@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import {
-  Plus, Edit, Trash2, LogOut, DollarSign, ChevronLeft, ChevronRight,
+  Plus, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { getBookings, createBooking, updateBooking, deleteBooking } from '../services/api';
 import { BookingModal } from '../components/BookingModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { PaymentModal } from '../components/PaymentModal';
 import { CheckoutModal } from '../components/CheckoutModal';
+import { BookingDetailModal } from '../components/BookingDetailModal';
 
 interface Booking {
   id: string;
@@ -58,12 +59,6 @@ const getSurname = (fullName?: string) => {
   return parts[parts.length - 1];
 };
 
-interface ActionMenuState {
-  booking: Booking;
-  x: number;
-  y: number;
-}
-
 export const Calendar = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,8 +75,8 @@ export const Calendar = () => {
   const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Menú de acciones anclado al chip de reserva clickeado
-  const [actionMenu, setActionMenu] = useState<ActionMenuState | null>(null);
+  // Ficha de detalle de la reserva clickeada en la grilla
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   const fetchData = async () => {
     try {
@@ -139,11 +134,9 @@ export const Calendar = () => {
   };
 
   const handleDeleteClick = (booking: Booking) => {
-    setActionMenu(null);
     setDeleteConfirm({ isOpen: true, booking });
   };
   const handleEditBooking = (booking: Booking) => {
-    setActionMenu(null);
     setEditingBooking(booking);
     setIsModalOpen(true);
   };
@@ -209,15 +202,6 @@ export const Calendar = () => {
     });
   };
 
-  const openActionMenu = (e: React.MouseEvent, booking: Booking) => {
-    e.stopPropagation();
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const menuWidth = 220;
-    const x = Math.min(rect.left, window.innerWidth - menuWidth - 12);
-    const y = Math.min(rect.bottom + 6, window.innerHeight - 260);
-    setActionMenu({ booking, x, y });
-  };
-
   // --- Render ---
   const blanks = Array(firstDay).fill(null);
   const days = Array.from({ length: totalDays }, (_, i) => i + 1);
@@ -237,11 +221,6 @@ export const Calendar = () => {
       visibleClients.set(b.client_id, b.client_name || '');
     }
   });
-
-  const menuBooking = actionMenu?.booking;
-  const menuLeftToPay = menuBooking?.left_to_pay_usd || 0;
-  const menuIsFullyPaid = menuLeftToPay <= 0;
-  const menuIsCompleted = menuBooking?.status === 'completed';
 
   return (
     <div className="space-y-6 pb-20 font-sans">
@@ -320,7 +299,7 @@ export const Calendar = () => {
                       return isCheckInDay ? (
                         <div
                           key={b.id}
-                          onClick={(e) => openActionMenu(e, b)}
+                          onClick={() => setSelectedBooking(b)}
                           title={`${b.client_name} · ${b.property_name}`}
                           className={`${color.solid} text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-1 rounded-md truncate cursor-pointer`}
                         >
@@ -329,7 +308,7 @@ export const Calendar = () => {
                       ) : (
                         <div
                           key={b.id}
-                          onClick={(e) => openActionMenu(e, b)}
+                          onClick={() => setSelectedBooking(b)}
                           title={`${b.client_name} · ${b.property_name}`}
                           className={`${color.solid} opacity-55 h-2 rounded-md cursor-pointer`}
                         />
@@ -343,42 +322,16 @@ export const Calendar = () => {
         </div>
       )}
 
-      {/* Menú de acciones anclado al chip de reserva clickeado */}
-      {actionMenu && menuBooking && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setActionMenu(null)} />
-          <div
-            className="fixed z-50 w-[220px] bg-white rounded-2xl border border-[#e7dff3] shadow-card-hover overflow-hidden animate-in fade-in zoom-in duration-150"
-            style={{ left: actionMenu.x, top: actionMenu.y }}
-          >
-            <div className="p-3 border-b border-[#eee5f6]">
-              <p className="text-sm font-bold text-[#121325] truncate">{menuBooking.client_name}</p>
-              <p className="text-xs text-[#7b6b95] truncate mb-1.5">{menuBooking.property_name}</p>
-              <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${getStatusColor(menuBooking.status)}`}>
-                {menuBooking.status}
-              </span>
-            </div>
-            <div className="p-1.5 flex flex-col">
-              {!menuIsCompleted && menuBooking.status !== 'cancelled' && (
-                <button onClick={() => { setCheckoutBooking(menuBooking); setActionMenu(null); }} className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-violet-50 text-violet-600 text-sm font-semibold transition-colors text-left">
-                  <LogOut className="w-4 h-4" /> Checkout
-                </button>
-              )}
-              {!menuIsFullyPaid && !menuIsCompleted && (
-                <button onClick={() => { setSettleBooking(menuBooking); setActionMenu(null); }} className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-emerald-50 text-emerald-600 text-sm font-semibold transition-colors text-left">
-                  <DollarSign className="w-4 h-4" /> Saldar
-                </button>
-              )}
-              <button onClick={() => handleEditBooking(menuBooking)} className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 text-blue-600 text-sm font-semibold transition-colors text-left">
-                <Edit className="w-4 h-4" /> Editar
-              </button>
-              <button onClick={() => handleDeleteClick(menuBooking)} className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-50 text-red-600 text-sm font-semibold transition-colors text-left">
-                <Trash2 className="w-4 h-4" /> Eliminar
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <BookingDetailModal
+        isOpen={!!selectedBooking}
+        booking={selectedBooking}
+        onClose={() => setSelectedBooking(null)}
+        onCheckout={(b) => { setCheckoutBooking(b as Booking); setSelectedBooking(null); }}
+        onSettle={(b) => { setSettleBooking(b as Booking); setSelectedBooking(null); }}
+        onEdit={(b) => { handleEditBooking(b as Booking); setSelectedBooking(null); }}
+        onDelete={(b) => { handleDeleteClick(b as Booking); setSelectedBooking(null); }}
+        getStatusColor={getStatusColor}
+      />
 
       <BookingModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingBooking(undefined); }} onSave={handleSaveBooking} booking={editingBooking} />
       <PaymentModal isOpen={!!settleBooking} booking={settleBooking} onClose={() => setSettleBooking(null)} onConfirm={handleSettlePayment} />
