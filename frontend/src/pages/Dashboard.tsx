@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Calendar, DollarSign, Sparkles } from 'lucide-react';
-import { getDashboardStats, getProperties } from '../services/api';
+import { Link } from 'react-router-dom';
+import { Calendar, TrendingUp, Building2, Wallet, ArrowRight } from 'lucide-react';
+import { getDashboardStats, getProperties, getBookings } from '../services/api';
 import { DirectvManagerModal } from '../components/DirectvManagerModal';
 
 interface MonthlyAvailability {
@@ -12,87 +12,101 @@ interface MonthlyAvailability {
   free_ranges: string[];
 }
 
-const WEEKS = [
-  { label: 'Sem 1', days: '1-7' },
-  { label: 'Sem 2', days: '8-14' },
-  { label: 'Sem 3', days: '15-21' },
-  { label: 'Sem 4', days: '22+' },
-];
+interface Booking {
+  id: string;
+  booking_number: string;
+  check_in: string;
+  check_out: string;
+  status: string;
+  client_name?: string;
+  property_name?: string;
+  left_to_pay_usd?: number;
+}
 
-const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const STATUS_BADGE: Record<string, string> = {
+  confirmed: 'bg-blue-50 text-blue-700 border border-blue-200',
+  active: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  completed: 'bg-gray-100 text-gray-600 border border-gray-200',
+  pending: 'bg-amber-50 text-amber-700 border border-amber-200',
+  cancelled: 'bg-rose-50 text-rose-700 border border-rose-200',
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  confirmed: 'Confirmada',
+  active: 'En curso',
+  completed: 'Finalizada',
+  pending: 'Pendiente',
+  cancelled: 'Cancelada',
+};
+
+const STAT_COLORS: Record<string, string> = {
+  emerald: 'bg-emerald-50 text-emerald-600',
+  violet: 'bg-violet-50 text-violet-600',
+  blue: 'bg-blue-50 text-blue-600',
+  amber: 'bg-amber-50 text-amber-600',
+};
+
+const StatCard = ({
+  label,
+  value,
+  subtitle,
+  icon: Icon,
+  color,
+}: {
+  label: string;
+  value: string;
+  subtitle?: string;
+  icon: typeof Calendar;
+  color: keyof typeof STAT_COLORS;
+}) => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+    <div className="flex items-start justify-between mb-3">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${STAT_COLORS[color]}`}>
+        <Icon className="w-4 h-4" />
+      </div>
+    </div>
+    <p className="text-2xl font-black text-gray-900 tracking-tight">{value}</p>
+    {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+  </div>
+);
 
 const AvailabilityWidget = ({ forecast }: { forecast: MonthlyAvailability[] }) => {
   const currentYear = useMemo(() => new Date().getFullYear(), []);
-  const currentMonth = useMemo(() => new Date().getMonth() + 1, []);
 
   if (!forecast || forecast.length === 0) return null;
 
   return (
-    <div className="bg-gradient-to-br from-indigo-600 via-violet-700 to-purple-800 rounded-[2rem] p-6 text-white shadow-xl animate-in slide-in-from-bottom-4 duration-700 relative overflow-hidden">
-      <h3 className="font-black text-lg mb-4 flex items-center gap-2 relative z-10">
-        <div className="w-8 h-8 rounded-lg bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-          <Sparkles className="w-4 h-4 text-yellow-300" />
+    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 h-full">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900">Disponibilidad de temporada</h3>
+          <p className="text-xs text-gray-400">Noches libres por mes · todas las propiedades</p>
         </div>
-        Disponibilidad Temporada
-      </h3>
+        <span className="text-xs font-semibold text-violet-600 bg-violet-50 px-3 py-1 rounded-full border border-violet-100">
+          {currentYear}
+        </span>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {forecast.map((month) => {
-          const isPastMonth = month.year < currentYear || (month.year === currentYear && MONTH_NAMES.indexOf(month.month_name) + 1 < currentMonth);
+          const dotColor =
+            month.status === 'full' ? 'bg-emerald-500' : month.status === 'none' ? 'bg-rose-500' : 'bg-amber-500';
+          const fraction = Math.min(100, Math.round((month.total_free_days / 30) * 100));
 
           return (
-            <div key={`${month.year}-${month.month_name}`} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex flex-col justify-between group hover:bg-white/15 transition-all duration-300">
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-black text-base capitalize tracking-tight">{month.month_name}</span>
-                <div className="flex flex-col items-end gap-1">
-                  {month.status === 'full' && (
-                    <span className="bg-emerald-400/20 text-emerald-300 text-[8px] font-black px-2 py-0.5 rounded-full border border-emerald-400/30 uppercase tracking-wider">LIBRE</span>
-                  )}
-                  {month.status === 'none' && (
-                    <span className="bg-rose-400/20 text-rose-300 text-[8px] font-black px-2 py-0.5 rounded-full border border-rose-400/30 uppercase tracking-wider">OCUPADO</span>
-                  )}
-                  {isPastMonth && (
-                    <span className="bg-white/10 text-white/50 text-[8px] font-black px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-wider">FINALIZADO</span>
-                  )}
-                </div>
+            <div
+              key={`${month.year}-${month.month_name}`}
+              className="bg-gray-50 rounded-2xl p-4 border border-gray-100"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-bold text-gray-700 capitalize">{month.month_name.slice(0, 3)}</span>
+                <span className={`w-2 h-2 rounded-full ${dotColor}`}></span>
               </div>
-
-              <div className="space-y-3">
-                <div className="flex items-end gap-1">
-                  {month.total_free_days >= 7 ? (
-                    <>
-                      <span className="text-2xl font-black leading-none">{(month.total_free_days / 7).toFixed(1)}</span>
-                      <span className="text-[9px] font-bold text-indigo-200 uppercase tracking-widest mb-0.5">Semanas Libres</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-2xl font-black leading-none">{month.total_free_days}</span>
-                      <span className="text-[9px] font-bold text-indigo-200 uppercase tracking-widest mb-0.5">Días Libres</span>
-                    </>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-4 gap-1">
-                  {WEEKS.map((w, idx) => {
-                    const weekStart = idx * 7 + 1;
-                    const weekEnd = (idx + 1) * 7;
-                    const isFree = month.status === 'full' || (month.status === 'partial' && month.free_ranges.some(r => {
-                      const [start, end] = r.split('-').map(Number);
-                      // Una semana se considera libre si el rango libre cubre al menos 5 días de la semana
-                      const overlapStart = Math.max(start, weekStart);
-                      const overlapEnd = Math.min(end, weekEnd);
-                      const overlapDays = Math.max(0, overlapEnd - overlapStart + 1);
-                      return overlapDays >= 5;
-                    }));
-
-                    return (
-                      <div key={w.label} className="flex flex-col items-center gap-1">
-                        <div className={`w-full h-1.5 rounded-full ${isFree ? 'bg-emerald-400' : 'bg-white/20'}`}></div>
-                        <span className="text-[7px] font-black text-white/60 uppercase">{w.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+              <p className="text-2xl font-black text-gray-900 leading-none mb-1">{month.total_free_days}</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-3">Noches libres</p>
+              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className={`h-full ${dotColor}`} style={{ width: `${fraction}%` }}></div>
               </div>
             </div>
           );
@@ -103,210 +117,182 @@ const AvailabilityWidget = ({ forecast }: { forecast: MonthlyAvailability[] }) =
 };
 
 export const Dashboard = () => {
-  const navigate = useNavigate();
   const [stats, setStats] = useState({
     availability_forecast: [] as MonthlyAvailability[],
-    total_revenue_accumulated: 0,
-    total_revenue_accumulated_ars: 0,
-    total_revenue_accumulated_usd: 0,
     total_revenue_month: 0,
-    total_revenue_month_ars: 0,
-    total_revenue_month_usd: 0,
-    total_advance_ars: 0,
-    total_advance_usd: 0,
-    total_advance_month_ars: 0,
-    total_advance_month_usd: 0,
-    directv_devices_summary: [] as any[]
+    directv_devices_summary: [] as any[],
   });
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDirectvModalOpen, setIsDirectvModalOpen] = useState(false);
-  const [properties, setProperties] = useState<any[]>([]);
+
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      const [statsData, bookingsData, propertiesData] = await Promise.all([
+        getDashboardStats(),
+        getBookings(),
+        getProperties(),
+      ]);
+      setStats({ ...statsData, availability_forecast: statsData.availability_forecast || [] });
+      setBookings(bookingsData || []);
+      setProperties(propertiesData || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Error al cargar el dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        const data = await getDashboardStats();
-        setStats({
-          ...data,
-          availability_forecast: data.availability_forecast || []
-        });
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching stats:', err);
-        setError('Error al cargar estadísticas');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchProperties = async () => {
-      try {
-        const props = await getProperties();
-        setProperties(props);
-      } catch (err) {
-        console.error('Error fetching properties:', err);
-      }
-    };
-
-    fetchStats();
-    fetchProperties();
+    fetchAll();
   }, []);
 
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Nota: active_bookings/occupancy_rate/checkins_today del endpoint /dashboard/stats
+  // están hardcodeados a 0 en el backend (no implementados todavía), así que se
+  // calculan acá con datos reales de reservas y propiedades.
+  const activeBookingsCount = useMemo(
+    () => bookings.filter((b) => ['confirmed', 'active'].includes(b.status)).length,
+    [bookings]
+  );
+
+  const checkinsToday = useMemo(
+    () => bookings.filter((b) => b.status !== 'cancelled' && b.check_in === todayStr).length,
+    [bookings, todayStr]
+  );
+
+  const occupancyRate = useMemo(() => {
+    if (!properties.length) return 0;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEndExclusive = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const daysInMonth = (monthEndExclusive.getTime() - monthStart.getTime()) / 86400000;
+    const totalAvailableNights = properties.length * daysInMonth;
+    if (totalAvailableNights <= 0) return 0;
+
+    let bookedNights = 0;
+    bookings.forEach((b) => {
+      if (b.status === 'cancelled') return;
+      const checkIn = new Date(b.check_in);
+      const checkOut = new Date(b.check_out);
+      const overlapStart = checkIn > monthStart ? checkIn : monthStart;
+      const overlapEnd = checkOut < monthEndExclusive ? checkOut : monthEndExclusive;
+      const nights = Math.round((overlapEnd.getTime() - overlapStart.getTime()) / 86400000);
+      if (nights > 0) bookedNights += nights;
+    });
+
+    return Math.min(100, Math.round((bookedNights / totalAvailableNights) * 100));
+  }, [bookings, properties]);
+
+  const receivables = useMemo(() => {
+    const pending = bookings.filter(
+      (b) => !['cancelled', 'completed'].includes(b.status) && (b.left_to_pay_usd || 0) > 0
+    );
+    const total = pending.reduce((sum, b) => sum + (b.left_to_pay_usd || 0), 0);
+    return { total, count: pending.length };
+  }, [bookings]);
+
+  const upcomingBookings = useMemo(() => {
+    return bookings
+      .filter((b) => b.status !== 'cancelled' && b.check_in >= todayStr)
+      .sort((a, b) => a.check_in.localeCompare(b.check_in))
+      .slice(0, 5);
+  }, [bookings, todayStr]);
+
+  const getInitials = (name: string) =>
+    name
+      .split(' ')
+      .map((word) => word[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+
+  const formatShortDate = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }).replace('.', '');
+  };
+
   return (
-    <div className="min-h-screen space-y-6 animate-in fade-in duration-700 pt-2 pb-10">
-      {/* Background Decorative Elements */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-blue-100/40 rounded-full blur-[120px]"></div>
-        <div className="absolute top-[20%] -left-[10%] w-[30%] h-[30%] bg-purple-100/30 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-[10%] right-[20%] w-[25%] h-[25%] bg-emerald-100/30 rounded-full blur-[80px]"></div>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {error && (
+        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-4 text-red-700 flex items-center gap-3">
+          <span className="text-xl">⚠️</span>
+          <p className="font-semibold text-sm">{error}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Ingresos del mes"
+          value={loading ? '...' : `$${stats.total_revenue_month.toLocaleString()}`}
+          subtitle="Mes actual"
+          icon={TrendingUp}
+          color="emerald"
+        />
+        <StatCard
+          label="Ocupación"
+          value={loading ? '...' : `${occupancyRate}%`}
+          subtitle="Ocupación del mes"
+          icon={Calendar}
+          color="violet"
+        />
+        <StatCard
+          label="Reservas activas"
+          value={loading ? '...' : String(activeBookingsCount)}
+          subtitle={checkinsToday > 0 ? `${checkinsToday} ingresan hoy` : undefined}
+          icon={Building2}
+          color="blue"
+        />
+        <StatCard
+          label="Saldos por cobrar"
+          value={loading ? '...' : `U$D ${receivables.total.toLocaleString()}`}
+          subtitle={receivables.count > 0 ? `en ${receivables.count} reserva${receivables.count > 1 ? 's' : ''}` : undefined}
+          icon={Wallet}
+          color="amber"
+        />
       </div>
 
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50/80 backdrop-blur-md border border-red-100 rounded-3xl p-6 text-red-700 flex items-center justify-center gap-3 shadow-xl shadow-red-900/5">
-          <span className="text-2xl">⚠️</span>
-          <p className="font-bold">{error}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="lg:col-span-2">
+          {!loading && stats.availability_forecast.length > 0 && (
+            <AvailabilityWidget forecast={stats.availability_forecast} />
+          )}
         </div>
-      )}
 
-      {/* Seasonal Availability Widget */}
-      {!loading && stats.availability_forecast && stats.availability_forecast.length > 0 && (
-        <div className="relative group">
-          <div className="absolute inset-0 bg-indigo-600 rounded-3xl blur-2xl opacity-5 group-hover:opacity-10 transition-opacity duration-500"></div>
-          <AvailabilityWidget forecast={stats.availability_forecast} />
-        </div>
-      )}
-
-      {/* Grid de Cards: Contabilidad + DirecTV */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Ingresos Consolidados - CLICKEABLE */}
-        <button
-          onClick={() => navigate('/finance')}
-          className="lg:col-span-2 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-3xl p-6 md:p-8 border border-emerald-100 shadow-2xl shadow-emerald-900/10 relative overflow-hidden hover:shadow-emerald-900/20 hover:-translate-y-1 transition-all duration-300 text-left group"
-        >
-          <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-500"></div>
-          <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-teal-400/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-500"></div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-                  <DollarSign className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-black text-gray-900 tracking-tight">Contabilidad</h2>
-                  <p className="text-xs text-gray-500 font-medium">Click para ver análisis completo</p>
-                </div>
-              </div>
-              <div className="text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Calendar className="w-6 h-6" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Recaudado del Mes ARS/USD */}
-              <div className="bg-white/70 backdrop-blur-md rounded-2xl p-5 border border-white shadow-lg">
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-3">Recaudado del Mes</p>
-
-                <div className="space-y-2">
-                  {/* ARS */}
-                  <div className="flex items-center justify-between p-2.5 bg-blue-50/50 rounded-xl">
-                    <div>
-                      <p className="text-[7px] font-black text-blue-400 uppercase tracking-wider mb-0.5">Pesos</p>
-                      <p className="text-lg font-black text-blue-600">
-                        {loading ? '...' : `$${(stats.total_revenue_month_ars || 0).toLocaleString()}`}
-                      </p>
-                    </div>
-                    <div className="text-xl">🇦🇷</div>
-                  </div>
-
-                  {/* USD */}
-                  <div className="flex items-center justify-between p-2.5 bg-green-50/50 rounded-xl">
-                    <div>
-                      <p className="text-[7px] font-black text-green-400 uppercase tracking-wider mb-0.5">Dólares</p>
-                      <p className="text-lg font-black text-green-600">
-                        {loading ? '...' : `U$D ${(stats.total_revenue_month_usd || 0).toLocaleString()}`}
-                      </p>
-                    </div>
-                    <div className="text-xl">💵</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Anticipos del Mes */}
-              <div className="bg-white/70 backdrop-blur-md rounded-2xl p-5 border border-white shadow-lg">
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-3">Anticipos del Mes</p>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2.5 bg-blue-50/50 rounded-xl">
-                    <div>
-                      <p className="text-[7px] font-black text-blue-400 uppercase tracking-wider mb-0.5">Pesos</p>
-                      <p className="text-lg font-black text-blue-600">
-                        {loading ? '...' : `$${(stats.total_advance_month_ars || 0).toLocaleString()}`}
-                      </p>
-                    </div>
-                    <div className="text-xl">🇦🇷</div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-2.5 bg-green-50/50 rounded-xl">
-                    <div>
-                      <p className="text-[7px] font-black text-green-400 uppercase tracking-wider mb-0.5">Dólares</p>
-                      <p className="text-lg font-black text-green-600">
-                        {loading ? '...' : `U$D ${(stats.total_advance_month_usd || 0).toLocaleString()}`}
-                      </p>
-                    </div>
-                    <div className="text-xl">💵</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ingresos del Mes */}
-              <div className="bg-white/70 backdrop-blur-md rounded-2xl p-5 border border-white shadow-lg">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1.5">Ingresos del Mes</p>
-                    <div className="text-2xl font-black text-amber-600 tracking-tight">
-                      {loading ? (
-                        <div className="h-8 w-24 bg-gray-100/50 rounded-lg animate-pulse" />
-                      ) : (
-                        `$${(stats.total_revenue_month || 0).toLocaleString()}`
-                      )}
-                    </div>
-                  </div>
-                  <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
-                    <Calendar className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-                <p className="text-[9px] text-gray-500 font-medium">Mes actual</p>
-              </div>
-            </div>
-          </div>
-        </button>
-
-        {/* DirecTV Card - Compacto y Clickeable */}
         {!loading && stats.directv_devices_summary && stats.directv_devices_summary.length > 0 && (
           <button
             onClick={() => setIsDirectvModalOpen(true)}
-            className="bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 rounded-3xl p-5 border border-blue-100 shadow-2xl shadow-blue-900/10 hover:shadow-blue-900/20 hover:-translate-y-1 relative overflow-hidden transition-all duration-300 text-left group"
+            className="bg-[#1E1533] rounded-3xl p-5 text-left hover:opacity-95 transition-opacity"
           >
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-500"></div>
-            
-            <div className="relative z-10 space-y-2.5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                <span className="text-lg">📺</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">DirecTV</p>
+                <p className="text-[10px] text-violet-300">Vencimiento por equipo</p>
+              </div>
+            </div>
+            <div className="space-y-2.5">
               {stats.directv_devices_summary.map((device: any) => (
-                <div key={device.id} className="bg-white/70 backdrop-blur-md rounded-xl p-3 border border-white shadow-sm flex items-center justify-between pointer-events-none">
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="text-2xl">📺</div>
-                    <div>
-                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{device.location}</p>
-                      <p className="font-black text-gray-800 text-xs">{device.card_number}</p>
-                    </div>
+                <div key={device.id} className="bg-white/5 rounded-xl p-3 flex items-center justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-violet-300 uppercase tracking-wide truncate">{device.location}</p>
+                    <p className="text-sm font-bold text-white truncate">{device.card_number}</p>
                   </div>
-                  <div className={`px-3 py-1.5 rounded-lg ${device.days_remaining <= 3 ? 'bg-red-50 border border-red-200' : 'bg-emerald-50 border border-emerald-200'}`}>
-                    <p className={`text-[7px] font-black uppercase tracking-wider leading-none mb-0.5 ${device.days_remaining <= 3 ? 'text-red-400' : 'text-emerald-400'}`}>Días</p>
-                    <p className={`text-xl font-black leading-none ${device.days_remaining <= 3 ? 'text-red-600' : 'text-emerald-600'}`}>{device.days_remaining}</p>
+                  <div
+                    className={`px-3 py-1 rounded-lg text-center flex-shrink-0 ml-2 ${
+                      device.days_remaining <= 3 ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'
+                    }`}
+                  >
+                    <p className="text-[8px] uppercase font-bold leading-none">Días</p>
+                    <p className="text-lg font-black leading-none">{device.days_remaining}</p>
                   </div>
                 </div>
               ))}
@@ -315,19 +301,73 @@ export const Dashboard = () => {
         )}
       </div>
 
-      {/* DirecTV Manager Modal */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">Próximas reservas</h3>
+          <Link to="/calendar" className="text-sm font-semibold text-violet-600 hover:text-violet-700 flex items-center gap-1">
+            Ver calendario <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {loading ? (
+          <p className="text-sm text-gray-400 text-center py-8">Cargando...</p>
+        ) : upcomingBookings.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-8">No hay reservas próximas</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
+                  <th className="pb-3 font-semibold">Cliente</th>
+                  <th className="pb-3 font-semibold">Propiedad</th>
+                  <th className="pb-3 font-semibold">Estadía</th>
+                  <th className="pb-3 font-semibold">Estado</th>
+                  <th className="pb-3 font-semibold text-right">Saldo</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {upcomingBookings.map((b) => (
+                  <tr key={b.id} className="hover:bg-gray-50/60 transition-colors">
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                          {getInitials(b.client_name || '?')}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-800 truncate">{b.client_name || 'Sin cliente'}</p>
+                          <p className="text-[11px] text-gray-400">{b.booking_number}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4 text-gray-600">{b.property_name}</td>
+                    <td className="py-3 pr-4 text-violet-600 font-medium whitespace-nowrap">
+                      {formatShortDate(b.check_in)} – {formatShortDate(b.check_out)}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                          STATUS_BADGE[b.status] || STATUS_BADGE.completed
+                        }`}
+                      >
+                        {STATUS_LABEL[b.status] || b.status}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right font-bold text-gray-900 whitespace-nowrap">
+                      {(b.left_to_pay_usd || 0) > 0 ? `U$D ${b.left_to_pay_usd!.toLocaleString()}` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       <DirectvManagerModal
         isOpen={isDirectvModalOpen}
         onClose={() => setIsDirectvModalOpen(false)}
         properties={properties}
-        onUpdate={async () => {
-          // Refrescar estadísticas después de actualizar DirecTV
-          const data = await getDashboardStats();
-          setStats({
-            ...data,
-            availability_forecast: data.availability_forecast || []
-          });
-        }}
+        onUpdate={fetchAll}
       />
     </div>
   );

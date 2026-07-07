@@ -7,6 +7,7 @@ interface BookingModalProps {
   onClose: () => void;
   onSave: (bookingData: any) => void;
   booking?: any;
+  errorMessage?: string | null;
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({
@@ -14,6 +15,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   onClose,
   onSave,
   booking,
+  errorMessage,
 }) => {
   const [formData, setFormData] = useState({
     property_id: '',
@@ -38,6 +40,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const [clients, setClients] = useState<any[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
+  const [dateError, setDateError] = useState<string | null>(null);
   // const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -62,6 +65,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
+    setDateError(null);
     if (booking) {
       setFormData({
         property_id: booking.property_id || '',
@@ -109,18 +113,19 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validar que check_out sea después de check_in
     if (formData.check_in && formData.check_out) {
       const checkIn = new Date(formData.check_in);
       const checkOut = new Date(formData.check_out);
-      
+
       if (checkOut <= checkIn) {
-        alert('⚠️ La fecha de salida debe ser al menos 1 día después de la fecha de entrada');
+        setDateError('La fecha de salida debe ser al menos 1 día después de la fecha de entrada');
         return;
       }
     }
-    
+
+    setDateError(null);
     onSave(formData);
   };
 
@@ -162,6 +167,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         {/* Form Content - Scrollable */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            {errorMessage && (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-red-600 font-bold">!</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-red-900 mb-1">Error</h4>
+                  <p className="text-sm text-red-700">{errorMessage}</p>
+                </div>
+              </div>
+            )}
+
             {/* Selección Principal */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -216,9 +233,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     required
                     value={formData.check_in}
                     onChange={(e) => {
+                      setDateError(null);
                       const newCheckIn = e.target.value;
                       const currentCheckOut = formData.check_out;
-                      
+
                       // Si check_out ya está definido y es igual o anterior a check_in, ajustarlo
                       if (currentCheckOut && newCheckIn >= currentCheckOut) {
                         const nextDay = new Date(newCheckIn);
@@ -251,7 +269,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     required
                     value={formData.check_out}
                     min={formData.check_in ? new Date(new Date(formData.check_in).getTime() + 86400000).toISOString().split('T')[0] : undefined}
-                    onChange={(e) => setFormData({ ...formData, check_out: e.target.value })}
+                    onChange={(e) => {
+                      setDateError(null);
+                      setFormData({ ...formData, check_out: e.target.value });
+                    }}
                     className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none ${formData.check_out && formData.property_id &&
                       new Date(formData.check_out + 'T00:00:00').getDay() !== ((properties.find(p => p.id === formData.property_id)?.check_out_day + 1) % 7)
                       ? 'border-amber-400 bg-amber-50' : 'border-pink-200 focus:border-pink-400'
@@ -261,6 +282,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     <p className="text-[10px] mt-1 font-bold text-pink-600 uppercase">
                       {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][new Date(formData.check_out + 'T00:00:00').getDay()]}
                     </p>
+                  )}
+                  {dateError && (
+                    <p className="text-xs mt-1 font-medium text-red-600">{dateError}</p>
                   )}
                 </div>
 
