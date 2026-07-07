@@ -9,6 +9,9 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { PaymentModal } from '../components/PaymentModal';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { BookingDetailModal } from '../components/BookingDetailModal';
+import { Pagination } from '../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 interface Booking {
   id: string;
@@ -91,6 +94,12 @@ export const Calendar = () => {
 
   // Ficha de detalle de la reserva clickeada en la grilla
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+
+  // Paginado de la vista de lista
+  const [listPage, setListPage] = useState(1);
+  useEffect(() => {
+    setListPage(1);
+  }, [currentDate]);
 
   const fetchData = async () => {
     try {
@@ -245,6 +254,9 @@ export const Calendar = () => {
     })
     .sort((a, b) => a.check_in.localeCompare(b.check_in));
 
+  const listTotalPages = Math.max(1, Math.ceil(monthBookings.length / PAGE_SIZE));
+  const paginatedMonthBookings = monthBookings.slice((listPage - 1) * PAGE_SIZE, listPage * PAGE_SIZE);
+
   return (
     <div className="space-y-6 pb-20 font-sans">
       {errorMessage && (
@@ -369,7 +381,7 @@ export const Calendar = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f3eefa]">
-                  {monthBookings.map(b => {
+                  {paginatedMonthBookings.map(b => {
                     const isPaid = (b.left_to_pay_usd || 0) <= 0;
                     const color = getClientColor(b.client_id);
                     return (
@@ -411,6 +423,7 @@ export const Calendar = () => {
               </table>
             </div>
           )}
+          <Pagination currentPage={listPage} totalPages={listTotalPages} onPageChange={setListPage} />
         </div>
       )}
 

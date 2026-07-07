@@ -1,6 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Download, Home, User } from 'lucide-react';
 import { getAccountingStats, getBookings, getDashboardStats, getExpenses } from '../services/api';
+import { Pagination } from '../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 interface SeasonStats {
   year: number;
@@ -77,6 +80,11 @@ export const Finance = () => {
   const [selectedMonth, setSelectedMonth] = useState<number>(0); // 0 = Temporada completa
   const [year1, setYear1] = useState<number>(new Date().getFullYear());
   const [year2, setYear2] = useState<number>(new Date().getFullYear() - 1);
+  const [movementsPage, setMovementsPage] = useState(1);
+
+  useEffect(() => {
+    setMovementsPage(1);
+  }, [selectedMonth, year1, year2]);
 
   const fetchData = async () => {
     try {
@@ -166,6 +174,12 @@ export const Finance = () => {
       </div>
     );
   }
+
+  const movementsTotalPages = Math.max(1, Math.ceil(completedBookings.length / PAGE_SIZE));
+  const paginatedMovements = completedBookings.slice(
+    (movementsPage - 1) * PAGE_SIZE,
+    movementsPage * PAGE_SIZE
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
@@ -334,7 +348,7 @@ export const Finance = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#eee5f6]">
-                {completedBookings.map((booking) => (
+                {paginatedMovements.map((booking) => (
                   <tr key={booking.id} className="hover:bg-[#faf8fd] transition-colors">
                     <td className="px-6 py-3.5 text-[#7b6b95] whitespace-nowrap">{formatDate(booking.check_out)}</td>
                     <td className="px-6 py-3.5">
@@ -361,6 +375,7 @@ export const Finance = () => {
             </table>
           </div>
         )}
+        <Pagination currentPage={movementsPage} totalPages={movementsTotalPages} onPageChange={setMovementsPage} />
       </div>
     </div>
   );

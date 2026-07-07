@@ -3,6 +3,9 @@ import { Search, Plus, Edit, Trash2, Users as UsersIcon } from 'lucide-react';
 import { getClients, getBookings, createClient, updateClient, deleteClient } from '../services/api';
 import { ClientModal } from '../components/ClientModal';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { Pagination } from '../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 interface Client {
   id: string;
@@ -65,6 +68,7 @@ export const Clients = () => {
     client: null,
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchClients = async () => {
     try {
@@ -116,6 +120,17 @@ export const Clients = () => {
       (c.phone || '').toLowerCase().includes(q)
     );
   }, [clients, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE));
+
+  const paginatedClients = useMemo(
+    () => filteredClients.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredClients, currentPage]
+  );
 
   const getInitials = (name: string) =>
     name.split(' ').map((word) => word[0]).slice(0, 2).join('').toUpperCase();
@@ -235,7 +250,7 @@ export const Clients = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#eee5f6]">
-                {filteredClients.map((client) => {
+                {paginatedClients.map((client) => {
                   const stats = statsByClient.get(client.id);
                   return (
                     <tr key={client.id} className="hover:bg-[#faf8fd] transition-colors">
@@ -293,6 +308,7 @@ export const Clients = () => {
               </tbody>
             </table>
           </div>
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
       )}
 

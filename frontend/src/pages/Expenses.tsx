@@ -12,6 +12,9 @@ import {
 import { getProperties, getExpenses, createExpense, updateExpense, deleteExpense } from '../services/api';
 import { ExpenseModal } from '../components/ExpenseModal';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { Pagination } from '../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 interface Property {
   id: string;
@@ -112,6 +115,11 @@ export const Expenses = () => {
   const [selectedProperty, setSelectedProperty] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [expensesPage, setExpensesPage] = useState(1);
+
+  useEffect(() => {
+    setExpensesPage(1);
+  }, [selectedYear, selectedProperty, selectedCategory, searchTerm]);
 
   const years = [2024, 2025, 2026];
 
@@ -155,6 +163,12 @@ export const Expenses = () => {
   });
 
   const nonCancelled = filteredExpenses.filter(e => e.status !== 'cancelled');
+
+  const expensesTotalPages = Math.max(1, Math.ceil(filteredExpenses.length / PAGE_SIZE));
+  const paginatedExpenses = filteredExpenses.slice(
+    (expensesPage - 1) * PAGE_SIZE,
+    expensesPage * PAGE_SIZE
+  );
 
   // Calcular totales
   const totalARS = nonCancelled
@@ -471,7 +485,7 @@ export const Expenses = () => {
               </div>
 
               <div className="divide-y divide-[#f3eefa]">
-                {filteredExpenses.map((expense) => {
+                {paginatedExpenses.map((expense) => {
                   const category = getCategoryInfo(expense.category);
                   return (
                     <div key={expense.id} className="p-4 md:px-5 hover:bg-[#faf8fd] transition-colors">
@@ -591,6 +605,11 @@ export const Expenses = () => {
                   );
                 })}
               </div>
+              <Pagination
+                currentPage={expensesPage}
+                totalPages={expensesTotalPages}
+                onPageChange={setExpensesPage}
+              />
             </>
           )}
         </div>
