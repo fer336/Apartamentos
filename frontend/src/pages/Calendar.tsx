@@ -59,10 +59,24 @@ const getSurname = (fullName?: string) => {
   return parts[parts.length - 1];
 };
 
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((word) => word[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+const formatShortDate = (dateStr: string) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }).replace('.', '');
+};
+
 export const Calendar = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Modals State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -222,6 +236,15 @@ export const Calendar = () => {
     }
   });
 
+  // Todas las reservas que tocan el mes visible, para la vista de lista
+  const monthBookings = bookings
+    .filter(b => {
+      const checkInDate = new Date(b.check_in);
+      const checkOutDate = new Date(b.check_out);
+      return checkInDate <= monthEnd && checkOutDate >= monthStart;
+    })
+    .sort((a, b) => a.check_in.localeCompare(b.check_in));
+
   return (
     <div className="space-y-6 pb-20 font-sans">
       {errorMessage && (
@@ -241,6 +264,19 @@ export const Calendar = () => {
           <h2 className="font-display text-[22px] font-extrabold text-[#121325] capitalize">
             {monthNames[month]} {year}
           </h2>
+          <div className="inline-flex bg-[#e2daf0] rounded-xl p-1">
+            {(['grid', 'list'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setViewMode(v)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                  viewMode === v ? 'bg-white text-[#5c3a8c] shadow-sm' : 'text-[#8b7aab] hover:text-[#5c3a8c]'
+                }`}
+              >
+                {v === 'grid' ? 'Calendario' : 'Lista'}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-4 flex-wrap">
@@ -263,7 +299,7 @@ export const Calendar = () => {
 
       {loading ? (
         <div className="text-center p-12 bg-white rounded-2xl border border-[#e7dff3]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div><p className="mt-4 text-muted-foreground">Cargando...</p></div>
-      ) : (
+      ) : viewMode === 'grid' ? (
         <div className="bg-white rounded-2xl border border-[#e7dff3] p-5 shadow-card">
           <div className="grid grid-cols-7 gap-2 mb-2">
             {weekdayLabels.map(day => (
@@ -319,6 +355,66 @@ export const Calendar = () => {
               );
             })}
           </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-[#e7dff3] shadow-card p-6">
+          {monthBookings.length === 0 ? (
+            <p className="text-sm text-[#9583b3] text-center py-8">No hay reservas este mes</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-wider text-[#9583b3] border-b border-[#eee5f6]">
+                    <th className="pb-3 font-semibold">Cliente</th>
+                    <th className="pb-3 font-semibold">Propiedad</th>
+                    <th className="pb-3 font-semibold">Estadía</th>
+                    <th className="pb-3 font-semibold">Estado</th>
+                    <th className="pb-3 font-semibold text-right">Saldo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f3eefa]">
+                  {monthBookings.map(b => {
+                    const isPaid = (b.left_to_pay_usd || 0) <= 0;
+                    const color = getClientColor(b.client_id);
+                    return (
+                      <tr
+                        key={b.id}
+                        onClick={() => setSelectedBooking(b)}
+                        className="hover:bg-[#faf8fd] transition-colors cursor-pointer"
+                      >
+                        <td className="py-3 pr-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-[10px] ${color.solid} text-white flex items-center justify-center text-xs font-bold flex-shrink-0`}>
+                              {getInitials(b.client_name || '?')}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-[#121325] truncate">{b.client_name || 'Sin cliente'}</p>
+                              <p className="text-[11px] font-mono text-[#9583b3]">{b.booking_number}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 pr-4 text-[#5c3a8c]">{b.property_name}</td>
+                        <td className="py-3 pr-4 text-[#5c3a8c] font-medium whitespace-nowrap">
+                          {formatShortDate(b.check_in)} – {formatShortDate(b.check_out)}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(b.status)}`}>
+                            {b.status}
+                          </span>
+                        </td>
+                        <td
+                          className="py-3 text-right font-display font-bold whitespace-nowrap"
+                          style={{ color: isPaid ? '#9583b3' : '#c2410c' }}
+                        >
+                          {isPaid ? 'Pagado' : `U$D ${(b.left_to_pay_usd || 0).toLocaleString()}`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
