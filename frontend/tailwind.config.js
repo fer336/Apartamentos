@@ -6,7 +6,24 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Figtree', 'system-ui', 'sans-serif'],
+        display: ['"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
+      },
       colors: {
+        brand: {
+          50: '#f5f2fa',
+          100: '#ece6f6',
+          200: '#d9caeb',
+          300: '#c3abdf',
+          400: '#ad8ed2',
+          500: '#9d84bf',
+          600: '#7c5ca8',
+          700: '#5c3a8c',
+          800: '#4b2f72',
+          900: '#3a2459',
+          950: '#25163a',
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -45,6 +62,11 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(18,19,37,.04)',
+        'card-hover': '0 16px 36px rgba(92,58,140,.14)',
+        'btn-primary': '0 8px 22px rgba(92,58,140,.32)',
       },
       animation: {
         "in": "in 0.5s ease-out",
