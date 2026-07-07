@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import {
-  Plus, ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { getBookings, createBooking, updateBooking, deleteBooking } from '../services/api';
 import { BookingModal } from '../components/BookingModal';
@@ -290,10 +290,6 @@ export const Calendar = () => {
               ))}
             </div>
           )}
-          <button onClick={() => { setEditingBooking(undefined); setIsModalOpen(true); }} className="px-4 py-2.5 bg-brand-600 hover:bg-[#6b4d95] text-white rounded-[11px] shadow-btn-primary transition-all hover:-translate-y-px flex items-center gap-2 font-semibold text-sm">
-            <Plus className="w-4 h-4" />
-            Nueva reserva
-          </button>
         </div>
       </div>
 
