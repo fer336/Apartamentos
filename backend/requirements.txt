@@ -1,0 +1,15 @@
+asyncpg
+sqlalchemy[asyncio]
+alembic
+fastapi
+uvicorn[standard]
+httpx
+pydantic
+pydantic-settings
+python-dotenv
+python-jose[cryptography]
+authlib
+itsdangerous
+starlette
+python-multipart
+minio

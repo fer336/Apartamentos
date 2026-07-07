@@ -1,0 +1,95 @@
+version: "3.8"
+
+services:
+  # ⚙️ Backend API
+  backend:
+    image: ferc33/apartamentos-backend:v2.2
+    networks:
+      - network_public
+      - apartamentos-internal
+    secrets:
+      - source: apartamentos_backend_env
+        target: /run/secrets/backend.env
+    volumes:
+      - backend_logs:/app/logs
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=network_public"
+        
+        # Router para la API principal (/api)
+        # Tu backend sirve en /api (endpoints.py incluido con prefix /api)
+        - "traefik.http.routers.apartamentos-api.rule=Host(`apartamentos.qeva.xyz`) && PathPrefix(`/api`)"
+        - "traefik.http.routers.apartamentos-api.entrypoints=websecure"
+        - "traefik.http.routers.apartamentos-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.apartamentos-api.priority=100"
+        
+        # Router para autenticación de Google (/auth)
+        # AuthRouter incluido con prefix /auth
+        - "traefik.http.routers.apartamentos-auth.rule=Host(`apartamentos.qeva.xyz`) && PathPrefix(`/auth`)"
+        - "traefik.http.routers.apartamentos-auth.entrypoints=websecure"
+        - "traefik.http.routers.apartamentos-auth.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.apartamentos-auth.priority=100"
+        
+        # Router para Health check
+        - "traefik.http.routers.apartamentos-health.rule=Host(`apartamentos.qeva.xyz`) && Path(`/health`)"
+        - "traefik.http.routers.apartamentos-health.entrypoints=websecure"
+        - "traefik.http.routers.apartamentos-health.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.apartamentos-health.priority=90"
+        
+        # Service definition
+        - "traefik.http.services.apartamentos-backend.loadbalancer.server.port=8000"
+
+  # 🎨 Frontend
+  frontend:
+    image: ferc33/apartamentos-frontend:v2.2
+    networks:
+      - network_public
+      - apartamentos-internal
+    depends_on:
+      - backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=network_public"
+        # Router principal para la aplicación de React (prioridad baja para catch-all)
+        - "traefik.http.routers.apartamentos-frontend.rule=Host(`apartamentos.qeva.xyz`)"
+        - "traefik.http.routers.apartamentos-frontend.entrypoints=websecure"
+        - "traefik.http.routers.apartamentos-frontend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.apartamentos-frontend.priority=1"
+        - "traefik.http.services.apartamentos-frontend.loadbalancer.server.port=80"
+
+networks:
+  network_public:
+    external: true
+    name: network_public
+  apartamentos-internal:
+    driver: overlay
+    internal: true
+
+volumes:
+  backend_logs:
+    driver: local
+
+secrets:
+  apartamentos_backend_env:
+    external: true
+
