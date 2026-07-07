@@ -19,8 +19,23 @@ import {
 } from 'lucide-react';
 import { BookingModal } from './BookingModal';
 import { ConfirmModal } from './ConfirmModal';
-import { createBooking } from '../services/api';
+import { createBooking, getBookings } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
+
+interface CheckoutToday {
+  id: string;
+  client_name?: string;
+  property_name?: string;
+  check_out: string;
+  status: string;
+}
+
+const getLocalDateString = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 interface NavItem {
   path: string;
@@ -66,6 +81,8 @@ export const Layout = () => {
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<{ name: string; picture: string } | null>(null);
+  const [checkoutsToday, setCheckoutsToday] = useState<CheckoutToday[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -80,6 +97,22 @@ export const Layout = () => {
         console.error('Error decoding token:', error);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchCheckoutsToday = async () => {
+      try {
+        const bookings: CheckoutToday[] = await getBookings();
+        const today = getLocalDateString(new Date());
+        const todaysCheckouts = (bookings || []).filter(
+          (b) => b.check_out === today && b.status !== 'cancelled'
+        );
+        setCheckoutsToday(todaysCheckouts);
+      } catch (error) {
+        console.error('Error fetching checkouts today:', error);
+      }
+    };
+    fetchCheckoutsToday();
   }, []);
 
   const handleGlobalCreateBooking = async (bookingData: any) => {
@@ -262,10 +295,54 @@ export const Layout = () => {
             />
           </div>
 
-          <button className="relative w-[42px] h-[42px] rounded-[11px] bg-white border border-[#e0d7ef] hover:bg-[#faf8fd] flex items-center justify-center flex-shrink-0 transition-colors">
-            <Bell className="w-5 h-5 text-[#5c3a8c]" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#f97316]" />
-          </button>
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setIsNotifOpen((open) => !open)}
+              className="relative w-[42px] h-[42px] rounded-[11px] bg-white border border-[#e0d7ef] hover:bg-[#faf8fd] flex items-center justify-center transition-colors"
+            >
+              <Bell className="w-5 h-5 text-[#5c3a8c]" />
+              {checkoutsToday.length > 0 && (
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#f97316]" />
+              )}
+            </button>
+
+            {isNotifOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsNotifOpen(false)}
+                />
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-[14px] border border-[#e7dff3] shadow-[0_16px_36px_rgba(92,58,140,.14)] z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[#eee5f6]">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#9583b3]">
+                      Checkouts de hoy
+                    </p>
+                  </div>
+                  {checkoutsToday.length === 0 ? (
+                    <p className="px-4 py-5 text-sm text-[#7b6b95] text-center">Sin checkouts hoy</p>
+                  ) : (
+                    <div className="max-h-72 overflow-y-auto">
+                      {checkoutsToday.map((booking) => (
+                        <button
+                          key={booking.id}
+                          onClick={() => {
+                            setIsNotifOpen(false);
+                            navigate('/calendar');
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-[#faf8fd] transition-colors border-b border-[#f3eefa] last:border-b-0"
+                        >
+                          <p className="text-sm font-semibold text-[#121325]">
+                            {booking.client_name || 'Cliente'}
+                          </p>
+                          <p className="text-xs text-[#7b6b95]">{booking.property_name || 'Propiedad'}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
 
           <button
             onClick={openBookingModal}
