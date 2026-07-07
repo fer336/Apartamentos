@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
-  Wrench,
   Plus,
   Trash2,
   Edit,
-  FileText,
   Calendar,
   Building,
   Filter,
   Download,
-  Search,
-  TrendingDown,
-  AlertTriangle
+  Search
 } from 'lucide-react';
 import { getProperties, getExpenses, createExpense, updateExpense, deleteExpense } from '../services/api';
 import { ExpenseModal } from '../components/ExpenseModal';
@@ -62,6 +56,26 @@ const DEFAULT_CATEGORIES: Category[] = [
   { value: 'otro', label: 'Otro', icon: '📦', color: 'slate' }
 ];
 
+// Hex equivalents (Tailwind ~500) for each category color name.
+// Used as inline styles instead of dynamic `bg-${color}-500` classes, since
+// custom categories are created at runtime (localStorage) and Tailwind's
+// JIT purge can't discover class names that don't appear literally in source.
+const COLOR_HEX: Record<string, string> = {
+  blue: '#3b82f6',
+  yellow: '#eab308',
+  orange: '#f97316',
+  purple: '#a855f7',
+  amber: '#f59e0b',
+  gray: '#6b7280',
+  cyan: '#06b6d4',
+  green: '#22c55e',
+  red: '#ef4444',
+  indigo: '#6366f1',
+  slate: '#64748b',
+};
+
+const colorHex = (color: string) => COLOR_HEX[color] || '#7c5ca8';
+
 // Cargar categorías personalizadas desde localStorage
 const loadCustomCategories = (): Category[] => {
   try {
@@ -78,7 +92,6 @@ const saveCustomCategories = (categories: Category[]) => {
 };
 
 export const Expenses = () => {
-  const navigate = useNavigate();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,9 +128,6 @@ export const Expenses = () => {
         getExpenses({ year: selectedYear })
       ]);
 
-      console.log('Properties loaded:', propertiesData);
-      console.log('Expenses loaded:', expensesData);
-
       if (Array.isArray(propertiesData)) {
         setProperties(propertiesData);
       }
@@ -144,21 +154,41 @@ export const Expenses = () => {
     return matchesYear && matchesProperty && matchesCategory && matchesSearch;
   });
 
+  const nonCancelled = filteredExpenses.filter(e => e.status !== 'cancelled');
+
   // Calcular totales
-  const totalARS = filteredExpenses
-    .filter(e => e.currency === 'ARS' && e.status !== 'cancelled')
+  const totalARS = nonCancelled
+    .filter(e => e.currency === 'ARS')
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const totalUSD = filteredExpenses
-    .filter(e => e.currency === 'USD' && e.status !== 'cancelled')
+  const totalUSD = nonCancelled
+    .filter(e => e.currency === 'USD')
     .reduce((sum, e) => sum + e.amount, 0);
 
-  const pendingCount = filteredExpenses.filter(e => e.status === 'pending').length;
+  // "Por categoría": breakdown por moneda dominante (real, no inventado).
+  // Si hay gasto en ambas monedas se muestran ambos desgloses; si solo hay
+  // una, se omite la otra en vez de mezclar montos de distinta moneda.
+  const buildBreakdown = (currency: 'ARS' | 'USD', total: number) => {
+    if (total <= 0) return [];
+    const byCategory = new Map<string, number>();
+    nonCancelled
+      .filter(e => e.currency === currency)
+      .forEach(e => byCategory.set(e.category, (byCategory.get(e.category) || 0) + e.amount));
+
+    return Array.from(byCategory.entries())
+      .map(([value, amount]) => ({
+        category: allCategories.find(c => c.value === value) || allCategories[allCategories.length - 1],
+        amount,
+        percent: (amount / total) * 100,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  };
+
+  const breakdownARS = buildBreakdown('ARS', totalARS);
+  const breakdownUSD = buildBreakdown('USD', totalUSD);
 
   const handleOpenModal = () => {
-    // Asegurarse de que las propiedades estén cargadas antes de abrir el modal
     if (properties.length === 0) {
-      console.warn('No properties loaded, fetching...');
       fetchData().then(() => {
         setIsModalOpen(true);
       });
@@ -171,7 +201,6 @@ export const Expenses = () => {
     try {
       setErrorMessage(null);
 
-      // Crear FormData para enviar archivo
       const formData = new FormData();
       formData.append('property_id', expenseData.property_id);
       formData.append('date', expenseData.date);
@@ -224,7 +253,6 @@ export const Expenses = () => {
   };
 
   const handleAddCategory = (newCategory: Category) => {
-    // Verificar que no exista ya
     if (allCategories.some(c => c.value === newCategory.value)) {
       return;
     }
@@ -241,13 +269,13 @@ export const Expenses = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'bg-green-100 text-green-700 border-green-200';
+        return 'bg-[#e4f3ea] text-[#2f8f4e] border-[#bfe3cc]';
       case 'pending':
-        return 'bg-amber-100 text-amber-700 border-amber-200';
+        return 'bg-[#fdf0e2] text-[#c2410c] border-[#f7d9ae]';
       case 'cancelled':
         return 'bg-gray-100 text-gray-500 border-gray-200';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
@@ -258,6 +286,49 @@ export const Expenses = () => {
       case 'cancelled': return 'Cancelado';
       default: return status;
     }
+  };
+
+  const CategoryBreakdownBlock = ({ label, total, rows }: { label: string; total: number; rows: ReturnType<typeof buildBreakdown> }) => {
+    if (rows.length === 0) return null;
+    return (
+      <div className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9583b3]">{label}</span>
+          <span className="font-display font-black text-lg text-[#dc2626]">
+            {label === 'USD' ? 'U$D ' : '$'}{total.toLocaleString()}
+          </span>
+        </div>
+        <div className="space-y-2.5">
+          {rows.map(({ category, amount, percent }) => (
+            <div key={category.value}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0"
+                    style={{ backgroundColor: colorHex(category.color) }}
+                  />
+                  <span className="text-sm font-medium text-[#121325] truncate">{category.label}</span>
+                </div>
+                <div className="flex items-baseline gap-1.5 flex-shrink-0 ml-2">
+                  <span className="font-display font-bold text-sm text-[#121325]">
+                    {label === 'USD' ? 'U$D ' : '$'}{amount.toLocaleString()}
+                  </span>
+                  <span className="text-xs font-semibold text-[#9583b3]">
+                    {percent.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+              <div className="h-1.5 rounded-full bg-[#eae1f5] overflow-hidden">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${percent}%`, backgroundColor: colorHex(category.color) }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -278,94 +349,20 @@ export const Expenses = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 md:gap-4">
-        <div className="flex items-center gap-2 md:gap-4">
-          <button
-            onClick={() => navigate('/')}
-            className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white border-2 border-orange-200 hover:bg-orange-50 flex items-center justify-center transition-all flex-shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg md:text-3xl font-bold text-foreground flex items-center gap-2 md:gap-3 truncate">
-              <Wrench className="w-5 h-5 md:w-8 md:h-8 text-orange-500 flex-shrink-0" />
-              Gastos y Reparaciones
-            </h1>
-            <p className="text-muted-foreground mt-1 hidden md:block">Control de gastos por propiedad</p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => {
-            setEditingExpense(undefined);
-            handleOpenModal();
-          }}
-          className="w-9 h-9 md:w-auto md:h-auto md:px-6 md:py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-lg flex items-center justify-center gap-2 font-medium"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="hidden md:inline">Nuevo Gasto</span>
-        </button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-4 border-2 border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-              <TrendingDown className="w-4 h-4 text-blue-600" />
-            </div>
-            <span className="text-xs font-bold text-gray-400 uppercase">Total ARS</span>
-          </div>
-          <p className="text-xl md:text-2xl font-black text-blue-600">${totalARS.toLocaleString()}</p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 border-2 border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-              <TrendingDown className="w-4 h-4 text-green-600" />
-            </div>
-            <span className="text-xs font-bold text-gray-400 uppercase">Total USD</span>
-          </div>
-          <p className="text-xl md:text-2xl font-black text-green-600">U$D {totalUSD.toLocaleString()}</p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 border-2 border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-              <FileText className="w-4 h-4 text-orange-600" />
-            </div>
-            <span className="text-xs font-bold text-gray-400 uppercase">Registros</span>
-          </div>
-          <p className="text-xl md:text-2xl font-black text-gray-800">{filteredExpenses.length}</p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 border-2 border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-            </div>
-            <span className="text-xs font-bold text-gray-400 uppercase">Pendientes</span>
-          </div>
-          <p className="text-xl md:text-2xl font-black text-amber-600">{pendingCount}</p>
-        </div>
-      </div>
-
       {/* Filters */}
-      <div className="bg-white rounded-2xl p-4 border-2 border-border">
+      <div className="bg-white rounded-2xl p-4 border border-[#e7dff3] shadow-card">
         <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-5 h-5 text-orange-500" />
-          <span className="font-bold text-gray-700">Filtros</span>
+          <Filter className="w-4 h-4 text-[#7c5ca8]" />
+          <span className="font-semibold text-sm text-[#121325]">Filtros</span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {/* Año */}
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Año</label>
+            <label className="block text-[11px] font-bold text-[#9583b3] uppercase mb-1">Año</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-xl border-2 border-border bg-gray-50 font-medium focus:border-orange-400 focus:outline-none"
+              className="w-full px-3 py-2 rounded-[10px] border border-[#e0d7ef] bg-white text-sm font-medium text-[#121325] focus:border-[#ad8ed2] focus:outline-none focus:ring-[3px] focus:ring-[#7c5ca8]/15"
             >
               {years.map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -373,13 +370,12 @@ export const Expenses = () => {
             </select>
           </div>
 
-          {/* Propiedad */}
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Propiedad</label>
+            <label className="block text-[11px] font-bold text-[#9583b3] uppercase mb-1">Propiedad</label>
             <select
               value={selectedProperty}
               onChange={(e) => setSelectedProperty(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border-2 border-border bg-gray-50 font-medium focus:border-orange-400 focus:outline-none"
+              className="w-full px-3 py-2 rounded-[10px] border border-[#e0d7ef] bg-white text-sm font-medium text-[#121325] focus:border-[#ad8ed2] focus:outline-none focus:ring-[3px] focus:ring-[#7c5ca8]/15"
             >
               <option value="all">Todas</option>
               {properties.map(prop => (
@@ -388,13 +384,12 @@ export const Expenses = () => {
             </select>
           </div>
 
-          {/* Categoría */}
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Categoría</label>
+            <label className="block text-[11px] font-bold text-[#9583b3] uppercase mb-1">Categoría</label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border-2 border-border bg-gray-50 font-medium focus:border-orange-400 focus:outline-none"
+              className="w-full px-3 py-2 rounded-[10px] border border-[#e0d7ef] bg-white text-sm font-medium text-[#121325] focus:border-[#ad8ed2] focus:outline-none focus:ring-[3px] focus:ring-[#7c5ca8]/15"
             >
               <option value="all">Todas</option>
               {allCategories.map(cat => (
@@ -403,180 +398,216 @@ export const Expenses = () => {
             </select>
           </div>
 
-          {/* Búsqueda */}
           <div className="col-span-2">
-            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Buscar</label>
+            <label className="block text-[11px] font-bold text-[#9583b3] uppercase mb-1">Buscar</label>
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-[#9583b3]" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Descripción o proveedor..."
-                className="w-full pl-9 pr-4 py-2 rounded-xl border-2 border-border bg-gray-50 font-medium focus:border-orange-400 focus:outline-none"
+                className="w-full pl-9 pr-4 py-2 rounded-[10px] border border-[#e0d7ef] bg-white text-sm font-medium text-[#121325] focus:border-[#ad8ed2] focus:outline-none focus:ring-[3px] focus:ring-[#7c5ca8]/15"
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Expenses List */}
-      {loading ? (
-        <div className="text-center p-12 bg-white rounded-2xl border-2 border-border">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Cargando gastos...</p>
-        </div>
-      ) : filteredExpenses.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 border-2 border-border text-center">
-          <div className="text-6xl mb-4">🔧</div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">No hay gastos registrados</h2>
-          <p className="text-muted-foreground mb-6">Registra tu primer gasto o reparación</p>
-          <button
-            onClick={() => {
-              setEditingExpense(undefined);
-              handleOpenModal();
-            }}
-            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-lg inline-flex items-center gap-2 font-medium"
-          >
-            <Plus className="w-5 h-5" />
-            Registrar Primer Gasto
-          </button>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border-2 border-border overflow-hidden">
-          {/* Table Header - Desktop */}
-          <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 border-b-2 border-border text-xs font-bold text-gray-500 uppercase">
-            <div className="col-span-1">Fecha</div>
-            <div className="col-span-2">Propiedad</div>
-            <div className="col-span-2">Categoría</div>
-            <div className="col-span-3">Descripción</div>
-            <div className="col-span-2 text-right">Monto</div>
-            <div className="col-span-2 text-center">Acciones</div>
+      {/* Content: Egresos + Por categoría */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
+        {/* Left: Egresos table */}
+        <div className="bg-white rounded-2xl border border-[#e7dff3] shadow-card overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-[#eee5f6]">
+            <div>
+              <h2 className="font-display font-extrabold text-lg text-[#121325]">Egresos {selectedYear}</h2>
+              <p className="text-xs text-[#7b6b95]">{filteredExpenses.length} registro{filteredExpenses.length === 1 ? '' : 's'}</p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingExpense(undefined);
+                handleOpenModal();
+              }}
+              className="px-4 py-2.5 bg-[#7c5ca8] hover:bg-[#6b4d95] text-white rounded-[11px] font-semibold text-sm flex items-center gap-2 shadow-btn-primary hover:-translate-y-px transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Registrar gasto</span>
+            </button>
           </div>
 
-          {/* Table Rows */}
-          <div className="divide-y divide-border">
-            {filteredExpenses.map((expense) => {
-              const category = getCategoryInfo(expense.category);
-              return (
-                <div
-                  key={expense.id}
-                  className="p-4 hover:bg-orange-50/50 transition-colors"
-                >
-                  {/* Mobile View */}
-                  <div className="md:hidden space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{category.icon}</span>
-                        <div>
-                          <p className="font-bold text-gray-800">{expense.description}</p>
-                          <p className="text-xs text-gray-500">{expense.property_name}</p>
+          {loading ? (
+            <div className="text-center p-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#7c5ca8] mx-auto"></div>
+              <p className="mt-4 text-sm text-[#7b6b95]">Cargando gastos...</p>
+            </div>
+          ) : filteredExpenses.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-[#f5f2fa] flex items-center justify-center mx-auto mb-4">
+                <Building className="w-6 h-6 text-[#7c5ca8]" />
+              </div>
+              <h3 className="font-display font-bold text-lg text-[#121325] mb-1">No hay gastos registrados</h3>
+              <p className="text-sm text-[#7b6b95] mb-6">Registrá tu primer gasto o reparación</p>
+              <button
+                onClick={() => {
+                  setEditingExpense(undefined);
+                  handleOpenModal();
+                }}
+                className="px-5 py-2.5 bg-[#7c5ca8] hover:bg-[#6b4d95] text-white rounded-[11px] font-semibold text-sm inline-flex items-center gap-2 shadow-btn-primary transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                Registrar primer gasto
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Table Header - Desktop */}
+              <div className="hidden md:grid md:grid-cols-12 gap-4 px-5 py-3 bg-[#faf8fd] border-b border-[#eee5f6] text-[11px] font-bold text-[#9583b3] uppercase tracking-wider">
+                <div className="col-span-1">Fecha</div>
+                <div className="col-span-2">Categoría</div>
+                <div className="col-span-3">Descripción</div>
+                <div className="col-span-2">Propiedad</div>
+                <div className="col-span-2 text-right">Monto</div>
+                <div className="col-span-2 text-center">Acciones</div>
+              </div>
+
+              <div className="divide-y divide-[#f3eefa]">
+                {filteredExpenses.map((expense) => {
+                  const category = getCategoryInfo(expense.category);
+                  return (
+                    <div key={expense.id} className="p-4 md:px-5 hover:bg-[#faf8fd] transition-colors">
+                      {/* Mobile */}
+                      <div className="md:hidden space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0"
+                              style={{ backgroundColor: colorHex(category.color) }}
+                            />
+                            <div className="min-w-0">
+                              <p className="font-semibold text-[#121325] truncate">{expense.description}</p>
+                              <p className="text-xs text-[#7b6b95] truncate">{expense.property_name}</p>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border flex-shrink-0 ${getStatusBadge(expense.status)}`}>
+                            {getStatusText(expense.status)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-xs text-[#7b6b95]">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {new Date(expense.date).toLocaleDateString('es-AR')}
+                          </div>
+                          <p className="font-display font-bold text-base text-[#dc2626]">
+                            {expense.currency === 'USD' ? 'U$D' : '$'} {expense.amount.toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {expense.receipt_url && (
+                            <a
+                              href={expense.receipt_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 px-3 py-2 bg-[#faf8fd] hover:bg-[#f0ebf8] text-[#5c3a8c] rounded-[10px] font-medium transition-colors flex items-center justify-center gap-1.5 text-sm"
+                            >
+                              <Download className="w-4 h-4" />
+                              Factura
+                            </a>
+                          )}
+                          <button
+                            onClick={() => handleEditExpense(expense)}
+                            className="flex-1 px-3 py-2 bg-[#f0ebf8] hover:bg-[#e6ddf3] text-[#5c3a8c] rounded-[10px] font-medium transition-colors flex items-center justify-center gap-1.5 text-sm"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(expense)}
+                            className="px-3 py-2 bg-[#fdecec] hover:bg-[#fbd9d9] text-[#dc2626] rounded-[10px] font-medium transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getStatusBadge(expense.status)}`}>
-                        {getStatusText(expense.status)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(expense.date).toLocaleDateString('es-AR')}
-                      </div>
-                      <p className={`text-lg font-black ${expense.currency === 'USD' ? 'text-green-600' : 'text-blue-600'}`}>
-                        {expense.currency === 'USD' ? 'U$D' : '$'} {expense.amount.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      {expense.receipt_url && (
-                        <a
-                          href={expense.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors flex items-center justify-center gap-1.5"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span className="text-sm">Factura</span>
-                        </a>
-                      )}
-                      <button
-                        onClick={() => handleEditExpense(expense)}
-                        className="flex-1 px-3 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-xl font-medium transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span className="text-sm">Editar</span>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(expense)}
-                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl font-medium transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
 
-                  {/* Desktop View */}
-                  <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
-                    <div className="col-span-1 text-sm text-gray-600">
-                      {new Date(expense.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
-                    </div>
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-gray-400" />
-                        <span className="font-medium text-gray-800 truncate">{expense.property_name}</span>
+                      {/* Desktop */}
+                      <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
+                        <div className="col-span-1 text-sm text-[#5c3a8c]">
+                          {new Date(expense.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
+                        </div>
+                        <div className="col-span-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0"
+                              style={{ backgroundColor: colorHex(category.color) }}
+                            />
+                            <span className="text-sm font-medium text-[#121325] truncate">{category.label}</span>
+                          </div>
+                        </div>
+                        <div className="col-span-3 min-w-0">
+                          <p className="font-medium text-[#121325] truncate">{expense.description}</p>
+                          <p className="text-xs text-[#7b6b95] truncate">{expense.provider}</p>
+                        </div>
+                        <div className="col-span-2 flex items-center gap-2 min-w-0">
+                          <Building className="w-4 h-4 text-[#9583b3] flex-shrink-0" />
+                          <span className="text-sm text-[#5c3a8c] truncate">{expense.property_name}</span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          <p className="font-display font-bold text-base text-[#dc2626]">
+                            {expense.currency === 'USD' ? 'U$D' : '$'} {expense.amount.toLocaleString()}
+                          </p>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(expense.status)}`}>
+                            {getStatusText(expense.status)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 flex items-center justify-center gap-1.5">
+                          {expense.receipt_url && (
+                            <a
+                              href={expense.receipt_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-8 h-8 flex items-center justify-center bg-[#faf8fd] hover:bg-[#f0ebf8] text-[#5c3a8c] rounded-[9px] transition-colors"
+                              title="Ver factura"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          )}
+                          <button
+                            onClick={() => handleEditExpense(expense)}
+                            className="w-8 h-8 flex items-center justify-center bg-[#f0ebf8] hover:bg-[#e6ddf3] text-[#5c3a8c] rounded-[9px] transition-colors"
+                            title="Editar"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(expense)}
+                            className="w-8 h-8 flex items-center justify-center bg-[#fdecec] hover:bg-[#fbd9d9] text-[#dc2626] rounded-[9px] transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{category.icon}</span>
-                        <span className="text-sm font-medium text-gray-600">{category.label}</span>
-                      </div>
-                    </div>
-                    <div className="col-span-3">
-                      <p className="font-medium text-gray-800 truncate">{expense.description}</p>
-                      <p className="text-xs text-gray-500">{expense.provider}</p>
-                    </div>
-                    <div className="col-span-2 text-right">
-                      <p className={`text-lg font-black ${expense.currency === 'USD' ? 'text-green-600' : 'text-blue-600'}`}>
-                        {expense.currency === 'USD' ? 'U$D' : '$'} {expense.amount.toLocaleString()}
-                      </p>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getStatusBadge(expense.status)}`}>
-                        {getStatusText(expense.status)}
-                      </span>
-                    </div>
-                    <div className="col-span-2 flex items-center justify-center gap-2">
-                      {expense.receipt_url && (
-                        <a
-                          href={expense.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors"
-                          title="Ver factura"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
-                      )}
-                      <button
-                        onClick={() => handleEditExpense(expense)}
-                        className="p-2 bg-orange-100 hover:bg-orange-200 text-orange-600 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(expense)}
-                        className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
-      )}
+
+        {/* Right: Por categoría */}
+        <div className="bg-white rounded-2xl border border-[#e7dff3] shadow-card p-5 space-y-5">
+          <h2 className="font-display font-extrabold text-lg text-[#121325]">Por categoría</h2>
+          {breakdownARS.length === 0 && breakdownUSD.length === 0 ? (
+            <p className="text-sm text-[#7b6b95]">Sin gastos registrados en {selectedYear}.</p>
+          ) : (
+            <>
+              <CategoryBreakdownBlock label="Pesos" total={totalARS} rows={breakdownARS} />
+              <CategoryBreakdownBlock label="USD" total={totalUSD} rows={breakdownUSD} />
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Expense Modal */}
       <ExpenseModal
