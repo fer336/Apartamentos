@@ -171,11 +171,12 @@ class ClientResponse(BaseModel):
     whatsapp: Optional[str] = None
     nationality: Optional[str] = None
     notes: Optional[str] = None
-    
+    rating: Optional[int] = None
+
     @field_serializer('id')
     def serialize_uuid(self, value: UUID, _info) -> str:
         return str(value)
-    
+
     class Config:
         from_attributes = True
 
