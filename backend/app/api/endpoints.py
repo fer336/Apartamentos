@@ -755,7 +755,30 @@ async def get_dashboard_stats(
             Property.status == 'available'
         )
     )
-    
+
+    # 5b. Total propiedades (todas, sin filtrar por estado) - para el cálculo de ocupación,
+    # igual que el frontend (getProperties() no filtra por status)
+    all_properties_query = select(func.count(Property.id)).where(
+        Property.organization_id == org_id
+    )
+
+    # 6. Reservas activas (confirmadas o en curso)
+    active_bookings_query = select(func.count(Booking.id)).where(
+        and_(
+            Booking.organization_id == org_id,
+            Booking.status.in_(['confirmed', 'active'])
+        )
+    )
+
+    # 7. Check-ins de hoy
+    checkins_today_query = select(func.count(Booking.id)).where(
+        and_(
+            Booking.organization_id == org_id,
+            Booking.status != 'cancelled',
+            Booking.check_in == date.today()
+        )
+    )
+
     # Ejecutar todas las queries en paralelo
     results = await db.execute(
         select(
@@ -768,7 +791,10 @@ async def get_dashboard_stats(
             func.coalesce(advances_usd_query.scalar_subquery(), 0).label('advances_usd'),
             func.coalesce(advances_month_ars_query.scalar_subquery(), 0).label('advances_month_ars'),
             func.coalesce(advances_month_usd_query.scalar_subquery(), 0).label('advances_month_usd'),
-            func.coalesce(total_properties_query.scalar_subquery(), 1).label('total_properties')
+            func.coalesce(total_properties_query.scalar_subquery(), 1).label('total_properties'),
+            func.coalesce(all_properties_query.scalar_subquery(), 0).label('all_properties'),
+            func.coalesce(active_bookings_query.scalar_subquery(), 0).label('active_bookings'),
+            func.coalesce(checkins_today_query.scalar_subquery(), 0).label('checkins_today')
         )
     )
 
@@ -783,6 +809,39 @@ async def get_dashboard_stats(
     total_advance_month_ars = float(row.advances_month_ars) if row else 0.0
     total_advance_month_usd = float(row.advances_month_usd) if row else 0.0
     total_properties_count = int(row.total_properties) if row else 1
+    all_properties_count = int(row.all_properties) if row else 0
+    active_bookings_count = int(row.active_bookings) if row else 0
+    checkins_today_count = int(row.checkins_today) if row else 0
+
+    # --- OCUPACIÓN DEL MES ACTUAL ---
+    # Mismo cálculo que el frontend: noches reservadas (recorte al mes actual) /
+    # (cantidad total de propiedades * días del mes actual)
+    occupancy_rate = 0.0
+    if all_properties_count > 0:
+        days_in_current_month = (next_month_start - current_month_start).days
+        total_available_nights = all_properties_count * days_in_current_month
+
+        occupancy_bookings_query = select(Booking).where(
+            and_(
+                Booking.organization_id == org_id,
+                Booking.status != 'cancelled',
+                Booking.check_in < next_month_start,
+                Booking.check_out > current_month_start
+            )
+        )
+        occupancy_bookings_result = await db.execute(occupancy_bookings_query)
+        occupancy_bookings = occupancy_bookings_result.scalars().all()
+
+        booked_nights = 0
+        for booking in occupancy_bookings:
+            overlap_start = max(booking.check_in, current_month_start)
+            overlap_end = min(booking.check_out, next_month_start)
+            nights = (overlap_end - overlap_start).days
+            if nights > 0:
+                booked_nights += nights
+
+        if total_available_nights > 0:
+            occupancy_rate = min(100.0, round((booked_nights / total_available_nights) * 100, 2))
 
     # --- FORECAST DE DISPONIBILIDAD ---
     availability_forecast = []
@@ -925,12 +984,12 @@ async def get_dashboard_stats(
         })
     
     return DashboardStats(
-        active_bookings=0,
+        active_bookings=active_bookings_count,
         total_revenue_month=total_revenue_month,
         total_revenue_month_ars=total_revenue_month_ars,
         total_revenue_month_usd=total_revenue_month_usd,
-        occupancy_rate=0.0,
-        checkins_today=0,
+        occupancy_rate=occupancy_rate,
+        checkins_today=checkins_today_count,
         availability_forecast=availability_forecast,
         total_revenue_accumulated=total_revenue_ars + total_revenue_usd,  # Total combinado
         total_revenue_accumulated_ars=total_revenue_ars,
