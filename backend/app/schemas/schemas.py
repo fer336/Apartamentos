@@ -47,6 +47,31 @@ class BookingResponse(BaseModel):
         from_attributes = True
 
 
+class PaymentResponse(BaseModel):
+    id: UUID
+    booking_id: UUID
+
+    # Datos expandidos
+    client_name: Optional[str] = None
+    property_name: Optional[str] = None
+    booking_number: Optional[str] = None
+
+    amount: Decimal
+    currency: str
+    exchange_rate: Optional[Decimal] = None
+    payment_date: datetime
+    type: str
+    method: Optional[str] = None
+    notes: Optional[str] = None
+
+    @field_serializer('amount', 'exchange_rate')
+    def serialize_decimal(self, value: Optional[Decimal], _info) -> Optional[float]:
+        return float(value) if value is not None else None
+
+    class Config:
+        from_attributes = True
+
+
 class BookingCreate(BaseModel):
     property_id: str
     client_id: str

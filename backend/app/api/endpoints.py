@@ -30,7 +30,8 @@ from app.schemas.schemas import (
     ExpenseCreate,
     ExpenseUpdate,
     ExpenseCategoryResponse,
-    ExpenseCategoryCreate
+    ExpenseCategoryCreate,
+    PaymentResponse
 )
 from typing import List, Optional
 from datetime import date, datetime, timedelta, timezone
@@ -70,6 +71,47 @@ async def get_bookings(
         bookings_list.append(booking)
         
     return bookings_list
+
+
+@router.get("/payments", response_model=List[PaymentResponse])
+async def get_payments(
+    month: Optional[int] = None,
+    year: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Obtener todos los pagos registrados con datos relacionados de la reserva"""
+    org_id = current_user.organization_id
+
+    query = select(
+        Payment,
+        Booking.booking_number.label("booking_number"),
+        Property.name.label("property_name"),
+        Client.full_name.label("client_name")
+    ) \
+        .join(Booking, Payment.booking_id == Booking.id) \
+        .join(Property, Booking.property_id == Property.id) \
+        .join(Client, Booking.client_id == Client.id) \
+        .where(Payment.organization_id == org_id)
+
+    if year:
+        query = query.where(func.extract('year', Payment.payment_date) == year)
+    if month:
+        query = query.where(func.extract('month', Payment.payment_date) == month)
+
+    query = query.order_by(Payment.payment_date.desc())
+
+    result = await db.execute(query)
+
+    payments_list = []
+    for row in result:
+        payment = row[0]
+        payment.booking_number = row[1]
+        payment.property_name = row[2]
+        payment.client_name = row[3]
+        payments_list.append(payment)
+
+    return payments_list
 
 
 @router.post("/bookings", response_model=BookingResponse)
