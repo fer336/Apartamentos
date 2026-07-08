@@ -150,6 +150,8 @@ export const Dashboard = () => {
     availability_forecast: [] as MonthlyAvailability[],
     total_revenue_month: 0,
     directv_devices_summary: [] as DirectvDevice[],
+    active_bookings: 0,
+    occupancy_rate: 0,
   });
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
@@ -183,14 +185,10 @@ export const Dashboard = () => {
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-  // Nota: active_bookings/occupancy_rate/checkins_today del endpoint /dashboard/stats
-  // están hardcodeados a 0 en el backend (no implementados todavía), así que se
-  // calculan acá con datos reales de reservas y propiedades.
-  const activeBookingsCount = useMemo(
-    () => bookings.filter((b) => ['confirmed', 'active'].includes(b.status)).length,
-    [bookings]
-  );
-
+  // active_bookings y occupancy_rate ahora vienen calculados de verdad desde
+  // /dashboard/stats. checkinsThisWeek/checkinsToday/checkoutsToday siguen
+  // calculándose acá porque necesitan los objetos completos de reserva (para
+  // Vista operativa) o una ventana de tiempo (semana) que el endpoint no expone.
   const weekAheadStr = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 6);
@@ -203,14 +201,14 @@ export const Dashboard = () => {
     [bookings, todayStr, weekAheadStr]
   );
 
-  const occupancy = useMemo(() => {
-    if (!properties.length) return { rate: 0, bookedNights: 0, totalNights: 0 };
+  // El % de ocupación en sí viene real de stats.occupancy_rate (backend). Acá solo
+  // derivamos el desglose "X de Y noches" para el subtítulo, con la misma fórmula.
+  const occupancyDetail = useMemo(() => {
+    if (!properties.length) return { bookedNights: 0, totalNights: 0 };
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEndExclusive = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const daysInMonth = (monthEndExclusive.getTime() - monthStart.getTime()) / 86400000;
-    const totalAvailableNights = properties.length * daysInMonth;
-    if (totalAvailableNights <= 0) return { rate: 0, bookedNights: 0, totalNights: 0 };
 
     let bookedNights = 0;
     bookings.forEach((b) => {
@@ -223,11 +221,7 @@ export const Dashboard = () => {
       if (nights > 0) bookedNights += nights;
     });
 
-    return {
-      rate: Math.min(100, Math.round((bookedNights / totalAvailableNights) * 100)),
-      bookedNights,
-      totalNights: daysInMonth,
-    };
+    return { bookedNights, totalNights: daysInMonth };
   }, [bookings, properties]);
 
   const receivables = useMemo(() => {
@@ -328,15 +322,15 @@ export const Dashboard = () => {
             />
             <StatCard
               label="Ocupación"
-              value={loading ? '...' : `${occupancy.rate}%`}
-              subtitle={loading ? undefined : `${occupancy.bookedNights} de ${occupancy.totalNights} noches`}
+              value={loading ? '...' : `${Math.round(stats.occupancy_rate)}%`}
+              subtitle={loading ? undefined : `${occupancyDetail.bookedNights} de ${occupancyDetail.totalNights} noches`}
               icon={Calendar}
               iconBg="#ece6f6"
               iconColor="#7c5ca8"
             />
             <StatCard
               label="Reservas activas"
-              value={loading ? '...' : String(activeBookingsCount)}
+              value={loading ? '...' : String(stats.active_bookings)}
               subtitle={checkinsThisWeek > 0 ? `${checkinsThisWeek} llegan esta semana` : undefined}
               subtitleColor="#2563eb"
               icon={Building2}
