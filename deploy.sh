@@ -11,15 +11,10 @@ echo ""
 BACKEND_VERSION="v2.3"
 FRONTEND_VERSION="v2.3"
 DOCKER_USER="ferc33"
-GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-replace-with-google-client-id}"
 
 # ⚠️ IMPORTANTE: Configurar el servidor de producción
 # Puede ser una IP o un hostname. No hardcodear servidores reales en Git.
 PRODUCTION_SERVER="${PRODUCTION_SERVER:-user@your-production-host}"
-
-# ⚠️ IMPORTANTE: URL de producción
-# El callback debe coincidir con la configuración de Google Console
-OAUTH_URL="${OAUTH_URL:-https://your-domain.example/auth/google/callback}"
 
 # Verificar que estamos en el directorio correcto
 if [ ! -f "docker-compose.yml" ]; then
@@ -73,16 +68,12 @@ echo "🎨 =================================================="
 echo "   CONSTRUYENDO FRONTEND ${FRONTEND_VERSION}"
 echo "   =================================================="
 
-# IMPORTANTE: 
+# IMPORTANTE:
 # VITE_BACKEND_URL="" -> Para que use rutas relativas en producción (/api) y Traefik maneje el proxy
-# VITE_GOOGLE_CLIENT_ID -> Para el botón de login
-# VITE_OAUTH_PROD_URL -> URL de callback específica de producción
 
 echo "🔨 Building imagen con build args..."
 sudo docker build --no-cache -t ${DOCKER_USER}/apartamentos-frontend:${FRONTEND_VERSION} \
-  --build-arg VITE_GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}" \
   --build-arg VITE_BACKEND_URL="" \
-  --build-arg VITE_OAUTH_PROD_URL="${OAUTH_URL}" \
   frontend/
 
 echo "🏷️  Tageando como latest..."

@@ -18,6 +18,9 @@
 #     tag instead of `latest`, the webhook alone will not pick up new images —
 #     the stack's environment variables (BACKEND_IMAGE_TAG / FRONTEND_IMAGE_TAG)
 #     would need to be updated in Portainer first.
+#   - The only repo secret this workflow requires is PORTAINER_WEBHOOK_URL.
+#     (VITE_GOOGLE_CLIENT_ID / VITE_OAUTH_PROD_URL were removed — the frontend
+#     never reads them; Google OAuth is entirely backend-driven.)
 #   - GHCR packages are private by default. For Portainer to pull them, pick one:
 #       (a) make the package public from its GitHub package settings after the
 #           first push (Settings -> Packages -> apartamentos-backend/-frontend
@@ -91,9 +94,7 @@ jobs:
             ${{ env.FRONTEND_IMAGE }}:latest
             ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
           build-args: |
-            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
             VITE_BACKEND_URL=
-            VITE_OAUTH_PROD_URL=${{ secrets.VITE_OAUTH_PROD_URL }}
 
   deploy:
     needs: [build-backend, build-frontend]
