@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Search, Plus, Edit, Trash2, Users as UsersIcon } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Users as UsersIcon, Star } from 'lucide-react';
 import { getClients, getBookings, createClient, updateClient, deleteClient } from '../services/api';
 import { ClientModal } from '../components/ClientModal';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -17,6 +17,7 @@ interface Client {
   document_id?: string;
   whatsapp?: string;
   notes?: string;
+  rating?: number | null;
 }
 
 interface Booking {
@@ -245,6 +246,7 @@ export const Clients = () => {
                   <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Documento</th>
                   <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Contacto</th>
                   <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Estadías</th>
+                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Rating</th>
                   <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3] text-right">Última</th>
                   <th className="px-5 py-3 w-24"></th>
                 </tr>
@@ -280,6 +282,16 @@ export const Clients = () => {
                       </td>
                       <td className="px-5 py-3.5">
                         <span className="font-display font-extrabold text-[#121325]">{stats?.count ?? 0}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {client.rating != null ? (
+                          <span className="flex items-center gap-1 text-[#f59e0b] font-semibold">
+                            <Star className="w-3.5 h-3.5 fill-current" />
+                            {client.rating}
+                          </span>
+                        ) : (
+                          <span className="text-[#9583b3]">—</span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 text-right text-[#5c3a8c]">
                         {stats?.lastDate ? formatMonthYear(stats.lastDate) : '—'}
