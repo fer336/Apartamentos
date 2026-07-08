@@ -1,5 +1,11 @@
-# Builds and pushes the backend/frontend Docker images to the GitHub Container
-# Registry (ghcr.io), then triggers a Portainer stack webhook to redeploy.
+# Release-gated production deploy.
+#
+# Flow: push a `vX.Y.Z` tag (or manually dispatch against one) -> validates the
+# tag format -> builds+pushes versioned images to the GitHub Container Registry
+# (ghcr.io) -> creates a GitHub Release for that tag -> triggers a Portainer
+# stack webhook to redeploy. Regular pushes to `main` no longer trigger any
+# build or deploy — only a properly formatted version tag does, and every such
+# tag always gets a corresponding GitHub Release as part of this same run.
 #
 # What this workflow does NOT do:
 #   - It does not manage the backend's runtime environment variables. Those are
@@ -14,10 +20,10 @@
 #     that webhook itself.
 #   - It relies on the stack's compose file using the `:latest` tag (the
 #     default in docker-compose.yml) and on Portainer re-pulling images when
-#     the webhook fires. If the Portainer stack is pinned to a specific version
-#     tag instead of `latest`, the webhook alone will not pick up new images —
-#     the stack's environment variables (BACKEND_IMAGE_TAG / FRONTEND_IMAGE_TAG)
-#     would need to be updated in Portainer first.
+#     the webhook fires. If the Portainer stack should instead run a pinned
+#     version, set the stack's BACKEND_IMAGE_TAG / FRONTEND_IMAGE_TAG
+#     environment variables in Portainer to the released tag (e.g. `v1.4.2`)
+#     — the webhook alone does not change which tag the stack is pinned to.
 #   - The only repo secret this workflow requires is PORTAINER_WEBHOOK_URL.
 #     (VITE_GOOGLE_CLIENT_ID / VITE_OAUTH_PROD_URL were removed — the frontend
 #     never reads them; Google OAuth is entirely backend-driven.)
@@ -34,11 +40,8 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - ".github/workflows/deploy.yml"
+    tags:
+      - "v*.*.*"
   workflow_dispatch: {}
 
 env:
@@ -46,7 +49,19 @@ env:
   FRONTEND_IMAGE: ghcr.io/fer336/apartamentos-frontend
 
 jobs:
+  validate-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate tag format
+        run: |
+          if [[ ! "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Ref '${{ github.ref_name }}' does not match the required release tag format vX.Y.Z (e.g. v1.4.2). Refusing to build or deploy."
+            exit 1
+          fi
+          echo "Tag '${{ github.ref_name }}' is a valid release version."
+
   build-backend:
+    needs: [validate-tag]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -68,9 +83,10 @@ jobs:
           push: true
           tags: |
             ${{ env.BACKEND_IMAGE }}:latest
-            ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+            ${{ env.BACKEND_IMAGE }}:${{ github.ref_name }}
 
   build-frontend:
+    needs: [validate-tag]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -92,12 +108,24 @@ jobs:
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+            ${{ env.FRONTEND_IMAGE }}:${{ github.ref_name }}
           build-args: |
             VITE_BACKEND_URL=
 
-  deploy:
+  release:
     needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+
+  deploy:
+    needs: [release]
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Portainer stack redeploy
