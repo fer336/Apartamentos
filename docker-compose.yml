@@ -1,9 +1,15 @@
 version: "3.8"
 
+# NOTE: the `apartamentos_backend_env` secret referenced below must already exist
+# as a Docker Swarm secret on the target node before this stack is deployed:
+#   docker secret create apartamentos_backend_env <path-to-local-env-file>
+# This is managed out-of-band (manually, or via infra/rotate-secret.sh) — it is
+# NOT created or updated by the CI/CD workflow in .github/workflows/deploy.yml.
+
 services:
   # ⚙️ Backend API
   backend:
-    image: ferc33/apartamentos-backend:v2.2
+    image: ferc33/apartamentos-backend:${BACKEND_IMAGE_TAG:-latest}
     networks:
       - network_public
       - apartamentos-internal
@@ -51,7 +57,7 @@ services:
 
   # 🎨 Frontend
   frontend:
-    image: ferc33/apartamentos-frontend:v2.2
+    image: ferc33/apartamentos-frontend:${FRONTEND_IMAGE_TAG:-latest}
     networks:
       - network_public
       - apartamentos-internal

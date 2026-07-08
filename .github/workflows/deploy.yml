@@ -1,0 +1,87 @@
+# Builds and pushes the backend/frontend Docker images to Docker Hub, then
+# triggers a Portainer stack webhook to redeploy.
+#
+# What this workflow does NOT do:
+#   - It does not manage the backend's runtime environment variables. Those are
+#     injected into the running containers via a Docker Swarm secret
+#     (`apartamentos_backend_env`, mounted at /run/secrets/backend.env) that is
+#     created once, directly on the target node, out of band from CI/CD — see
+#     DEPLOY_SECRET.md. This workflow never reads or writes that secret.
+#   - It does not create the Portainer stack or its webhook. Both are one-time
+#     manual setup steps in the Portainer UI (Stacks -> your stack -> Webhook):
+#     Portainer generates the webhook URL, which then gets stored here as the
+#     PORTAINER_WEBHOOK_URL repo secret. GitHub Actions has no way to create
+#     that webhook itself.
+#   - It relies on the stack's compose file using the `:latest` tag (the
+#     default in docker-compose.yml) and on Portainer re-pulling images when
+#     the webhook fires. If the Portainer stack is pinned to a specific version
+#     tag instead of `latest`, the webhook alone will not pick up new images —
+#     the stack's environment variables (BACKEND_IMAGE_TAG / FRONTEND_IMAGE_TAG)
+#     would need to be updated in Portainer first.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch: {}
+
+env:
+  BACKEND_IMAGE: ferc33/apartamentos-backend
+  FRONTEND_IMAGE: ferc33/apartamentos-frontend
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+          build-args: |
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+            VITE_BACKEND_URL=
+            VITE_OAUTH_PROD_URL=${{ secrets.VITE_OAUTH_PROD_URL }}
+
+  deploy:
+    needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Portainer stack redeploy
+        run: curl -fsS -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}"
