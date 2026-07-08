@@ -1,5 +1,5 @@
-# Builds and pushes the backend/frontend Docker images to Docker Hub, then
-# triggers a Portainer stack webhook to redeploy.
+# Builds and pushes the backend/frontend Docker images to the GitHub Container
+# Registry (ghcr.io), then triggers a Portainer stack webhook to redeploy.
 #
 # What this workflow does NOT do:
 #   - It does not manage the backend's runtime environment variables. Those are
@@ -18,6 +18,14 @@
 #     tag instead of `latest`, the webhook alone will not pick up new images —
 #     the stack's environment variables (BACKEND_IMAGE_TAG / FRONTEND_IMAGE_TAG)
 #     would need to be updated in Portainer first.
+#   - GHCR packages are private by default. For Portainer to pull them, pick one:
+#       (a) make the package public from its GitHub package settings after the
+#           first push (Settings -> Packages -> apartamentos-backend/-frontend
+#           -> Change visibility) — simplest, no Portainer-side config needed; or
+#       (b) add a registry credential in Portainer (Registries -> Add registry,
+#           ghcr.io, using a GitHub Personal Access Token with `read:packages`
+#           scope as the password) if the packages should stay private.
+#     This workflow doesn't decide between them — pick whichever fits.
 
 name: Deploy
 
@@ -31,20 +39,24 @@ on:
   workflow_dispatch: {}
 
 env:
-  BACKEND_IMAGE: ferc33/apartamentos-backend
-  FRONTEND_IMAGE: ferc33/apartamentos-frontend
+  BACKEND_IMAGE: ghcr.io/fer336/apartamentos-backend
+  FRONTEND_IMAGE: ghcr.io/fer336/apartamentos-frontend
 
 jobs:
   build-backend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push backend image
         uses: docker/build-push-action@v6
@@ -57,14 +69,18 @@ jobs:
 
   build-frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v6

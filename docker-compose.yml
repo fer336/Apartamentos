@@ -9,7 +9,7 @@ version: "3.8"
 services:
   # ⚙️ Backend API
   backend:
-    image: ferc33/apartamentos-backend:${BACKEND_IMAGE_TAG:-latest}
+    image: ghcr.io/fer336/apartamentos-backend:${BACKEND_IMAGE_TAG:-latest}
     networks:
       - network_public
       - apartamentos-internal
@@ -57,7 +57,7 @@ services:
 
   # 🎨 Frontend
   frontend:
-    image: ferc33/apartamentos-frontend:${FRONTEND_IMAGE_TAG:-latest}
+    image: ghcr.io/fer336/apartamentos-frontend:${FRONTEND_IMAGE_TAG:-latest}
     networks:
       - network_public
       - apartamentos-internal
