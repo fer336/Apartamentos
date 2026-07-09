@@ -14,7 +14,7 @@ Este documento define la arquitectura de agentes para el sistema **Apartamentos 
 | Skill | Descripción | URL |
 | :--- | :--- | :--- |
 | `docker-compose-ops` | Gestión de contenedores, redes y volúmenes persistentes. | [infra/skills/DOCKER_OPS.md](./infra/skills/DOCKER_OPS.md) |
-| `git-flow-deploy` | Estrategia de ramas, versionado y scripts de despliegue (`deploy.sh`). | [infra/skills/DEPLOYMENT.md](./infra/skills/DEPLOYMENT.md) |
+| `git-flow-deploy` | Estrategia de ramas, versionado y despliegue automático vía tags `vX.Y.Z` (`.github/workflows/deploy.yml`). | [infra/skills/DEPLOYMENT.md](./infra/skills/DEPLOYMENT.md) |
 | `env-secrets` | Gestión de variables de entorno y secretos Docker. | [infra/skills/SECRETS.md](./infra/skills/SECRETS.md) |
 
 ## 🤖 Tabla de Auto-Invocación (Agentes Globales)
@@ -33,8 +33,9 @@ Este documento define la arquitectura de agentes para el sistema **Apartamentos 
 *   **DB**: PostgreSQL 15+
 
 ```bash
-# Setup Inicial
-./deploy.sh
+# Desplegar a producción (dispara .github/workflows/deploy.yml)
+git tag -a v1.0.0 -m "Descripción del release"
+git push origin v1.0.0
 
 # Logs Globales
 docker compose logs -f
