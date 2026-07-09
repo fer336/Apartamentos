@@ -2,6 +2,35 @@
 
 Sistema web para administrar propiedades de alquiler temporal: reservas, clientes, pagos, gastos, check-in/check-out, autenticación con Google y carga de comprobantes. El repositorio está preparado para desarrollo local con frontend React, backend FastAPI y despliegue con Docker Compose.
 
+## Vista previa
+
+| Inicio | Calendario |
+|---|---|
+| ![Inicio](docs/inicio.png) | ![Calendario](docs/calendario.png) |
+
+| Propiedades | Clientes |
+|---|---|
+| ![Propiedades](docs/propiedades.png) | ![Clientes](docs/clientes.png) |
+
+| Contabilidad | Gastos y reparaciones |
+|---|---|
+| ![Contabilidad](docs/contabilidad.png) | ![Gastos y reparaciones](docs/gastos-reparaciones.png) |
+
+<details>
+<summary>Pantalla de login</summary>
+
+![Login](docs/login.png)
+
+</details>
+
+### Flujos en video
+
+| Nueva reserva | Nueva propiedad |
+|---|---|
+| <video src="docs/nueva-reserva.mp4" controls width="320"></video> | <video src="docs/nueva-propiedad.mp4" controls width="320"></video> |
+
+> Si los videos no se reproducen inline en tu visor de Markdown, abrilos directamente: [`docs/nueva-reserva.mp4`](docs/nueva-reserva.mp4) · [`docs/nueva-propiedad.mp4`](docs/nueva-propiedad.mp4)
+
 ## Camino rápido
 
 1. Copiá el archivo de entorno del backend y completá tus valores locales:
@@ -101,14 +130,25 @@ Si usás otro usuario, host o nombre de base, actualizá `backend/.env`.
 
 ## Docker Compose
 
-El `docker-compose.yml` está orientado a despliegue con imágenes publicadas, red externa de Traefik y secret externo para el backend.
+El `docker-compose.yml` está orientado a despliegue con imágenes publicadas en GitHub Container Registry (GHCR), red externa de Traefik y secret externo para el backend.
 
 | Recurso | Valor esperado |
 |---|---|
 | Red pública | `network_public` creada previamente |
 | Secret backend | `apartamentos_backend_env` creado fuera del repositorio |
-| Backend | Imagen Docker configurada en `docker-compose.yml` |
-| Frontend | Imagen Docker configurada en `docker-compose.yml` |
+| Backend | `ghcr.io/fer336/apartamentos-backend:${BACKEND_IMAGE_TAG:-latest}` |
+| Frontend | `ghcr.io/fer336/apartamentos-frontend:${FRONTEND_IMAGE_TAG:-latest}` |
+
+### Despliegue automático (CI/CD)
+
+Cada tag `vX.Y.Z` pusheado a `main` dispara `.github/workflows/deploy.yml`: valida el formato del tag, construye y publica ambas imágenes en GHCR, crea el GitHub Release correspondiente y notifica al webhook de Portainer para redesplegar el stack.
+
+```bash
+git tag -a v1.0.0 -m "Descripción del release"
+git push origin v1.0.0
+```
+
+Un push normal a `main` (sin tag) no dispara ningún despliegue.
 
 Ejemplo de despliegue, ajustando los valores a tu entorno:
 
