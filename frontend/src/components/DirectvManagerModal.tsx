@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Tv, Plus, RefreshCw, Trash2, Calendar } from 'lucide-react';
+import { X, Tv, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { getDirectvDevices, createDirectvDevice, rechargeDirectvDevice, deleteDirectvDevice } from '../services/api';
 
 interface DirectvDevice {
