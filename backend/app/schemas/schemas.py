@@ -1,6 +1,6 @@
 from pydantic import BaseModel, field_serializer, field_validator
 from datetime import date, datetime
-from typing import Optional, Any, List
+from typing import Optional, List
 from decimal import Decimal
 from uuid import UUID
 
@@ -46,30 +46,6 @@ class BookingResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
-class PaymentResponse(BaseModel):
-    id: UUID
-    booking_id: UUID
-
-    # Datos expandidos
-    client_name: Optional[str] = None
-    property_name: Optional[str] = None
-    booking_number: Optional[str] = None
-
-    amount: Decimal
-    currency: str
-    exchange_rate: Optional[Decimal] = None
-    payment_date: datetime
-    type: str
-    method: Optional[str] = None
-    notes: Optional[str] = None
-
-    @field_serializer('amount', 'exchange_rate')
-    def serialize_decimal(self, value: Optional[Decimal], _info) -> Optional[float]:
-        return float(value) if value is not None else None
-
-    class Config:
-        from_attributes = True
 
 
 class BookingCreate(BaseModel):
@@ -370,54 +346,4 @@ class ExpenseResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-class ExpenseCreate(BaseModel):
-    property_id: str
-    date: date
-    category: str
-    description: str
-    provider: str
-    amount: float
-    currency: str = 'ARS'
-    status: str = 'pending'
-    notes: Optional[str] = None
-
-
-class ExpenseUpdate(BaseModel):
-    property_id: Optional[str] = None
-    date: Optional[date] = None
-    category: Optional[str] = None
-    description: Optional[str] = None
-    provider: Optional[str] = None
-    amount: Optional[float] = None
-    currency: Optional[str] = None
-    status: Optional[str] = None
-    receipt_url: Optional[str] = None
-    receipt_filename: Optional[str] = None
-    notes: Optional[str] = None
-
-
-class ExpenseCategoryResponse(BaseModel):
-    id: UUID
-    organization_id: UUID
-    value: str
-    label: str
-    icon: str
-    color: str
-    created_at: datetime
-
-    @field_serializer('id', 'organization_id')
-    def serialize_uuid(self, value: UUID, _info) -> str:
-        return str(value)
-
-    class Config:
-        from_attributes = True
-
-
-class ExpenseCategoryCreate(BaseModel):
-    value: str
-    label: str
-    icon: str = '📦'
-    color: str = 'orange'
 

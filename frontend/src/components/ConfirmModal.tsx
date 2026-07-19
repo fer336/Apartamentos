@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { Button } from './ui/Button';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -27,70 +28,56 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const getTypeStyles = () => {
     switch (type) {
       case 'danger':
-        return {
-          icon: 'bg-red-100',
-          iconColor: 'text-red-600',
-          button: 'bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600',
-        };
+        return { icon: 'bg-state-red/16', iconColor: 'text-state-red', button: 'primary' as const };
       case 'warning':
-        return {
-          icon: 'bg-yellow-100',
-          iconColor: 'text-yellow-600',
-          button: 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600',
-        };
+        return { icon: 'bg-state-yellow/16', iconColor: 'text-state-yellow', button: 'primary' as const };
       case 'info':
-        return {
-          icon: 'bg-blue-100',
-          iconColor: 'text-blue-600',
-          button: 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600',
-        };
+        return { icon: 'bg-state-blue/16', iconColor: 'text-state-blue', button: 'primary' as const };
     }
   };
 
   const styles = getTypeStyles();
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl animate-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-surface border border-border rounded-3xl max-w-md w-full shadow-2xl animate-in zoom-in duration-200">
         {/* Header */}
-        <div className="p-6 border-b-2 border-gray-100">
+        <div className="p-6 border-b border-border-subtle">
           <div className="flex items-start gap-4">
             <div className={`w-12 h-12 rounded-2xl ${styles.icon} flex items-center justify-center flex-shrink-0`}>
-              <AlertTriangle className={`w-6 h-6 ${styles.iconColor}`} />
+              <AlertTriangle className={`w-6 h-6 ${styles.iconColor}`} strokeWidth={1.7} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{message}</p>
+              <h3 className="font-display text-xl font-bold text-ink-primary mb-2">{title}</h3>
+              <p className="text-ink-secondary text-sm leading-relaxed">{message}</p>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors flex-shrink-0"
+              className="w-8 h-8 rounded-lg hover:bg-surface-hover flex items-center justify-center transition-colors flex-shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-ink-secondary" strokeWidth={1.7} />
             </button>
           </div>
         </div>
 
         {/* Actions */}
         <div className="p-6 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-6 py-3 rounded-xl border-2 border-border hover:bg-gray-50 font-medium transition-colors"
-          >
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
             {cancelText}
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant={type === 'danger' ? 'danger' : 'primary'}
             onClick={() => {
               onConfirm();
               onClose();
             }}
-            className={`flex-1 px-6 py-3 rounded-xl ${styles.button} text-white font-medium transition-all shadow-lg`}
+            className="flex-1"
           >
             {confirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
   );
 };
-

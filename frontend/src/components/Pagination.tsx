@@ -10,24 +10,24 @@ export const Pagination = ({ currentPage, totalPages, onPageChange }: Pagination
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-t border-[#eee5f6] bg-[#faf8fd]">
-      <span className="text-xs font-medium text-[#7b6b95]">
+    <div className="flex items-center justify-between px-5 py-3 border-t border-border-subtle bg-surface-elevated">
+      <span className="text-xs font-medium text-ink-secondary">
         Página {currentPage} de {totalPages}
       </span>
-      <div className="flex items-center rounded-[10px] border border-[#e0d7ef] bg-white overflow-hidden">
+      <div className="flex items-center rounded-[10px] border border-border bg-surface overflow-hidden">
         <button
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="p-2 hover:bg-brand-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className="p-2 hover:bg-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
-          <ChevronLeft className="w-4 h-4 text-brand-700" />
+          <ChevronLeft className="w-4 h-4 text-primary" strokeWidth={1.7} />
         </button>
         <button
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="p-2 hover:bg-brand-50 transition-colors border-l border-[#e0d7ef] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className="p-2 hover:bg-surface-hover transition-colors border-l border-border disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
         >
-          <ChevronRight className="w-4 h-4 text-brand-700" />
+          <ChevronRight className="w-4 h-4 text-primary" strokeWidth={1.7} />
         </button>
       </div>
     </div>

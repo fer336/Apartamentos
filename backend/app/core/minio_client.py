@@ -96,38 +96,6 @@ async def upload_file_to_minio(
         return None, None
 
 
-async def delete_file_from_minio(file_url: str) -> bool:
-    """
-    Elimina un archivo de MinIO dado su URL.
-    
-    Args:
-        file_url: URL completa del archivo
-        
-    Returns:
-        True si se eliminó correctamente, False si falló
-    """
-    try:
-        bucket_name = settings.MINIO_BUCKET_NAME
-        
-        # Extraer object_name de la URL
-        # URL format: https://endpoint/bucket/object_name
-        parts = file_url.split(f"/{bucket_name}/")
-        if len(parts) != 2:
-            return False
-            
-        object_name = parts[1]
-        
-        minio_client.remove_object(bucket_name, object_name)
-        return True
-
-    except S3Error as e:
-        print(f"Error eliminando archivo de MinIO: {e}")
-        return False
-    except Exception as e:
-        print(f"Error inesperado: {e}")
-        return False
-
-
 def get_presigned_url(file_url: str, expiry_hours: int = 1) -> str:
     """
     Genera una URL firmada temporal para ver un archivo privado.

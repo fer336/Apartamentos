@@ -37,7 +37,7 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DirectvDevice | null>(null);
-  
+
   // Form states
   const [newDevice, setNewDevice] = useState({
     property_id: '',
@@ -64,12 +64,12 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
     try {
       setLoading(true);
       const allDevices: DirectvDevice[] = [];
-      
+
       for (const property of properties) {
         const propertyDevices = await getDirectvDevices(property.id);
         allDevices.push(...propertyDevices);
       }
-      
+
       setDevices(allDevices);
     } catch (error) {
       console.error('Error fetching devices:', error);
@@ -138,23 +138,23 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-surface rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex items-center justify-between">
+        <div className="bg-gradient-to-r from-primary to-primary-dark p-6 text-primary-foreground flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <Tv className="w-6 h-6" />
+            <div className="w-10 h-10 bg-primary-foreground/20 rounded-xl flex items-center justify-center">
+              <Tv className="w-6 h-6" strokeWidth={1.7} />
             </div>
             <div>
               <h2 className="text-2xl font-black">Gestión DirecTV Prepago</h2>
-              <p className="text-sm text-blue-100">Administrá todas las tarjetas DirecTV</p>
+              <p className="text-sm text-primary-foreground/80">Administrá todas las tarjetas DirecTV</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-colors"
+            className="w-10 h-10 bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded-xl flex items-center justify-center transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" strokeWidth={1.7} />
           </button>
         </div>
 
@@ -164,24 +164,24 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
           {!showAddForm && (
             <button
               onClick={() => setShowAddForm(true)}
-              className="w-full mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300 rounded-2xl hover:border-blue-500 transition-colors flex items-center justify-center gap-2 text-blue-600 font-bold group"
+              className="w-full mb-6 p-4 bg-gradient-to-r from-primary-soft to-surface-violet border-2 border-dashed border-primary/40 rounded-2xl hover:border-primary transition-colors flex items-center justify-center gap-2 text-primary font-bold group"
             >
-              <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" strokeWidth={1.7} />
               Agregar Nuevo Dispositivo DirecTV
             </button>
           )}
 
           {/* Add Form */}
           {showAddForm && (
-            <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Nuevo Dispositivo</h3>
+            <div className="mb-6 p-6 bg-gradient-to-br from-primary-soft to-surface-violet rounded-2xl border border-border">
+              <h3 className="text-lg font-bold text-ink-primary mb-4">Nuevo Dispositivo</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Propiedad *</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Propiedad *</label>
                   <select
                     value={newDevice.property_id}
                     onChange={(e) => setNewDevice({ ...newDevice, property_id: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent bg-surface text-ink-primary"
                   >
                     <option value="">Seleccioná una propiedad</option>
                     {properties.map(prop => (
@@ -190,64 +190,64 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Ubicación *</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Ubicación *</label>
                   <input
                     type="text"
                     value={newDevice.location}
                     onChange={(e) => setNewDevice({ ...newDevice, location: e.target.value })}
                     placeholder="Ej: Living, Habitación Principal"
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Número de Tarjeta *</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Número de Tarjeta *</label>
                   <input
                     type="text"
                     value={newDevice.card_number}
                     onChange={(e) => setNewDevice({ ...newDevice, card_number: e.target.value })}
                     placeholder="Ej: 1234-5678-9012"
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Código de Recarga (Opcional)</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Código de Recarga (Opcional)</label>
                   <input
                     type="text"
                     value={newDevice.recharge_code}
                     onChange={(e) => setNewDevice({ ...newDevice, recharge_code: e.target.value })}
                     placeholder="Código inicial"
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Monto Cargado (ARS)</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Monto Cargado (ARS)</label>
                   <input
                     type="number"
                     value={newDevice.amount_loaded}
                     onChange={(e) => setNewDevice({ ...newDevice, amount_loaded: parseFloat(e.target.value) })}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Días Cargados</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Días Cargados</label>
                   <input
                     type="number"
                     value={newDevice.days_loaded}
                     onChange={(e) => setNewDevice({ ...newDevice, days_loaded: parseInt(e.target.value) })}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
               </div>
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={handleAddDevice}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary-hover transition-colors"
                 >
                   Guardar Dispositivo
                 </button>
                 <button
                   onClick={() => setShowAddForm(false)}
-                  className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition-colors"
+                  className="px-6 bg-surface-hover text-ink-secondary py-3 rounded-xl font-bold hover:bg-border transition-colors"
                 >
                   Cancelar
                 </button>
@@ -257,10 +257,10 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
 
           {/* Devices List */}
           {loading ? (
-            <div className="text-center py-12 text-gray-500">Cargando dispositivos...</div>
+            <div className="text-center py-12 text-ink-secondary">Cargando dispositivos...</div>
           ) : devices.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <Tv className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <div className="text-center py-12 text-ink-secondary">
+              <Tv className="w-16 h-16 mx-auto mb-4 text-ink-muted" strokeWidth={1.7} />
               <p>No hay dispositivos registrados</p>
             </div>
           ) : (
@@ -268,59 +268,59 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
               {devices.map(device => {
                 const property = properties.find(p => p.id === device.property_id);
                 const isExpiringSoon = device.days_remaining <= 3;
-                
+
                 return (
                   <div
                     key={device.id}
                     className={`p-5 rounded-2xl border-2 ${
                       isExpiringSoon
-                        ? 'bg-red-50 border-red-200'
-                        : 'bg-white border-gray-200'
+                        ? 'bg-state-red/10 border-state-red/30'
+                        : 'bg-surface border-border'
                     } shadow-sm hover:shadow-md transition-shadow`}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          isExpiringSoon ? 'bg-red-100' : 'bg-blue-100'
+                          isExpiringSoon ? 'bg-state-red/15' : 'bg-state-blue/15'
                         }`}>
-                          <Tv className={`w-6 h-6 ${isExpiringSoon ? 'text-red-600' : 'text-blue-600'}`} />
+                          <Tv className={`w-6 h-6 ${isExpiringSoon ? 'text-state-red' : 'text-state-blue'}`} strokeWidth={1.7} />
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-gray-500">{property?.name}</p>
-                          <p className="font-black text-gray-800">{device.location}</p>
+                          <p className="text-xs font-bold text-ink-secondary">{property?.name}</p>
+                          <p className="font-black text-ink-primary">{device.location}</p>
                         </div>
                       </div>
                       <button
                         onClick={() => handleDelete(device.id)}
-                        className="w-8 h-8 bg-red-100 hover:bg-red-200 rounded-lg flex items-center justify-center transition-colors"
+                        className="w-8 h-8 bg-state-red/15 hover:bg-state-red/25 rounded-lg flex items-center justify-center transition-colors"
                       >
-                        <Trash2 className="w-4 h-4 text-red-600" />
+                        <Trash2 className="w-4 h-4 text-state-red" strokeWidth={1.7} />
                       </button>
                     </div>
 
                     <div className="space-y-2 mb-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Tarjeta:</span>
-                        <span className="font-bold">{device.card_number}</span>
+                        <span className="text-ink-secondary">Tarjeta:</span>
+                        <span className="font-bold text-ink-primary">{device.card_number}</span>
                       </div>
                       {device.expiry_date && (
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Vence:</span>
-                          <span className="font-bold">
+                          <span className="text-ink-secondary">Vence:</span>
+                          <span className="font-bold text-ink-primary">
                             {new Date(device.expiry_date).toLocaleDateString('es-AR')}
                           </span>
                         </div>
                       )}
                       <div className={`flex items-center justify-between p-2 rounded-lg ${
-                        isExpiringSoon ? 'bg-red-100' : 'bg-emerald-100'
+                        isExpiringSoon ? 'bg-state-red/15' : 'bg-state-green/15'
                       }`}>
                         <span className={`text-xs font-bold ${
-                          isExpiringSoon ? 'text-red-600' : 'text-emerald-600'
+                          isExpiringSoon ? 'text-state-red' : 'text-state-green'
                         }`}>
                           DÍAS RESTANTES
                         </span>
                         <span className={`text-2xl font-black ${
-                          isExpiringSoon ? 'text-red-700' : 'text-emerald-700'
+                          isExpiringSoon ? 'text-state-red' : 'text-state-green'
                         }`}>
                           {device.days_remaining}
                         </span>
@@ -334,11 +334,11 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
                       }}
                       className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${
                         isExpiringSoon
-                          ? 'bg-red-600 hover:bg-red-700 text-white'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          ? 'bg-state-red hover:bg-state-red/90 text-primary-foreground'
+                          : 'bg-primary hover:bg-primary-hover text-primary-foreground'
                       }`}
                     >
-                      <RefreshCw className="w-4 h-4" />
+                      <RefreshCw className="w-4 h-4" strokeWidth={1.7} />
                       Recargar
                     </button>
                   </div>
@@ -351,59 +351,59 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
         {/* Recharge Modal */}
         {selectedDevice && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+            <div className="bg-surface rounded-3xl max-w-md w-full p-6 shadow-2xl">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                  <RefreshCw className="w-5 h-5 text-blue-600" />
+                <h3 className="text-xl font-black text-ink-primary flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-primary" strokeWidth={1.7} />
                   Recargar {selectedDevice.location}
                 </h3>
                 <button
                   onClick={() => setSelectedDevice(null)}
-                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                  className="w-8 h-8 bg-surface-hover hover:bg-border rounded-lg flex items-center justify-center transition-colors"
                 >
-                  <X className="w-4 h-4 text-gray-600" />
+                  <X className="w-4 h-4 text-ink-secondary" strokeWidth={1.7} />
                 </button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Código de Recarga *</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Código de Recarga *</label>
                   <input
                     type="text"
                     value={rechargeForm.recharge_code}
                     onChange={(e) => setRechargeForm({ ...rechargeForm, recharge_code: e.target.value })}
                     placeholder="Ingresá el código"
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Monto (ARS)</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Monto (ARS)</label>
                   <input
                     type="number"
                     value={rechargeForm.amount_loaded}
                     onChange={(e) => setRechargeForm({ ...rechargeForm, amount_loaded: parseFloat(e.target.value) })}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Días *</label>
+                  <label className="block text-sm font-bold text-ink-secondary mb-2">Días *</label>
                   <input
                     type="number"
                     value={rechargeForm.days_loaded}
                     onChange={(e) => setRechargeForm({ ...rechargeForm, days_loaded: parseInt(e.target.value) })}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={handleRecharge}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors"
+                  className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary-hover transition-colors"
                 >
                   Confirmar Recarga
                 </button>
                 <button
                   onClick={() => setSelectedDevice(null)}
-                  className="px-6 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition-colors"
+                  className="px-6 bg-surface-hover text-ink-secondary py-3 rounded-xl font-bold hover:bg-border transition-colors"
                 >
                   Cancelar
                 </button>

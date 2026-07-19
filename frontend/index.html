@@ -1,10 +1,36 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>Apartamentos Valeria — Administración</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      // Resolve the Kanagawa theme before first paint to avoid a flash of the
+      // wrong theme. Mirrors the logic in src/theme/ThemeProvider.tsx.
+      (function () {
+        try {
+          var stored = localStorage.getItem('app-theme');
+          var theme =
+            stored === 'kanagawa-dark' || stored === 'kanagawa-light'
+              ? stored
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'kanagawa-light'
+                : 'kanagawa-dark';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'kanagawa-dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -203,17 +203,3 @@ class Expense(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
-
-class ExpenseCategory(Base):
-    """Categorías personalizadas de gastos por organización"""
-    __tablename__ = "expense_categories"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
-    value = Column(String(100), nullable=False)  # slug: blanqueria
-    label = Column(String(100), nullable=False)  # display: Blanquería
-    icon = Column(String(10), default='📦')
-    color = Column(String(50), default='orange')
-
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-

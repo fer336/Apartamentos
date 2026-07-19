@@ -4,6 +4,9 @@ import { getClients, getBookings, createClient, updateClient, deleteClient } fro
 import { ClientModal } from '../components/ClientModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Pagination } from '../components/Pagination';
+import { KanagawaCard } from '../components/ui/KanagawaCard';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const PAGE_SIZE = 10;
 
@@ -31,14 +34,14 @@ interface Booking {
 // Misma paleta y hash estable por id que usa Calendar.tsx, para que el color de
 // un cliente sea consistente en toda la app (grilla del calendario y esta tabla).
 const CLIENT_COLORS = [
-  'bg-brand-600',
-  'bg-emerald-500',
-  'bg-blue-500',
-  'bg-orange-500',
-  'bg-rose-500',
-  'bg-amber-500',
-  'bg-cyan-500',
-  'bg-fuchsia-500',
+  'bg-primary',
+  'bg-state-green',
+  'bg-state-blue',
+  'bg-state-orange',
+  'bg-state-red',
+  'bg-state-yellow',
+  'bg-state-cyan',
+  'bg-state-green-strong',
 ];
 
 const getClientColor = (clientId: string) => {
@@ -178,122 +181,115 @@ export const Clients = () => {
   return (
     <div className="space-y-6 font-sans">
       {errorMessage && (
-        <div className="bg-[#fdecec] border border-[#f7d2d2] rounded-xl p-4 flex items-start gap-3 animate-in fade-in">
-          <div className="w-8 h-8 rounded-lg bg-[#fdecec] flex items-center justify-center flex-shrink-0">
-            <span className="text-[#dc2626] font-bold">!</span>
+        <div className="bg-[rgba(166,77,69,0.1)] border border-[rgba(166,77,69,0.22)] rounded-xl p-4 flex items-start gap-3 animate-in fade-in">
+          <div className="w-8 h-8 rounded-lg bg-[rgba(166,77,69,0.14)] flex items-center justify-center flex-shrink-0">
+            <span className="text-state-red font-bold">!</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-[#dc2626] mb-1">Error</h4>
-            <p className="text-sm text-[#dc2626]">{errorMessage}</p>
+            <h4 className="font-semibold text-state-red mb-1">Error</h4>
+            <p className="text-sm text-state-red">{errorMessage}</p>
           </div>
-          <button onClick={() => setErrorMessage(null)} className="text-[#dc2626]/60 hover:text-[#dc2626]">✕</button>
+          <button onClick={() => setErrorMessage(null)} className="text-state-red/60 hover:text-state-red">✕</button>
         </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9583b3]" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" strokeWidth={1.7} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por nombre, DNI o teléfono…"
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#e0d7ef] rounded-[11px] text-sm text-[#121325] placeholder:text-[#9583b3] focus:outline-none focus:border-[#ad8ed2] focus:ring-[3px] focus:ring-[#7c5ca8]/15 transition-all"
+            className="form-control w-full pl-10 pr-4 py-2.5 text-sm placeholder:text-ink-muted"
           />
         </div>
-        <button
+        <Button
+          variant="primary"
           onClick={() => { setEditingClient(undefined); setIsModalOpen(true); }}
-          className="px-4 py-2.5 bg-brand-600 hover:bg-[#6b4d95] text-white rounded-[11px] shadow-btn-primary transition-all hover:-translate-y-px flex items-center gap-2 font-semibold text-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" strokeWidth={1.7} />
           Nuevo cliente
-        </button>
+        </Button>
       </div>
 
       {loading ? (
-        <div className="text-center p-12 bg-white rounded-2xl border border-[#e7dff3]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
-          <p className="mt-4 text-[#7b6b95]">Cargando clientes...</p>
-        </div>
+        <KanagawaCard className="text-center p-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-ink-secondary">Cargando clientes...</p>
+        </KanagawaCard>
       ) : filteredClients.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 border border-[#e7dff3] text-center">
-          <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-4">
-            <UsersIcon className="w-8 h-8 text-brand-600" />
-          </div>
-          <h2 className="font-display text-2xl font-extrabold text-[#121325] mb-2">
-            {searchQuery ? 'Sin resultados' : 'No hay clientes'}
-          </h2>
-          <p className="text-[#7b6b95] mb-6">
-            {searchQuery ? 'Probá con otro nombre, DNI o teléfono.' : 'Agrega tu primer cliente para comenzar'}
-          </p>
-          {!searchQuery && (
-            <button
-              onClick={() => { setEditingClient(undefined); setIsModalOpen(true); }}
-              className="px-6 py-3 bg-brand-600 hover:bg-[#6b4d95] text-white rounded-[11px] shadow-btn-primary transition-all inline-flex items-center gap-2 font-semibold"
-            >
-              <Plus className="w-5 h-5" />
-              Crear primer cliente
-            </button>
-          )}
-        </div>
+        <KanagawaCard className="p-12">
+          <EmptyState
+            icon={<UsersIcon className="w-8 h-8" strokeWidth={1.7} />}
+            title={searchQuery ? 'Sin resultados' : 'No hay clientes'}
+            description={searchQuery ? 'Probá con otro nombre, DNI o teléfono.' : 'Agrega tu primer cliente para comenzar'}
+            action={!searchQuery && (
+              <Button variant="primary" onClick={() => { setEditingClient(undefined); setIsModalOpen(true); }}>
+                <Plus className="w-5 h-5" strokeWidth={1.7} />
+                Crear primer cliente
+              </Button>
+            )}
+          />
+        </KanagawaCard>
       ) : (
-        <div className="bg-white rounded-2xl border border-[#e7dff3] shadow-card overflow-hidden">
+        <KanagawaCard padded={false} className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#faf8fd] text-left">
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Cliente</th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Documento</th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Contacto</th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Estadías</th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Rating</th>
-                  <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3] text-right">Última</th>
+                <tr className="bg-background-alt text-left">
+                  <th className="table-head-cell px-5 py-3">Cliente</th>
+                  <th className="table-head-cell px-5 py-3">Documento</th>
+                  <th className="table-head-cell px-5 py-3">Contacto</th>
+                  <th className="table-head-cell px-5 py-3">Estadías</th>
+                  <th className="table-head-cell px-5 py-3">Rating</th>
+                  <th className="table-head-cell px-5 py-3 text-right">Última</th>
                   <th className="px-5 py-3 w-24"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#eee5f6]">
+              <tbody>
                 {paginatedClients.map((client) => {
                   const stats = statsByClient.get(client.id);
                   return (
-                    <tr key={client.id} className="hover:bg-[#faf8fd] transition-colors">
+                    <tr key={client.id} className="table-row">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-[11px] ${getClientColor(client.id)} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
+                          <div className={`w-10 h-10 rounded-[11px] ${getClientColor(client.id)} flex items-center justify-center text-primary-foreground font-bold text-sm flex-shrink-0`}>
                             {getInitials(client.full_name)}
                           </div>
-                          <span className="font-semibold text-[#121325] truncate">{client.full_name}</span>
+                          <span className="font-semibold text-ink-primary truncate">{client.full_name}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
                         {client.document_id ? (
-                          <span className="font-mono text-[#5c3a8c]">
+                          <span className="font-mono text-ink-secondary">
                             {client.document_type || 'DNI'} {client.document_id}
                           </span>
                         ) : (
-                          <span className="text-[#9583b3]">—</span>
+                          <span className="text-ink-muted">—</span>
                         )}
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col gap-0.5">
-                          {client.phone && <span className="text-[#121325]">{client.phone}</span>}
-                          {client.email && <span className="text-xs text-[#7b6b95] truncate">{client.email}</span>}
-                          {!client.phone && !client.email && <span className="text-[#9583b3]">—</span>}
+                          {client.phone && <span className="text-ink-primary">{client.phone}</span>}
+                          {client.email && <span className="text-xs text-ink-secondary truncate">{client.email}</span>}
+                          {!client.phone && !client.email && <span className="text-ink-muted">—</span>}
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="font-display font-extrabold text-[#121325]">{stats?.count ?? 0}</span>
+                        <span className="font-display font-extrabold text-ink-primary">{stats?.count ?? 0}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         {client.rating != null ? (
-                          <span className="flex items-center gap-1 text-[#f59e0b] font-semibold">
-                            <Star className="w-3.5 h-3.5 fill-current" />
+                          <span className="flex items-center gap-1 text-state-yellow font-semibold">
+                            <Star className="w-3.5 h-3.5 fill-current" strokeWidth={1.7} />
                             {client.rating}
                           </span>
                         ) : (
-                          <span className="text-[#9583b3]">—</span>
+                          <span className="text-ink-muted">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-3.5 text-right text-[#5c3a8c]">
+                      <td className="px-5 py-3.5 text-right text-ink-secondary">
                         {stats?.lastDate ? formatMonthYear(stats.lastDate) : '—'}
                       </td>
                       <td className="px-5 py-3.5">
@@ -301,16 +297,16 @@ export const Clients = () => {
                           <button
                             onClick={() => handleEditClient(client)}
                             title="Editar"
-                            className="w-8 h-8 rounded-[10px] bg-brand-50 hover:bg-brand-100 text-brand-700 flex items-center justify-center transition-colors"
+                            className="w-8 h-8 rounded-[10px] bg-surface-violet hover:bg-primary-soft/30 text-primary flex items-center justify-center transition-colors duration-fast ease-kanagawa"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4" strokeWidth={1.7} />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(client)}
                             title="Eliminar"
-                            className="w-8 h-8 rounded-[10px] bg-[#fdecec] hover:bg-[#fbd9d9] text-[#dc2626] flex items-center justify-center transition-colors"
+                            className="w-8 h-8 rounded-[10px] bg-[rgba(166,77,69,0.1)] hover:bg-[rgba(166,77,69,0.22)] text-state-red flex items-center justify-center transition-colors duration-fast ease-kanagawa"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" strokeWidth={1.7} />
                           </button>
                         </div>
                       </td>
@@ -320,8 +316,10 @@ export const Clients = () => {
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-        </div>
+          <div className="px-2">
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          </div>
+        </KanagawaCard>
       )}
 
       <ClientModal

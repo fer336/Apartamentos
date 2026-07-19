@@ -33,18 +33,5 @@ app.include_router(endpoints.router, prefix="/api", tags=["api"])
 def health_check():
     return {"status": "ok", "database": "connected"}
 
-@app.get("/debug/cors")
-def debug_cors():
-    return {
-        "cors_origins": settings.CORS_ORIGINS,
-        "environment": settings.ENVIRONMENT,
-        "db_host": settings.POSTGRES_HOST,
-        "db_port": settings.POSTGRES_PORT,
-        "db_name": settings.POSTGRES_DB,
-        "frontend_url": settings.FRONTEND_URL,
-        "backend_url_prod": settings.PRODUCTION_BACKEND_URL,
-        "debug": settings.DEBUG
-    }
-
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

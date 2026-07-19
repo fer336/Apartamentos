@@ -13,6 +13,11 @@ import { getProperties, getExpenses, createExpense, updateExpense, deleteExpense
 import { ExpenseModal } from '../components/ExpenseModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Pagination } from '../components/Pagination';
+import { Button } from '../components/ui/Button';
+import { Badge, type BadgeTone } from '../components/ui/Badge';
+import { EmptyState } from '../components/ui/EmptyState';
+import { KanagawaCard } from '../components/ui/KanagawaCard';
+import { kanagawaAssets } from '../theme/kanagawa-assets';
 
 const PAGE_SIZE = 10;
 
@@ -59,25 +64,26 @@ const DEFAULT_CATEGORIES: Category[] = [
   { value: 'otro', label: 'Otro', icon: '📦', color: 'slate' }
 ];
 
-// Hex equivalents (Tailwind ~500) for each category color name.
+// Kanagawa token equivalents for each category color name, referenced as CSS
+// custom properties (inline `var(--x)` strings) instead of hex literals.
 // Used as inline styles instead of dynamic `bg-${color}-500` classes, since
 // custom categories are created at runtime (localStorage) and Tailwind's
 // JIT purge can't discover class names that don't appear literally in source.
-const COLOR_HEX: Record<string, string> = {
-  blue: '#3b82f6',
-  yellow: '#eab308',
-  orange: '#f97316',
-  purple: '#a855f7',
-  amber: '#f59e0b',
-  gray: '#6b7280',
-  cyan: '#06b6d4',
-  green: '#22c55e',
-  red: '#ef4444',
-  indigo: '#6366f1',
-  slate: '#64748b',
+const COLOR_TOKENS: Record<string, string> = {
+  blue: 'var(--blue)',
+  yellow: 'var(--yellow)',
+  orange: 'var(--orange)',
+  purple: 'var(--primary)',
+  amber: 'var(--orange)',
+  gray: 'var(--text-muted)',
+  cyan: 'var(--cyan)',
+  green: 'var(--green)',
+  red: 'var(--red)',
+  indigo: 'var(--primary-soft)',
+  slate: 'var(--border-strong)',
 };
 
-const colorHex = (color: string) => COLOR_HEX[color] || '#7c5ca8';
+const colorToken = (color: string) => COLOR_TOKENS[color] || 'var(--primary)';
 
 // Cargar categorías personalizadas desde localStorage
 const loadCustomCategories = (): Category[] => {
@@ -280,16 +286,16 @@ export const Expenses = () => {
     return allCategories.find(c => c.value === categoryValue) || allCategories[allCategories.length - 1];
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusTone = (status: string): BadgeTone => {
     switch (status) {
       case 'paid':
-        return 'bg-[#e4f3ea] text-[#2f8f4e] border-[#bfe3cc]';
+        return 'green';
       case 'pending':
-        return 'bg-[#fdf0e2] text-[#c2410c] border-[#f7d9ae]';
+        return 'yellow';
       case 'cancelled':
-        return 'bg-gray-100 text-gray-500 border-gray-200';
+        return 'neutral';
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return 'neutral';
     }
   };
 
@@ -307,8 +313,8 @@ export const Expenses = () => {
     return (
       <div className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#9583b3]">{label}</span>
-          <span className="font-display font-black text-lg text-[#dc2626]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{label}</span>
+          <span className="font-display font-black text-lg text-state-red">
             {label === 'USD' ? 'U$D ' : '$'}{total.toLocaleString()}
           </span>
         </div>
@@ -319,23 +325,23 @@ export const Expenses = () => {
                 <div className="flex items-center gap-2 min-w-0">
                   <span
                     className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0"
-                    style={{ backgroundColor: colorHex(category.color) }}
+                    style={{ backgroundColor: colorToken(category.color) }}
                   />
-                  <span className="text-sm font-medium text-[#121325] truncate">{category.label}</span>
+                  <span className="text-sm font-medium text-ink-primary truncate">{category.label}</span>
                 </div>
                 <div className="flex items-baseline gap-1.5 flex-shrink-0 ml-2">
-                  <span className="font-display font-bold text-sm text-[#121325]">
+                  <span className="font-display font-bold text-sm text-ink-primary">
                     {label === 'USD' ? 'U$D ' : '$'}{amount.toLocaleString()}
                   </span>
-                  <span className="text-xs font-semibold text-[#9583b3]">
+                  <span className="text-xs font-semibold text-ink-muted">
                     {percent.toFixed(0)}%
                   </span>
                 </div>
               </div>
-              <div className="h-1.5 rounded-full bg-[#eae1f5] overflow-hidden">
+              <div className="h-1.5 rounded-full bg-surface-hover overflow-hidden">
                 <div
                   className="h-full rounded-full"
-                  style={{ width: `${percent}%`, backgroundColor: colorHex(category.color) }}
+                  style={{ width: `${percent}%`, backgroundColor: colorToken(category.color) }}
                 />
               </div>
             </div>
@@ -349,34 +355,34 @@ export const Expenses = () => {
     <div className="space-y-6">
       {/* Error Message */}
       {errorMessage && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3 animate-in fade-in">
-          <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-red-600 font-bold">!</span>
+        <div className="bg-state-red/10 border-2 border-state-red/30 rounded-xl p-4 flex items-start gap-3 animate-in fade-in">
+          <div className="w-8 h-8 rounded-lg bg-state-red/15 flex items-center justify-center flex-shrink-0">
+            <span className="text-state-red font-bold">!</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-red-900 mb-1">Error</h4>
-            <p className="text-sm text-red-700">{errorMessage}</p>
+            <h4 className="font-semibold text-ink-primary mb-1">Error</h4>
+            <p className="text-sm text-state-red">{errorMessage}</p>
           </div>
-          <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-red-600">
+          <button onClick={() => setErrorMessage(null)} className="text-state-red/60 hover:text-state-red transition-colors duration-fast ease-kanagawa">
             ✕
           </button>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl p-4 border border-[#e7dff3] shadow-card">
+      <KanagawaCard>
         <div className="flex items-center gap-2 mb-4">
-          <Filter className="w-4 h-4 text-[#7c5ca8]" />
-          <span className="font-semibold text-sm text-[#121325]">Filtros</span>
+          <Filter className="w-4 h-4 text-primary" strokeWidth={1.7} />
+          <span className="font-semibold text-sm text-ink-primary">Filtros</span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div>
-            <label className="block text-[11px] font-bold text-[#9583b3] uppercase mb-1">Año</label>
+            <label className="block text-[11px] font-bold text-ink-muted uppercase mb-1">Año</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-[10px] border border-[#e0d7ef] bg-white text-sm font-medium text-[#121325] focus:border-[#ad8ed2] focus:outline-none focus:ring-[3px] focus:ring-[#7c5ca8]/15"
+              className="form-control w-full px-3 py-2 text-sm font-medium"
             >
               {years.map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -385,11 +391,11 @@ export const Expenses = () => {
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-[#9583b3] uppercase mb-1">Propiedad</label>
+            <label className="block text-[11px] font-bold text-ink-muted uppercase mb-1">Propiedad</label>
             <select
               value={selectedProperty}
               onChange={(e) => setSelectedProperty(e.target.value)}
-              className="w-full px-3 py-2 rounded-[10px] border border-[#e0d7ef] bg-white text-sm font-medium text-[#121325] focus:border-[#ad8ed2] focus:outline-none focus:ring-[3px] focus:ring-[#7c5ca8]/15"
+              className="form-control w-full px-3 py-2 text-sm font-medium"
             >
               <option value="all">Todas</option>
               {properties.map(prop => (
@@ -399,11 +405,11 @@ export const Expenses = () => {
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-[#9583b3] uppercase mb-1">Categoría</label>
+            <label className="block text-[11px] font-bold text-ink-muted uppercase mb-1">Categoría</label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-3 py-2 rounded-[10px] border border-[#e0d7ef] bg-white text-sm font-medium text-[#121325] focus:border-[#ad8ed2] focus:outline-none focus:ring-[3px] focus:ring-[#7c5ca8]/15"
+              className="form-control w-full px-3 py-2 text-sm font-medium"
             >
               <option value="all">Todas</option>
               {allCategories.map(cat => (
@@ -413,69 +419,69 @@ export const Expenses = () => {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-[11px] font-bold text-[#9583b3] uppercase mb-1">Buscar</label>
+            <label className="block text-[11px] font-bold text-ink-muted uppercase mb-1">Buscar</label>
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-[#9583b3]" />
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-ink-muted" strokeWidth={1.7} />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Descripción o proveedor..."
-                className="w-full pl-9 pr-4 py-2 rounded-[10px] border border-[#e0d7ef] bg-white text-sm font-medium text-[#121325] focus:border-[#ad8ed2] focus:outline-none focus:ring-[3px] focus:ring-[#7c5ca8]/15"
+                className="form-control w-full pl-9 pr-4 py-2 text-sm font-medium"
               />
             </div>
           </div>
         </div>
-      </div>
+      </KanagawaCard>
 
       {/* Content: Egresos + Por categoría */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
         {/* Left: Egresos table */}
-        <div className="bg-white rounded-2xl border border-[#e7dff3] shadow-card overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-[#eee5f6]">
+        <KanagawaCard padded={false}>
+          <div className="flex items-center justify-between p-5 border-b border-border-subtle">
             <div>
-              <h2 className="font-display font-extrabold text-lg text-[#121325]">Egresos {selectedYear}</h2>
-              <p className="text-xs text-[#7b6b95]">{filteredExpenses.length} registro{filteredExpenses.length === 1 ? '' : 's'}</p>
+              <h2 className="font-display font-extrabold text-lg text-ink-primary">Egresos {selectedYear}</h2>
+              <p className="text-xs text-ink-muted">{filteredExpenses.length} registro{filteredExpenses.length === 1 ? '' : 's'}</p>
             </div>
-            <button
+            <Button
+              variant="primary"
               onClick={() => {
                 setEditingExpense(undefined);
                 handleOpenModal();
               }}
-              className="px-4 py-2.5 bg-[#7c5ca8] hover:bg-[#6b4d95] text-white rounded-[11px] font-semibold text-sm flex items-center gap-2 shadow-btn-primary hover:-translate-y-px transition-all"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4" strokeWidth={1.7} />
               <span className="hidden sm:inline">Registrar gasto</span>
-            </button>
+            </Button>
           </div>
 
           {loading ? (
             <div className="text-center p-12">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#7c5ca8] mx-auto"></div>
-              <p className="mt-4 text-sm text-[#7b6b95]">Cargando gastos...</p>
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-sm text-ink-muted">Cargando gastos...</p>
             </div>
           ) : filteredExpenses.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-[#f5f2fa] flex items-center justify-center mx-auto mb-4">
-                <Building className="w-6 h-6 text-[#7c5ca8]" />
-              </div>
-              <h3 className="font-display font-bold text-lg text-[#121325] mb-1">No hay gastos registrados</h3>
-              <p className="text-sm text-[#7b6b95] mb-6">Registrá tu primer gasto o reparación</p>
-              <button
-                onClick={() => {
-                  setEditingExpense(undefined);
-                  handleOpenModal();
-                }}
-                className="px-5 py-2.5 bg-[#7c5ca8] hover:bg-[#6b4d95] text-white rounded-[11px] font-semibold text-sm inline-flex items-center gap-2 shadow-btn-primary transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                Registrar primer gasto
-              </button>
-            </div>
+            <EmptyState
+              icon={<kanagawaAssets.cards.expenseFuji className="w-16 h-16" />}
+              title="No hay gastos registrados"
+              description="Registrá tu primer gasto o reparación"
+              action={
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setEditingExpense(undefined);
+                    handleOpenModal();
+                  }}
+                >
+                  <Plus className="w-4 h-4" strokeWidth={1.7} />
+                  Registrar primer gasto
+                </Button>
+              }
+            />
           ) : (
             <>
               {/* Table Header - Desktop */}
-              <div className="hidden md:grid md:grid-cols-12 gap-4 px-5 py-3 bg-[#faf8fd] border-b border-[#eee5f6] text-[11px] font-bold text-[#9583b3] uppercase tracking-wider">
+              <div className="hidden md:grid md:grid-cols-12 gap-4 px-5 py-3 bg-background-alt border-b border-border-subtle table-head-cell">
                 <div className="col-span-1">Fecha</div>
                 <div className="col-span-2">Categoría</div>
                 <div className="col-span-3">Descripción</div>
@@ -484,34 +490,34 @@ export const Expenses = () => {
                 <div className="col-span-2 text-center">Acciones</div>
               </div>
 
-              <div className="divide-y divide-[#f3eefa]">
+              <div className="divide-y divide-border-subtle">
                 {paginatedExpenses.map((expense) => {
                   const category = getCategoryInfo(expense.category);
                   return (
-                    <div key={expense.id} className="p-4 md:px-5 hover:bg-[#faf8fd] transition-colors">
+                    <div key={expense.id} className="p-4 md:px-5 hover:bg-surface-hover transition-colors duration-fast ease-kanagawa">
                       {/* Mobile */}
                       <div className="md:hidden space-y-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-2 min-w-0">
                             <span
                               className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0"
-                              style={{ backgroundColor: colorHex(category.color) }}
+                              style={{ backgroundColor: colorToken(category.color) }}
                             />
                             <div className="min-w-0">
-                              <p className="font-semibold text-[#121325] truncate">{expense.description}</p>
-                              <p className="text-xs text-[#7b6b95] truncate">{expense.property_name}</p>
+                              <p className="font-semibold text-ink-primary truncate">{expense.description}</p>
+                              <p className="text-xs text-ink-muted truncate">{expense.property_name}</p>
                             </div>
                           </div>
-                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border flex-shrink-0 ${getStatusBadge(expense.status)}`}>
+                          <Badge tone={getStatusTone(expense.status)} className="flex-shrink-0">
                             {getStatusText(expense.status)}
-                          </span>
+                          </Badge>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-xs text-[#7b6b95]">
-                            <Calendar className="w-3.5 h-3.5" />
+                          <div className="flex items-center gap-2 text-xs text-ink-muted">
+                            <Calendar className="w-3.5 h-3.5" strokeWidth={1.7} />
                             {new Date(expense.date).toLocaleDateString('es-AR')}
                           </div>
-                          <p className="font-display font-bold text-base text-[#dc2626]">
+                          <p className="font-display font-bold text-base text-state-red">
                             {expense.currency === 'USD' ? 'U$D' : '$'} {expense.amount.toLocaleString()}
                           </p>
                         </div>
@@ -521,57 +527,57 @@ export const Expenses = () => {
                               href={expense.receipt_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 px-3 py-2 bg-[#faf8fd] hover:bg-[#f0ebf8] text-[#5c3a8c] rounded-[10px] font-medium transition-colors flex items-center justify-center gap-1.5 text-sm"
+                              className="flex-1 px-3 py-2 bg-surface-elevated hover:bg-surface-hover text-ink-secondary rounded-md font-medium transition-colors duration-fast ease-kanagawa flex items-center justify-center gap-1.5 text-sm"
                             >
-                              <Download className="w-4 h-4" />
+                              <Download className="w-4 h-4" strokeWidth={1.7} />
                               Factura
                             </a>
                           )}
                           <button
                             onClick={() => handleEditExpense(expense)}
-                            className="flex-1 px-3 py-2 bg-[#f0ebf8] hover:bg-[#e6ddf3] text-[#5c3a8c] rounded-[10px] font-medium transition-colors flex items-center justify-center gap-1.5 text-sm"
+                            className="flex-1 px-3 py-2 bg-surface-elevated hover:bg-surface-hover text-ink-secondary rounded-md font-medium transition-colors duration-fast ease-kanagawa flex items-center justify-center gap-1.5 text-sm"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4" strokeWidth={1.7} />
                             Editar
                           </button>
                           <button
                             onClick={() => handleDeleteClick(expense)}
-                            className="px-3 py-2 bg-[#fdecec] hover:bg-[#fbd9d9] text-[#dc2626] rounded-[10px] font-medium transition-colors"
+                            className="px-3 py-2 bg-state-red/10 hover:bg-state-red/20 text-state-red rounded-md font-medium transition-colors duration-fast ease-kanagawa"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" strokeWidth={1.7} />
                           </button>
                         </div>
                       </div>
 
                       {/* Desktop */}
                       <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
-                        <div className="col-span-1 text-sm text-[#5c3a8c]">
+                        <div className="col-span-1 text-sm text-ink-secondary font-mono">
                           {new Date(expense.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
                         </div>
                         <div className="col-span-2">
                           <div className="flex items-center gap-2">
                             <span
                               className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0"
-                              style={{ backgroundColor: colorHex(category.color) }}
+                              style={{ backgroundColor: colorToken(category.color) }}
                             />
-                            <span className="text-sm font-medium text-[#121325] truncate">{category.label}</span>
+                            <span className="text-sm font-medium text-ink-primary truncate">{category.label}</span>
                           </div>
                         </div>
                         <div className="col-span-3 min-w-0">
-                          <p className="font-medium text-[#121325] truncate">{expense.description}</p>
-                          <p className="text-xs text-[#7b6b95] truncate">{expense.provider}</p>
+                          <p className="font-medium text-ink-primary truncate">{expense.description}</p>
+                          <p className="text-xs text-ink-muted truncate">{expense.provider}</p>
                         </div>
                         <div className="col-span-2 flex items-center gap-2 min-w-0">
-                          <Building className="w-4 h-4 text-[#9583b3] flex-shrink-0" />
-                          <span className="text-sm text-[#5c3a8c] truncate">{expense.property_name}</span>
+                          <Building className="w-4 h-4 text-ink-muted flex-shrink-0" strokeWidth={1.7} />
+                          <span className="text-sm text-ink-secondary truncate">{expense.property_name}</span>
                         </div>
                         <div className="col-span-2 text-right">
-                          <p className="font-display font-bold text-base text-[#dc2626]">
+                          <p className="font-display font-bold text-base text-state-red">
                             {expense.currency === 'USD' ? 'U$D' : '$'} {expense.amount.toLocaleString()}
                           </p>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(expense.status)}`}>
+                          <Badge tone={getStatusTone(expense.status)}>
                             {getStatusText(expense.status)}
-                          </span>
+                          </Badge>
                         </div>
                         <div className="col-span-2 flex items-center justify-center gap-1.5">
                           {expense.receipt_url && (
@@ -579,25 +585,25 @@ export const Expenses = () => {
                               href={expense.receipt_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-8 h-8 flex items-center justify-center bg-[#faf8fd] hover:bg-[#f0ebf8] text-[#5c3a8c] rounded-[9px] transition-colors"
+                              className="w-8 h-8 flex items-center justify-center bg-surface-elevated hover:bg-surface-hover text-ink-secondary rounded-md transition-colors duration-fast ease-kanagawa"
                               title="Ver factura"
                             >
-                              <Download className="w-4 h-4" />
+                              <Download className="w-4 h-4" strokeWidth={1.7} />
                             </a>
                           )}
                           <button
                             onClick={() => handleEditExpense(expense)}
-                            className="w-8 h-8 flex items-center justify-center bg-[#f0ebf8] hover:bg-[#e6ddf3] text-[#5c3a8c] rounded-[9px] transition-colors"
+                            className="w-8 h-8 flex items-center justify-center bg-surface-elevated hover:bg-surface-hover text-ink-secondary rounded-md transition-colors duration-fast ease-kanagawa"
                             title="Editar"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-4 h-4" strokeWidth={1.7} />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(expense)}
-                            className="w-8 h-8 flex items-center justify-center bg-[#fdecec] hover:bg-[#fbd9d9] text-[#dc2626] rounded-[9px] transition-colors"
+                            className="w-8 h-8 flex items-center justify-center bg-state-red/10 hover:bg-state-red/20 text-state-red rounded-md transition-colors duration-fast ease-kanagawa"
                             title="Eliminar"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" strokeWidth={1.7} />
                           </button>
                         </div>
                       </div>
@@ -612,20 +618,20 @@ export const Expenses = () => {
               />
             </>
           )}
-        </div>
+        </KanagawaCard>
 
         {/* Right: Por categoría */}
-        <div className="bg-white rounded-2xl border border-[#e7dff3] shadow-card p-5 space-y-5">
-          <h2 className="font-display font-extrabold text-lg text-[#121325]">Por categoría</h2>
+        <KanagawaCard tone="violet" className="space-y-5">
+          <h2 className="font-display font-extrabold text-lg text-ink-primary">Por categoría</h2>
           {breakdownARS.length === 0 && breakdownUSD.length === 0 ? (
-            <p className="text-sm text-[#7b6b95]">Sin gastos registrados en {selectedYear}.</p>
+            <p className="text-sm text-ink-muted">Sin gastos registrados en {selectedYear}.</p>
           ) : (
             <>
               <CategoryBreakdownBlock label="Pesos" total={totalARS} rows={breakdownARS} />
               <CategoryBreakdownBlock label="USD" total={totalUSD} rows={breakdownUSD} />
             </>
           )}
-        </div>
+        </KanagawaCard>
       </div>
 
       {/* Expense Modal */}

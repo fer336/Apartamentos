@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, User, Home, DollarSign, Users } from 'lucide-react';
 import { getClients, getProperties } from '../services/api';
+import { Button } from './ui/Button';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -138,7 +139,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       }));
       return;
     }
-    
+
     const numValue = parseFloat(value);
     setFormData(prev => ({
       ...prev,
@@ -150,17 +151,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-in zoom-in duration-200 shadow-2xl overflow-hidden">
+      <div className="bg-surface border border-border rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-in zoom-in duration-200 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-white border-b border-pink-100 p-6 flex items-center justify-between flex-none z-10">
-          <h2 className="text-2xl font-bold text-foreground">
+        <div className="bg-surface border-b border-border-subtle p-6 flex items-center justify-between flex-none z-10">
+          <h2 className="font-display text-2xl font-bold text-foreground">
             {booking ? 'Editar Reserva' : 'Nueva Reserva'}
           </h2>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-xl hover:bg-surface-hover flex items-center justify-center transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6" strokeWidth={1.7} />
           </button>
         </div>
 
@@ -168,13 +169,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {errorMessage && (
-              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                  <span className="text-red-600 font-bold">!</span>
+              <div className="bg-state-red/10 border-2 border-state-red/30 rounded-xl p-4 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-state-red/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-state-red font-bold">!</span>
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-red-900 mb-1">Error</h4>
-                  <p className="text-sm text-red-700">{errorMessage}</p>
+                  <h4 className="font-semibold text-state-red mb-1">Error</h4>
+                  <p className="text-sm text-state-red">{errorMessage}</p>
                 </div>
               </div>
             )}
@@ -183,14 +184,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-foreground flex items-center gap-2">
-                  <Home className="w-4 h-4 text-purple-500" />
+                  <Home className="w-4 h-4 text-primary" strokeWidth={1.7} />
                   Propiedad *
                 </label>
                 <select
                   required
                   value={formData.property_id}
                   onChange={(e) => setFormData({ ...formData, property_id: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-border focus:border-purple-400 focus:outline-none bg-white"
+                  className="form-control w-full px-4 py-3 focus:outline-none"
                 >
                   <option value="">Seleccionar Propiedad</option>
                   {properties.map(p => (
@@ -201,14 +202,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-foreground flex items-center gap-2">
-                  <User className="w-4 h-4 text-blue-500" />
+                  <User className="w-4 h-4 text-state-blue" strokeWidth={1.7} />
                   Cliente *
                 </label>
                 <select
                   required
                   value={formData.client_id}
                   onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-border focus:border-purple-400 focus:outline-none bg-white"
+                  className="form-control w-full px-4 py-3 focus:outline-none"
                 >
                   <option value="">Seleccionar Cliente</option>
                   {clients.map(c => (
@@ -219,15 +220,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             </div>
 
             {/* Fechas y Huéspedes */}
-            <div className="p-6 bg-pink-50 rounded-2xl border border-pink-100 space-y-6">
-              <h3 className="font-semibold text-pink-900 flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5" />
+            <div className="p-6 bg-surface-violet rounded-2xl border border-border space-y-6">
+              <h3 className="font-display text-lg font-semibold text-ink-violet flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5" strokeWidth={1.7} />
                 Estadía
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-pink-800 mb-2">Check-in *</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">Check-in *</label>
                   <input
                     type="date"
                     required
@@ -241,8 +242,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       if (currentCheckOut && newCheckIn >= currentCheckOut) {
                         const nextDay = new Date(newCheckIn);
                         nextDay.setDate(nextDay.getDate() + 1);
-                        setFormData({ 
-                          ...formData, 
+                        setFormData({
+                          ...formData,
                           check_in: newCheckIn,
                           check_out: nextDay.toISOString().split('T')[0]
                         });
@@ -250,20 +251,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         setFormData({ ...formData, check_in: newCheckIn });
                       }
                     }}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none ${formData.check_in && formData.property_id &&
+                    className={`form-control w-full px-4 py-3 focus:outline-none ${formData.check_in && formData.property_id &&
                       new Date(formData.check_in + 'T00:00:00').getDay() !== ((properties.find(p => p.id === formData.property_id)?.check_in_day + 1) % 7)
-                      ? 'border-amber-400 bg-amber-50' : 'border-pink-200 focus:border-pink-400'
+                      ? 'border-state-yellow bg-state-yellow/10' : ''
                       }`}
                   />
                   {formData.check_in && formData.property_id && (
-                    <p className="text-[10px] mt-1 font-bold text-pink-600 uppercase">
+                    <p className="text-[10px] mt-1 font-bold text-ink-violet uppercase">
                       {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][new Date(formData.check_in + 'T00:00:00').getDay()]}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-pink-800 mb-2">Check-out *</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">Check-out *</label>
                   <input
                     type="date"
                     required
@@ -273,23 +274,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       setDateError(null);
                       setFormData({ ...formData, check_out: e.target.value });
                     }}
-                    className={`w-full px-4 py-3 rounded-xl border-2 focus:outline-none ${formData.check_out && formData.property_id &&
+                    className={`form-control w-full px-4 py-3 focus:outline-none ${formData.check_out && formData.property_id &&
                       new Date(formData.check_out + 'T00:00:00').getDay() !== ((properties.find(p => p.id === formData.property_id)?.check_out_day + 1) % 7)
-                      ? 'border-amber-400 bg-amber-50' : 'border-pink-200 focus:border-pink-400'
+                      ? 'border-state-yellow bg-state-yellow/10' : ''
                       }`}
                   />
                   {formData.check_out && formData.property_id && (
-                    <p className="text-[10px] mt-1 font-bold text-pink-600 uppercase">
+                    <p className="text-[10px] mt-1 font-bold text-ink-violet uppercase">
                       {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][new Date(formData.check_out + 'T00:00:00').getDay()]}
                     </p>
                   )}
                   {dateError && (
-                    <p className="text-xs mt-1 font-medium text-red-600">{dateError}</p>
+                    <p className="text-xs mt-1 font-medium text-state-red">{dateError}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-pink-800 mb-2">Total Huéspedes</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">Total Huéspedes</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -302,10 +303,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                           guests_count: total
                         }));
                       }}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-400 focus:outline-none pl-10"
+                      className="form-control w-full px-4 py-3 focus:outline-none pl-10"
                       readOnly
                     />
-                    <Users className="w-5 h-5 text-pink-400 absolute left-3 top-3.5" />
+                    <Users className="w-5 h-5 text-ink-violet absolute left-3 top-3.5" strokeWidth={1.7} />
                   </div>
                 </div>
               </div>
@@ -313,7 +314,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               {/* Detalle de Huéspedes */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 <div>
-                  <label className="block text-sm font-medium text-pink-800 mb-2">👨‍👩‍👧 Adultos *</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">👨‍👩‍👧 Adultos *</label>
                   <input
                     type="number"
                     min="1"
@@ -326,13 +327,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         guests_count: adults + prev.children
                       }));
                     }}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-400 focus:outline-none"
+                    className="form-control w-full px-4 py-3 focus:outline-none"
                     placeholder="0"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-pink-800 mb-2">👶 Niños</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">👶 Niños</label>
                   <input
                     type="number"
                     min="0"
@@ -345,13 +346,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         guests_count: prev.adults + children
                       }));
                     }}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-400 focus:outline-none"
+                    className="form-control w-full px-4 py-3 focus:outline-none"
                     placeholder="0"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-pink-800 mb-2">🐾 Mascotas</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">🐾 Mascotas</label>
                   <div className="flex items-center h-[50px]">
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -360,17 +361,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         onChange={(e) => setFormData(prev => ({ ...prev, pets: e.target.checked }))}
                         className="sr-only peer"
                       />
-                      <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-pink-500"></div>
-                      <span className="ml-3 text-sm font-medium text-gray-700">{formData.pets ? 'Sí' : 'No'}</span>
+                      <div className="w-14 h-7 bg-surface-hover peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-soft/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-surface-elevated after:border-border after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary"></div>
+                      <span className="ml-3 text-sm font-medium text-ink-secondary">{formData.pets ? 'Sí' : 'No'}</span>
                     </label>
                   </div>
                 </div>
               </div>
 
               {formData.property_id && (
-                <div className="bg-amber-100/50 p-3 rounded-xl border border-amber-200 flex items-center gap-2">
+                <div className="bg-state-yellow/15 p-3 rounded-xl border border-state-yellow/30 flex items-center gap-2">
                   <span className="text-lg">💡</span>
-                  <p className="text-xs text-amber-800 font-medium">
+                  <p className="text-xs text-state-yellow font-medium">
                     Esta propiedad prefiere check-in los <b>{['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][properties.find(p => p.id === formData.property_id)?.check_in_day]}</b> y check-out los <b>{['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][properties.find(p => p.id === formData.property_id)?.check_out_day]}</b>.
                   </p>
                 </div>
@@ -378,15 +379,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             </div>
 
             {/* Precios */}
-            <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-100 space-y-6">
-              <h3 className="font-semibold text-emerald-900 flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
+            <div className="p-6 bg-state-green/10 rounded-2xl border border-state-green/25 space-y-6">
+              <h3 className="font-display text-lg font-semibold text-state-green-strong flex items-center gap-2">
+                <DollarSign className="w-5 h-5" strokeWidth={1.7} />
                 Pagos y Valores
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-emerald-800 mb-2">Precio Total *</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">Precio Total *</label>
                   <div className="flex gap-2">
                     <input
                       type="number"
@@ -394,13 +395,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       required
                       value={formData.total_price_usd === 0 ? '' : formData.total_price_usd}
                       onChange={(e) => handleNumberChange('total_price_usd', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-400 focus:outline-none"
+                      className="form-control w-full px-4 py-3 focus:outline-none"
                       placeholder="0"
                     />
                     <select
                       value={formData.total_price_currency}
                       onChange={(e) => setFormData({ ...formData, total_price_currency: e.target.value })}
-                      className="px-2 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-400 focus:outline-none bg-white text-sm font-bold text-emerald-700"
+                      className="form-control px-2 py-3 focus:outline-none text-sm font-bold text-state-green-strong"
                     >
                       <option value="USD">USD</option>
                       <option value="ARS">ARS</option>
@@ -411,20 +412,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-emerald-800 mb-2">Anticipo</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">Anticipo</label>
                   <div className="flex gap-2">
                     <input
                       type="number"
                       step="0.01"
                       value={formData.advance_payment_usd === 0 ? '' : formData.advance_payment_usd}
                       onChange={(e) => handleNumberChange('advance_payment_usd', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-400 focus:outline-none"
+                      className="form-control w-full px-4 py-3 focus:outline-none"
                       placeholder="0"
                     />
                     <select
                       value={formData.advance_payment_currency}
                       onChange={(e) => setFormData({ ...formData, advance_payment_currency: e.target.value })}
-                      className="px-2 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-400 focus:outline-none bg-white text-sm font-bold text-emerald-700"
+                      className="form-control px-2 py-3 focus:outline-none text-sm font-bold text-state-green-strong"
                     >
                       <option value="USD">USD</option>
                       <option value="ARS">ARS</option>
@@ -437,10 +438,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 {/* Tipo de Cambio (Condicional) */}
                 {(formData.total_price_currency !== formData.advance_payment_currency) && (
                   <div>
-                    <label className="block text-sm font-medium text-blue-800 mb-2 flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
+                    <label className="block text-sm font-medium text-state-blue mb-2 flex items-center gap-1">
+                      <DollarSign className="w-4 h-4" strokeWidth={1.7} />
                       Tipo de Cambio
-                      <span className="text-xs font-normal text-blue-600 ml-1">
+                      <span className="text-xs font-normal text-state-blue/80 ml-1">
                         (1 {formData.total_price_currency} = X {formData.advance_payment_currency})
                       </span>
                     </label>
@@ -449,27 +450,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       step="0.01"
                       value={formData.exchange_rate === 0 ? '' : formData.exchange_rate}
                       onChange={(e) => handleNumberChange('exchange_rate', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-400 focus:outline-none bg-blue-50/50"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-state-blue/30 focus:border-state-blue focus:outline-none bg-state-blue/10"
                       placeholder="Ej: 1200"
                     />
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-emerald-800 mb-2">Depósito</label>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">Depósito</label>
                   <div className="flex gap-2">
                     <input
                       type="number"
                       step="0.01"
                       value={formData.deposit_ars === 0 ? '' : formData.deposit_ars}
                       onChange={(e) => handleNumberChange('deposit_ars', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-400 focus:outline-none"
+                      className="form-control w-full px-4 py-3 focus:outline-none"
                       placeholder="0"
                     />
                     <select
                       value={formData.deposit_currency}
                       onChange={(e) => setFormData({ ...formData, deposit_currency: e.target.value })}
-                      className="px-2 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-400 focus:outline-none bg-white text-sm font-bold text-emerald-700"
+                      className="form-control px-2 py-3 focus:outline-none text-sm font-bold text-state-green-strong"
                     >
                       <option value="ARS">ARS</option>
                       <option value="USD">USD</option>
@@ -488,7 +489,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-border focus:border-purple-400 focus:outline-none bg-white"
+                  className="form-control w-full px-4 py-3 focus:outline-none"
                 >
                   <option value="pending">Pendiente</option>
                   <option value="confirmed">Confirmada</option>
@@ -503,7 +504,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <select
                   value={formData.payment_status}
                   onChange={(e) => setFormData({ ...formData, payment_status: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-border focus:border-purple-400 focus:outline-none bg-white"
+                  className="form-control w-full px-4 py-3 focus:outline-none"
                 >
                   <option value="pending">Pendiente</option>
                   <option value="advance_paid">Anticipo Pagado</option>
@@ -516,7 +517,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <select
                   value={formData.service_status}
                   onChange={(e) => setFormData({ ...formData, service_status: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-border focus:border-purple-400 focus:outline-none bg-white"
+                  className="form-control w-full px-4 py-3 focus:outline-none"
                 >
                   <option value="SERVICIOS">SERVICIOS</option>
                   <option value="NO SERVICIOS">NO SERVICIOS</option>
@@ -526,20 +527,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           </div>
 
           {/* Fixed Footer with Buttons */}
-          <div className="flex gap-4 p-6 border-t border-gray-100 bg-white flex-none z-10">
-            <button
+          <div className="flex gap-4 p-6 border-t border-border-subtle bg-surface flex-none z-10">
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className="flex-1 px-6 py-3 rounded-xl border-2 border-border hover:bg-gray-50 font-medium transition-colors"
+              className="flex-1"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:from-pink-600 hover:to-rose-600 font-medium transition-all shadow-lg"
+              variant="primary"
+              className="flex-1"
             >
               {booking ? 'Actualizar' : 'Crear'} Reserva
-            </button>
+            </Button>
           </div>
         </form>
       </div >

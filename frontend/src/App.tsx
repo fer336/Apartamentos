@@ -40,8 +40,8 @@ function App() {
           <Route path="finance" element={<Finance />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="import" element={<Import />} />
-          <Route path="inventory" element={<div className="text-center p-12 bg-white rounded-2xl border-2 border-border"><div className="text-6xl mb-4">📦</div><h2 className="text-2xl font-bold">Inventario</h2><p className="text-muted-foreground mt-2">Esta sección está en desarrollo</p></div>} />
-          <Route path="settings" element={<div className="text-center p-12 bg-white rounded-2xl border-2 border-border"><div className="text-6xl mb-4">⚙️</div><h2 className="text-2xl font-bold">Configuración</h2><p className="text-muted-foreground mt-2">Esta sección está en desarrollo</p></div>} />
+          <Route path="inventory" element={<div className="kanagawa-card card-content text-center p-12"><div className="text-6xl mb-4">📦</div><h2 className="font-display text-2xl font-bold text-ink-primary">Inventario</h2><p className="text-muted-foreground mt-2">Esta sección está en desarrollo</p></div>} />
+          <Route path="settings" element={<div className="kanagawa-card card-content text-center p-12"><div className="text-6xl mb-4">⚙️</div><h2 className="font-display text-2xl font-bold text-ink-primary">Configuración</h2><p className="text-muted-foreground mt-2">Esta sección está en desarrollo</p></div>} />
         </Route>
       </Routes>
     </BrowserRouter>

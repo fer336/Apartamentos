@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Wrench, Upload, FileText, Trash2, AlertCircle, Plus, Check } from 'lucide-react';
+import { cn } from '../utils/cn';
+import { Button } from './ui/Button';
 
 interface Property {
   id: string;
@@ -220,26 +222,26 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-surface rounded-3xl max-w-2xl w-full shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 text-white flex-shrink-0">
+        <div className="bg-gradient-to-r from-state-orange to-state-red p-6 text-primary-foreground flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                <Wrench className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
+                <Wrench className="w-6 h-6" strokeWidth={1.7} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">
+                <h2 className="text-2xl font-display font-bold">
                   {expense ? 'Editar Gasto' : 'Nuevo Gasto'}
                 </h2>
-                <p className="text-orange-100 text-sm">Registra gastos y reparaciones</p>
+                <p className="text-primary-foreground/80 text-sm">Registra gastos y reparaciones</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-xl bg-primary-foreground/20 hover:bg-primary-foreground/30 flex items-center justify-center transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" strokeWidth={1.7} />
             </button>
           </div>
         </div>
@@ -249,13 +251,16 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
           {/* Propiedad y Fecha */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-ink-secondary mb-2">
                 Propiedad *
               </label>
               <select
                 value={formData.property_id}
                 onChange={(e) => setFormData({ ...formData, property_id: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl border-2 ${errors.property_id ? 'border-red-300 bg-red-50' : 'border-border'} focus:border-orange-400 focus:outline-none transition-colors`}
+                className={cn(
+                  'form-control w-full px-4 py-3 focus:outline-none',
+                  errors.property_id && 'border-state-red bg-state-red/10'
+                )}
                 disabled={properties.length === 0}
               >
                 <option value="">
@@ -266,41 +271,44 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                 ))}
               </select>
               {properties.length === 0 && !errors.property_id && (
-                <p className="text-amber-600 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
+                <p className="text-state-yellow text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" strokeWidth={1.7} />
                   No se encontraron propiedades. Recarga la página.
                 </p>
               )}
-              {errors.property_id && <p className="text-red-500 text-xs mt-1">{errors.property_id}</p>}
+              {errors.property_id && <p className="text-state-red text-xs mt-1">{errors.property_id}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-ink-secondary mb-2">
                 Fecha *
               </label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className={`w-full px-4 py-3 rounded-xl border-2 ${errors.date ? 'border-red-300 bg-red-50' : 'border-border'} focus:border-orange-400 focus:outline-none transition-colors`}
+                className={cn(
+                  'form-control w-full px-4 py-3 focus:outline-none',
+                  errors.date && 'border-state-red bg-state-red/10'
+                )}
               />
-              {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
+              {errors.date && <p className="text-state-red text-xs mt-1">{errors.date}</p>}
             </div>
           </div>
 
           {/* Categoría */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-bold text-gray-700">
+              <label className="block text-sm font-bold text-ink-secondary">
                 Categoría
               </label>
               {!isAddingCategory && (
                 <button
                   type="button"
                   onClick={() => setIsAddingCategory(true)}
-                  className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                  className="text-xs font-bold text-state-orange hover:text-state-red flex items-center gap-1"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3 h-3" strokeWidth={1.7} />
                   Nueva categoría
                 </button>
               )}
@@ -308,9 +316,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
             {/* Formulario para nueva categoría */}
             {isAddingCategory && (
-              <div className="mb-3 p-4 bg-orange-50 border-2 border-orange-200 rounded-xl space-y-3 animate-in fade-in duration-200">
+              <div className="mb-3 p-4 bg-state-orange/10 border-2 border-state-orange/30 rounded-xl space-y-3 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-orange-700">Nueva Categoría</span>
+                  <span className="text-sm font-bold text-state-orange">Nueva Categoría</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -318,9 +326,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                       setNewCategoryName('');
                       setNewCategoryIcon('📦');
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-ink-muted hover:text-ink-secondary"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" strokeWidth={1.7} />
                   </button>
                 </div>
 
@@ -329,23 +337,24 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="Ej: Blanquería, Limpieza profunda..."
-                  className="w-full px-3 py-2 rounded-lg border-2 border-orange-200 focus:border-orange-400 focus:outline-none text-sm"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-state-orange/30 bg-surface focus:border-state-orange focus:outline-none text-sm text-ink-primary"
                   autoFocus
                 />
 
                 <div>
-                  <span className="text-xs font-bold text-gray-500 mb-1 block">Selecciona un icono:</span>
+                  <span className="text-xs font-bold text-ink-muted mb-1 block">Selecciona un icono:</span>
                   <div className="flex flex-wrap gap-1">
                     {AVAILABLE_ICONS.map(({ icon }) => (
                       <button
                         key={icon}
                         type="button"
                         onClick={() => setNewCategoryIcon(icon)}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition-all ${
+                        className={cn(
+                          'w-8 h-8 rounded-lg flex items-center justify-center text-lg transition-all',
                           newCategoryIcon === icon
-                            ? 'bg-orange-500 shadow-md scale-110'
-                            : 'bg-white border border-gray-200 hover:border-orange-300'
-                        }`}
+                            ? 'bg-state-orange shadow-md scale-110'
+                            : 'bg-surface border border-border-subtle hover:border-state-orange/50'
+                        )}
                       >
                         {icon}
                       </button>
@@ -357,13 +366,14 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                   type="button"
                   onClick={handleAddCategory}
                   disabled={!newCategoryName.trim()}
-                  className={`w-full py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                  className={cn(
+                    'w-full py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all',
                     newCategoryName.trim()
-                      ? 'bg-orange-500 text-white hover:bg-orange-600'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                      ? 'bg-state-orange text-primary-foreground hover:opacity-90'
+                      : 'bg-surface-hover text-ink-muted cursor-not-allowed'
+                  )}
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="w-4 h-4" strokeWidth={1.7} />
                   Agregar "{newCategoryName || '...'}"
                 </button>
               </div>
@@ -375,11 +385,12 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
                   key={cat.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, category: cat.value })}
-                  className={`px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all flex items-center gap-2 justify-center ${
+                  className={cn(
+                    'px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all flex items-center gap-2 justify-center',
                     formData.category === cat.value
-                      ? 'border-orange-400 bg-orange-50 text-orange-700'
-                      : 'border-border hover:border-orange-200 text-gray-600'
-                  }`}
+                      ? 'border-state-orange bg-state-orange/10 text-state-orange'
+                      : 'border-border hover:border-state-orange/40 text-ink-secondary'
+                  )}
                 >
                   <span>{cat.icon}</span>
                   <span className="hidden md:inline">{cat.label}</span>
@@ -390,7 +401,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
           {/* Descripción */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-ink-secondary mb-2">
               Descripción *
             </label>
             <input
@@ -398,14 +409,17 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Ej: Reparación de cañería en baño"
-              className={`w-full px-4 py-3 rounded-xl border-2 ${errors.description ? 'border-red-300 bg-red-50' : 'border-border'} focus:border-orange-400 focus:outline-none transition-colors`}
+              className={cn(
+                'form-control w-full px-4 py-3 focus:outline-none',
+                errors.description && 'border-state-red bg-state-red/10'
+              )}
             />
-            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+            {errors.description && <p className="text-state-red text-xs mt-1">{errors.description}</p>}
           </div>
 
           {/* Proveedor */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-ink-secondary mb-2">
               Proveedor / Empresa *
             </label>
             <input
@@ -413,54 +427,62 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               value={formData.provider}
               onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
               placeholder="Ej: Plomería González"
-              className={`w-full px-4 py-3 rounded-xl border-2 ${errors.provider ? 'border-red-300 bg-red-50' : 'border-border'} focus:border-orange-400 focus:outline-none transition-colors`}
+              className={cn(
+                'form-control w-full px-4 py-3 focus:outline-none',
+                errors.provider && 'border-state-red bg-state-red/10'
+              )}
             />
-            {errors.provider && <p className="text-red-500 text-xs mt-1">{errors.provider}</p>}
+            {errors.provider && <p className="text-state-red text-xs mt-1">{errors.provider}</p>}
           </div>
 
           {/* Monto y Moneda */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-ink-secondary mb-2">
                 Monto *
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-3 text-gray-400 font-bold">$</span>
+                <span className="absolute left-4 top-3 text-ink-muted font-bold font-mono">$</span>
                 <input
                   type="number"
                   value={formData.amount || ''}
                   onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
-                  className={`w-full pl-8 pr-4 py-3 rounded-xl border-2 ${errors.amount ? 'border-red-300 bg-red-50' : 'border-border'} focus:border-orange-400 focus:outline-none transition-colors`}
+                  className={cn(
+                    'form-control w-full pl-8 pr-4 py-3 font-mono focus:outline-none',
+                    errors.amount && 'border-state-red bg-state-red/10'
+                  )}
                 />
               </div>
-              {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount}</p>}
+              {errors.amount && <p className="text-state-red text-xs mt-1">{errors.amount}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-ink-secondary mb-2">
                 Moneda
               </label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, currency: 'ARS' })}
-                  className={`flex-1 py-3 rounded-xl border-2 font-bold transition-all ${
+                  className={cn(
+                    'flex-1 py-3 rounded-xl border-2 font-bold font-mono transition-all',
                     formData.currency === 'ARS'
-                      ? 'border-blue-400 bg-blue-50 text-blue-700'
-                      : 'border-border text-gray-500 hover:border-blue-200'
-                  }`}
+                      ? 'border-state-blue bg-state-blue/10 text-state-blue'
+                      : 'border-border text-ink-muted hover:border-state-blue/40'
+                  )}
                 >
                   ARS
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, currency: 'USD' })}
-                  className={`flex-1 py-3 rounded-xl border-2 font-bold transition-all ${
+                  className={cn(
+                    'flex-1 py-3 rounded-xl border-2 font-bold font-mono transition-all',
                     formData.currency === 'USD'
-                      ? 'border-green-400 bg-green-50 text-green-700'
-                      : 'border-border text-gray-500 hover:border-green-200'
-                  }`}
+                      ? 'border-state-green bg-state-green/10 text-state-green'
+                      : 'border-border text-ink-muted hover:border-state-green/40'
+                  )}
                 >
                   USD
                 </button>
@@ -470,29 +492,31 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
           {/* Estado */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-ink-secondary mb-2">
               Estado del Pago
             </label>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, status: 'pending' })}
-                className={`flex-1 py-3 rounded-xl border-2 font-medium transition-all ${
+                className={cn(
+                  'flex-1 py-3 rounded-xl border-2 font-medium transition-all',
                   formData.status === 'pending'
-                    ? 'border-amber-400 bg-amber-50 text-amber-700'
-                    : 'border-border text-gray-500 hover:border-amber-200'
-                }`}
+                    ? 'border-state-yellow bg-state-yellow/10 text-state-yellow'
+                    : 'border-border text-ink-muted hover:border-state-yellow/40'
+                )}
               >
                 Pendiente
               </button>
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, status: 'paid' })}
-                className={`flex-1 py-3 rounded-xl border-2 font-medium transition-all ${
+                className={cn(
+                  'flex-1 py-3 rounded-xl border-2 font-medium transition-all',
                   formData.status === 'paid'
-                    ? 'border-green-400 bg-green-50 text-green-700'
-                    : 'border-border text-gray-500 hover:border-green-200'
-                }`}
+                    ? 'border-state-green bg-state-green/10 text-state-green'
+                    : 'border-border text-ink-muted hover:border-state-green/40'
+                )}
               >
                 Pagado
               </button>
@@ -501,37 +525,37 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
           {/* Upload Factura */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-ink-secondary mb-2">
               Factura / Comprobante
             </label>
 
             {receiptPreview ? (
-              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border-2 border-border">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-orange-600" />
+              <div className="flex items-center gap-3 p-4 bg-surface-elevated rounded-xl border-2 border-border">
+                <div className="w-10 h-10 rounded-lg bg-state-orange/15 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-state-orange" strokeWidth={1.7} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-800 truncate">{receiptPreview}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-medium text-ink-primary truncate">{receiptPreview}</p>
+                  <p className="text-xs text-ink-muted font-mono">
                     {receiptFile ? `${(receiptFile.size / 1024).toFixed(1)} KB` : 'Archivo adjunto'}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleRemoveFile}
-                  className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+                  className="p-2 text-state-red hover:bg-state-red/10 rounded-lg transition-colors"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" strokeWidth={1.7} />
                 </button>
               </div>
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-all"
+                className="upload-zone p-8 text-center cursor-pointer"
               >
-                <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                <p className="font-medium text-gray-700">Click para subir factura</p>
-                <p className="text-sm text-gray-500 mt-1">PDF, JPG, PNG (máx. 2MB)</p>
+                <Upload className="w-10 h-10 text-ink-muted mx-auto mb-3" strokeWidth={1.7} />
+                <p className="font-medium text-ink-secondary">Click para subir factura</p>
+                <p className="text-sm text-ink-muted mt-1">PDF, JPG, PNG (máx. 2MB)</p>
               </div>
             )}
 
@@ -544,8 +568,8 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
             />
 
             {fileError && (
-              <div className="flex items-center gap-2 mt-2 text-red-600">
-                <AlertCircle className="w-4 h-4" />
+              <div className="flex items-center gap-2 mt-2 text-state-red">
+                <AlertCircle className="w-4 h-4" strokeWidth={1.7} />
                 <span className="text-sm">{fileError}</span>
               </div>
             )}
@@ -553,7 +577,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
           {/* Notas */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-ink-secondary mb-2">
               Notas adicionales
             </label>
             <textarea
@@ -561,26 +585,24 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Observaciones, detalles adicionales..."
               rows={3}
-              className="w-full px-4 py-3 rounded-xl border-2 border-border focus:border-orange-400 focus:outline-none transition-colors resize-none"
+              className="form-control w-full px-4 py-3 focus:outline-none resize-none"
             />
           </div>
         </form>
 
         {/* Footer */}
-        <div className="p-6 bg-gray-50 border-t border-border flex gap-3 flex-shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-100 transition-colors"
-          >
+        <div className="p-6 bg-surface-elevated border-t border-border flex gap-3 flex-shrink-0">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
             onClick={handleSubmit}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:from-orange-600 hover:to-red-600 transition-all shadow-lg"
+            className="flex-1 bg-gradient-to-r from-state-orange to-state-red border-none shadow-lg hover:opacity-90"
           >
             {expense ? 'Guardar Cambios' : 'Registrar Gasto'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

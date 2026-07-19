@@ -1,13 +1,12 @@
 from pydantic_settings import BaseSettings
 from typing import List, Optional, Union
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import field_validator
 import json
 
 class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
-    LOG_LEVEL: str = "INFO"
 
     # Database
     POSTGRES_HOST: str
@@ -67,7 +66,6 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000"
     ]
-    CORS_CREDENTIALS: bool = True
 
     @field_validator("CORS_ORIGINS", mode="before")
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
@@ -82,9 +80,6 @@ class Settings(BaseSettings):
                 # If JSON decode fails, return as single item list or split by comma if applicable
                 return [i.strip() for i in v.split(",")] if "," in v else [v]
         return []
-
-    # AI
-    OPENROUTER_API_KEY: Optional[str] = None
 
     class Config:
         env_file = (".env", "/run/secrets/backend.env")

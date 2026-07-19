@@ -5,6 +5,11 @@ import { PropertyModal } from '../components/PropertyModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { DirectvManager } from '../components/DirectvManager';
 import { TaskManager } from '../components/TaskManager';
+import { KanagawaCard } from '../components/ui/KanagawaCard';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { kanagawaAssets, pickThemedArtwork } from '../theme/kanagawa-assets';
+import { useTheme } from '../theme/ThemeProvider';
 
 interface Property {
   id: string;
@@ -31,9 +36,12 @@ interface Booking {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; chip: string }> = {
-  available: { label: 'Disponible', chip: 'bg-[#e4f3ea] text-[#2f8f4e] border-[#bfe3cc]' },
-  occupied: { label: 'Ocupada', chip: 'bg-[#e6eefc] text-[#2563eb] border-[#c7d9f9]' },
-  maintenance: { label: 'Mantenimiento', chip: 'bg-[#fdf0e2] text-[#c2410c] border-[#f6ddb5]' },
+  available: { label: 'Disponible', chip: 'status-available' },
+  occupied: { label: 'Ocupada', chip: 'status-occupied' },
+  maintenance: {
+    label: 'Mantenimiento',
+    chip: 'border border-[rgba(212,178,111,0.28)] bg-[rgba(212,178,111,0.16)] text-state-yellow',
+  },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -53,6 +61,7 @@ const nightsBetween = (checkIn: string, checkOut: string) => {
 };
 
 export const Properties = () => {
+  const { theme } = useTheme();
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,18 +214,20 @@ export const Properties = () => {
     return amenities.slice(0, 4).map((a) => labels[a] || a).join(', ') + (amenities.length > 4 ? '...' : '');
   };
 
+  const PropertyArt = pickThemedArtwork(kanagawaAssets.cards.propertyLandscape, theme);
+
   return (
     <div className="space-y-6 font-sans">
       {errorMessage && (
-        <div className="bg-[#fdecec] border border-[#f7d2d2] rounded-xl p-4 flex items-start gap-3 animate-in fade-in">
-          <div className="w-8 h-8 rounded-lg bg-[#fdecec] flex items-center justify-center flex-shrink-0">
-            <span className="text-[#dc2626] font-bold">!</span>
+        <div className="bg-[rgba(166,77,69,0.14)] border border-[rgba(166,77,69,0.28)] rounded-xl p-4 flex items-start gap-3 animate-in fade-in">
+          <div className="w-8 h-8 rounded-lg bg-[rgba(166,77,69,0.14)] flex items-center justify-center flex-shrink-0">
+            <span className="text-state-red-strong font-bold">!</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-semibold text-[#dc2626] mb-1">Error</h4>
-            <p className="text-sm text-[#dc2626]">{errorMessage}</p>
+            <h4 className="font-semibold text-state-red-strong mb-1">Error</h4>
+            <p className="text-sm text-state-red-strong">{errorMessage}</p>
           </div>
-          <button onClick={() => setErrorMessage(null)} className="text-[#dc2626]/60 hover:text-[#dc2626]">✕</button>
+          <button onClick={() => setErrorMessage(null)} className="text-state-red-strong/60 hover:text-state-red-strong">✕</button>
         </div>
       )}
 
@@ -230,10 +241,10 @@ export const Properties = () => {
             <button
               key={chip.value}
               onClick={() => setStatusFilter(chip.value)}
-              className={`px-4 py-2 rounded-[11px] text-sm font-semibold transition-all border ${
+              className={`px-4 py-2 rounded-[11px] text-sm font-semibold transition-all duration-fast ease-kanagawa border ${
                 statusFilter === chip.value
-                  ? 'bg-brand-600 text-white border-brand-600 shadow-btn-primary'
-                  : 'bg-white text-[#5c3a8c] border-[#e0d7ef] hover:bg-brand-50'
+                  ? 'bg-primary text-primary-foreground border-primary shadow-btn-primary'
+                  : 'bg-surface text-primary border-border hover:bg-surface-hover'
               }`}
             >
               {chip.label}
@@ -242,88 +253,85 @@ export const Properties = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsTaskManagerOpen(true)}
-            className="px-4 py-2.5 bg-white border border-[#e0d7ef] text-[#5c3a8c] rounded-[11px] hover:bg-brand-50 transition-all flex items-center gap-2 font-semibold text-sm"
-          >
-            <ListTodo className="w-4 h-4" />
+          <Button variant="secondary" onClick={() => setIsTaskManagerOpen(true)}>
+            <ListTodo className="w-4 h-4" strokeWidth={1.7} />
             <span className="hidden md:inline">Tareas</span>
-          </button>
-          <button
-            onClick={() => { setEditingProperty(undefined); setIsModalOpen(true); }}
-            className="px-4 py-2.5 bg-brand-600 hover:bg-[#6b4d95] text-white rounded-[11px] shadow-btn-primary transition-all hover:-translate-y-px flex items-center gap-2 font-semibold text-sm"
-          >
-            <Plus className="w-4 h-4" />
+          </Button>
+          <Button variant="primary" onClick={() => { setEditingProperty(undefined); setIsModalOpen(true); }}>
+            <Plus className="w-4 h-4" strokeWidth={1.7} />
             <span className="hidden md:inline">Agregar propiedad</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center p-12 bg-white rounded-2xl border border-[#e7dff3]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
-          <p className="mt-4 text-[#7b6b95]">Cargando propiedades...</p>
+        <div className="text-center p-12 bg-surface-elevated rounded-2xl border border-border-subtle">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-ink-secondary">Cargando propiedades...</p>
         </div>
       ) : filteredProperties.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 border border-[#e7dff3] text-center">
-          <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-brand-600" />
-          </div>
-          <h2 className="font-display text-2xl font-extrabold text-[#121325] mb-2">No hay propiedades</h2>
-          <p className="text-[#7b6b95] mb-6">Agrega tu primera propiedad para comenzar</p>
-          <button
-            onClick={() => { setEditingProperty(undefined); setIsModalOpen(true); }}
-            className="px-6 py-3 bg-brand-600 hover:bg-[#6b4d95] text-white rounded-[11px] shadow-btn-primary transition-all inline-flex items-center gap-2 font-semibold"
-          >
-            <Plus className="w-5 h-5" />
-            Crear primera propiedad
-          </button>
-        </div>
+        <KanagawaCard className="text-center">
+          <EmptyState
+            icon={<Building2 className="w-8 h-8" strokeWidth={1.7} />}
+            title="No hay propiedades"
+            description="Agrega tu primera propiedad para comenzar"
+            action={
+              <Button variant="primary" onClick={() => { setEditingProperty(undefined); setIsModalOpen(true); }}>
+                <Plus className="w-5 h-5" strokeWidth={1.7} />
+                Crear primera propiedad
+              </Button>
+            }
+          />
+        </KanagawaCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">
           {filteredProperties.map((property) => {
-            const status = STATUS_CONFIG[property.status] || { label: property.status, chip: 'bg-gray-100 text-gray-600 border-gray-200' };
+            const status = STATUS_CONFIG[property.status] || {
+              label: property.status,
+              chip: 'border border-border-subtle bg-surface-elevated text-ink-secondary',
+            };
             const avgPrice = getAvgPricePerNight(property.id);
             const occupancy = getMonthOccupancy(property.id);
 
             return (
-              <div
+              <KanagawaCard
                 key={property.id}
-                className="bg-white rounded-2xl border border-[#e7dff3] shadow-card hover:shadow-card-hover hover:-translate-y-[3px] transition-all duration-300 overflow-hidden flex flex-col"
+                padded={false}
+                className="hover:shadow-card-hover hover:-translate-y-[3px] transition-all duration-300 overflow-hidden flex flex-col"
               >
-                <div className="relative h-24 bg-gradient-to-br from-brand-300 to-brand-600 flex items-center justify-center">
-                  <Building2 className="w-10 h-10 text-white/40" strokeWidth={1.5} />
-                  <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${status.chip}`}>
+                <div className="relative property-card-image w-full overflow-hidden">
+                  <PropertyArt className="h-full w-full opacity-70" />
+                  <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${status.chip}`}>
                     {status.label}
                   </span>
                 </div>
 
                 <div className="p-[18px] flex-1 flex flex-col">
-                  <h3 className="font-display text-base font-extrabold text-[#121325] mb-1">{property.name}</h3>
-                  <p className="text-xs text-[#7b6b95] flex items-center gap-1 mb-3">
-                    <MapPin className="w-3 h-3" />
+                  <h3 className="font-display text-base font-extrabold text-ink-primary mb-1">{property.name}</h3>
+                  <p className="text-xs text-ink-secondary flex items-center gap-1 mb-3">
+                    <MapPin className="w-3 h-3" strokeWidth={1.7} />
                     {[property.city, property.state].filter(Boolean).join(', ') || property.address}
                     {' · '}{TYPE_LABELS[property.property_type] || property.property_type}
                   </p>
 
-                  <div className="flex items-center text-sm mb-3 divide-x divide-[#eee5f6]">
+                  <div className="flex items-center text-sm mb-3 divide-x divide-border-subtle">
                     <div className="flex-1 text-center">
-                      <p className="font-display text-lg font-extrabold text-[#121325] leading-none">{property.capacity}</p>
-                      <p className="text-[10px] text-[#9583b3] uppercase font-bold tracking-wide mt-1">Huésp.</p>
+                      <p className="font-display text-lg font-extrabold text-ink-primary leading-none">{property.capacity}</p>
+                      <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wide mt-1">Huésp.</p>
                     </div>
                     <div className="flex-1 text-center">
-                      <p className="font-display text-lg font-extrabold text-[#121325] leading-none">{property.bedrooms}</p>
-                      <p className="text-[10px] text-[#9583b3] uppercase font-bold tracking-wide mt-1">Dorm.</p>
+                      <p className="font-display text-lg font-extrabold text-ink-primary leading-none">{property.bedrooms}</p>
+                      <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wide mt-1">Dorm.</p>
                     </div>
                     <div className="flex-1 text-center">
-                      <p className="font-display text-lg font-extrabold text-[#121325] leading-none">{property.bathrooms}</p>
-                      <p className="text-[10px] text-[#9583b3] uppercase font-bold tracking-wide mt-1">Baños</p>
+                      <p className="font-display text-lg font-extrabold text-ink-primary leading-none">{property.bathrooms}</p>
+                      <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wide mt-1">Baños</p>
                     </div>
                   </div>
 
                   {property.amenities && property.amenities.length > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-[#7b6b95] border-t border-[#eee5f6] pt-2 mb-3">
-                      <Check className="w-3 h-3 text-[#2f8f4e]" />
+                    <div className="flex items-center gap-1 text-xs text-ink-secondary border-t border-border-subtle pt-2 mb-3">
+                      <Check className="w-3 h-3 text-state-green-strong" strokeWidth={1.7} />
                       <span className="truncate">{getAmenitiesText(property.amenities)}</span>
                     </div>
                   )}
@@ -332,47 +340,47 @@ export const Properties = () => {
                     <div>
                       {avgPrice !== null ? (
                         <>
-                          <p className="font-display text-base font-extrabold text-[#5c3a8c] leading-none">
-                            USD {Math.round(avgPrice).toLocaleString()} <span className="font-sans text-xs font-normal text-[#9583b3]">/noche</span>
+                          <p className="font-mono text-base font-extrabold text-primary leading-none">
+                            USD {Math.round(avgPrice).toLocaleString()} <span className="font-sans text-xs font-normal text-ink-muted">/noche</span>
                           </p>
-                          <p className="text-[9px] text-[#9583b3] font-semibold uppercase tracking-wide mt-0.5">Promedio histórico</p>
+                          <p className="text-[9px] text-ink-muted font-semibold uppercase tracking-wide mt-0.5">Promedio histórico</p>
                         </>
                       ) : (
-                        <p className="text-xs text-[#9583b3] font-medium">Sin historial de reservas</p>
+                        <p className="text-xs text-ink-muted font-medium">Sin historial de reservas</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-[#9583b3] font-bold uppercase tracking-wide">Ocupación</p>
-                      <p className="font-display text-sm font-extrabold text-[#2f8f4e] leading-none">{occupancy}%</p>
+                      <p className="text-[10px] text-ink-muted font-bold uppercase tracking-wide">Ocupación</p>
+                      <p className="font-display text-sm font-extrabold text-state-green-strong leading-none">{occupancy}%</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-2 border-t border-[#eee5f6] p-3">
+                <div className="flex gap-2 border-t border-border-subtle p-3">
                   <button
                     onClick={() => handleOpenDirectv(property)}
                     title="Gestionar DirecTV"
-                    className="flex-1 px-3 py-2 bg-[#e6eefc] hover:bg-[#d6e4fb] text-[#2563eb] rounded-[10px] font-semibold text-sm transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 px-3 py-2 bg-[rgba(118,102,154,0.14)] hover:bg-[rgba(118,102,154,0.24)] text-state-blue rounded-[10px] font-semibold text-sm transition-colors duration-fast ease-kanagawa flex items-center justify-center gap-1.5"
                   >
-                    <Tv className="w-4 h-4" />
+                    <Tv className="w-4 h-4" strokeWidth={1.7} />
                     TV
                   </button>
                   <button
                     onClick={() => handleEditProperty(property)}
-                    className="flex-1 px-3 py-2 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-[10px] font-semibold text-sm transition-colors flex items-center justify-center gap-1.5"
+                    className="flex-1 px-3 py-2 bg-surface-violet hover:bg-surface-hover text-primary rounded-[10px] font-semibold text-sm transition-colors duration-fast ease-kanagawa flex items-center justify-center gap-1.5"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="w-4 h-4" strokeWidth={1.7} />
                     Editar
                   </button>
                   <button
                     onClick={() => handleDeleteClick(property)}
                     title="Eliminar"
-                    className="px-3 py-2 bg-[#fdecec] hover:bg-[#fbd9d9] text-[#dc2626] rounded-[10px] transition-colors flex items-center justify-center"
+                    className="px-3 py-2 bg-[rgba(166,77,69,0.14)] hover:bg-[rgba(166,77,69,0.24)] text-state-red-strong rounded-[10px] transition-colors duration-fast ease-kanagawa flex items-center justify-center"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" strokeWidth={1.7} />
                   </button>
                 </div>
-              </div>
+              </KanagawaCard>
             );
           })}
         </div>

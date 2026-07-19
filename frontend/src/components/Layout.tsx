@@ -7,20 +7,31 @@ import {
   Users,
   Plus,
   LogOut,
-  Menu,
   X,
   Settings,
   Package,
   DollarSign,
   FileSpreadsheet,
   Wrench,
-  Search,
   Bell,
+  MoreHorizontal,
 } from 'lucide-react';
 import { BookingModal } from './BookingModal';
 import { ConfirmModal } from './ConfirmModal';
 import { createBooking, getBookings } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
+import { KanagawaBackground } from './layout/KanagawaBackground';
+import { ThemeToggle } from './ui/ThemeToggle';
+import { useTheme } from '../theme/ThemeProvider';
+
+const ToriiIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+    <path d="M2 7L4 4h16l2 3" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3.5 9h17" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" />
+    <path d="M6.5 9v11M17.5 9v11" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" />
+    <path d="M12 9v2" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" />
+  </svg>
+);
 
 interface CheckoutToday {
   id: string;
@@ -59,6 +70,8 @@ const NAV_GESTION: NavItem[] = [
   { path: '/settings', icon: Settings, label: 'Configuración', disabled: true },
 ];
 
+const NAV_ALL: NavItem[] = [...NAV_PRINCIPAL, ...NAV_GESTION];
+
 const PAGE_HEADERS: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Inicio', subtitle: 'Resumen general de tu operación' },
   '/calendar': { title: 'Calendario', subtitle: 'Reservas y disponibilidad' },
@@ -74,12 +87,12 @@ const PAGE_HEADERS: Record<string, { title: string; subtitle: string }> = {
 export const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<{ name: string; picture: string } | null>(null);
   const [checkoutsToday, setCheckoutsToday] = useState<CheckoutToday[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -148,7 +161,8 @@ export const Layout = () => {
       subtitle: '',
     };
 
-  const renderNavItem = (item: NavItem) => {
+  /** Horizontal pill nav item, used in the desktop header bar. */
+  const renderHeaderNavItem = (item: NavItem) => {
     const isActive = location.pathname === item.path;
     const Icon = item.icon;
 
@@ -157,11 +171,41 @@ export const Layout = () => {
         <div
           key={item.path}
           aria-disabled="true"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-[11px] opacity-40 cursor-not-allowed"
+          className="header-nav-link opacity-40 cursor-not-allowed"
         >
-          <Icon className="w-[18px] h-[18px] text-[#c9bce0]" />
-          <span className="text-sm font-semibold text-[#c9bce0] flex-1">{item.label}</span>
-          <span className="text-[9px] font-bold uppercase tracking-wide bg-white/10 text-[#c9bce0] px-1.5 py-0.5 rounded">
+          <Icon className="w-3.5 h-3.5" strokeWidth={1.7} />
+          <span>{item.label}</span>
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        key={item.path}
+        to={item.path}
+        className={`header-nav-link ${isActive ? 'header-nav-link-active' : ''}`}
+      >
+        <Icon className="w-3.5 h-3.5" strokeWidth={1.7} />
+        <span>{item.label}</span>
+      </Link>
+    );
+  };
+
+  /** Vertical nav item, used in the mobile slide-in menu. */
+  const renderMobileNavItem = (item: NavItem) => {
+    const isActive = location.pathname === item.path;
+    const Icon = item.icon;
+
+    if (item.disabled) {
+      return (
+        <div
+          key={item.path}
+          aria-disabled="true"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-md opacity-40 cursor-not-allowed"
+        >
+          <Icon className="w-[18px] h-[18px] text-ink-violet" strokeWidth={1.7} />
+          <span className="text-sm font-semibold text-ink-violet flex-1">{item.label}</span>
+          <span className="text-[9px] font-bold uppercase tracking-wide bg-white/10 text-ink-violet px-1.5 py-0.5 rounded">
             Pronto
           </span>
         </div>
@@ -172,52 +216,52 @@ export const Layout = () => {
       <Link
         key={item.path}
         to={item.path}
-        onClick={() => setIsSidebarOpen(false)}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-[11px] text-sm font-semibold transition-colors ${
+        onClick={() => setIsMobileMenuOpen(false)}
+        className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-colors duration-fast ease-kanagawa ${
           isActive
-            ? 'bg-white/[.13] text-white'
-            : 'text-[#c9bce0] hover:bg-white/5 hover:text-white'
+            ? 'sidebar-link-active'
+            : 'text-ink-violet hover:bg-white/5 hover:text-ink-primary'
         }`}
       >
-        <Icon className="w-[18px] h-[18px]" />
+        <Icon className="w-[18px] h-[18px]" strokeWidth={1.7} />
         <span>{item.label}</span>
       </Link>
     );
   };
 
-  const sidebarContent = (
-    <div className="flex flex-col h-full relative overflow-hidden">
+  const mobileMenuContent = (
+    <div className="flex flex-col flex-1 min-h-0 relative overflow-hidden">
       {/* Decorative glow, non-interactive */}
-      <div className="absolute -top-16 -right-20 w-56 h-56 bg-[#ad8ed2]/20 rounded-full blur-[70px] pointer-events-none" />
+      <div className="absolute -top-16 -right-20 w-56 h-56 bg-primary/20 rounded-full blur-[70px] pointer-events-none" aria-hidden="true" />
 
       <div className="relative flex items-center gap-3 px-5 pt-6 pb-8">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ad8ed2] to-[#7c5ca8] flex items-center justify-center flex-shrink-0">
-          <Building2 className="w-5 h-5 text-white" />
+        <div className="w-10 h-10 rounded-md bg-gradient-to-br from-cta-hover to-cta flex items-center justify-center flex-shrink-0">
+          <ToriiIcon className="w-5 h-5 text-primary-foreground" />
         </div>
         <div>
-          <p className="font-display font-extrabold text-white leading-tight">Valeria</p>
-          <p className="text-[10px] text-[#b9a9d6]">Administración</p>
+          <p className="font-display font-bold text-lg text-ink-primary leading-tight">Valeria</p>
+          <p className="text-[10px] text-ink-violet">Gestión inmobiliaria</p>
         </div>
       </div>
 
       <nav className="relative flex-1 px-3 space-y-6 overflow-y-auto">
         <div>
-          <p className="px-3 text-[10px] font-bold uppercase tracking-[.16em] text-[#8f7db0] mb-2">
+          <p className="px-3 text-[10px] font-bold uppercase tracking-[.16em] text-ink-violet/80 mb-2">
             Principal
           </p>
-          <div className="space-y-1">{NAV_PRINCIPAL.map(renderNavItem)}</div>
+          <div className="space-y-1">{NAV_PRINCIPAL.map(renderMobileNavItem)}</div>
         </div>
         <div>
-          <p className="px-3 text-[10px] font-bold uppercase tracking-[.16em] text-[#8f7db0] mb-2">
+          <p className="px-3 text-[10px] font-bold uppercase tracking-[.16em] text-ink-violet/80 mb-2">
             Gestión
           </p>
-          <div className="space-y-1">{NAV_GESTION.map(renderNavItem)}</div>
+          <div className="space-y-1">{NAV_GESTION.map(renderMobileNavItem)}</div>
         </div>
       </nav>
 
       <div className="relative p-3 mt-auto">
-        <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-[11px] bg-gradient-to-br from-[#ad8ed2] to-[#7c5ca8] flex items-center justify-center font-bold text-white text-sm overflow-hidden flex-shrink-0">
+        <div className="bg-white/5 border border-white/10 rounded-md p-3 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-md bg-gradient-to-br from-primary-soft to-primary flex items-center justify-center font-bold text-primary-foreground text-sm overflow-hidden flex-shrink-0">
             {user?.picture ? (
               <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
             ) : (
@@ -225,14 +269,14 @@ export const Layout = () => {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white truncate">{user?.name || 'Usuario'}</p>
-            <p className="text-[10px] text-[#b9a9d6]">Propietaria</p>
+            <p className="text-sm font-bold text-ink-primary truncate">{user?.name || 'Usuario'}</p>
+            <p className="text-[10px] text-ink-violet">Propietaria</p>
           </div>
           <button
             onClick={() => setIsLogoutConfirmOpen(true)}
-            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors flex-shrink-0"
+            className="w-8 h-8 rounded-md hover:bg-white/10 flex items-center justify-center transition-colors duration-fast ease-kanagawa flex-shrink-0"
           >
-            <LogOut className="w-4 h-4 text-[#c9bce0]" />
+            <LogOut className="w-4 h-4 text-ink-violet" strokeWidth={1.7} />
           </button>
         </div>
       </div>
@@ -240,69 +284,62 @@ export const Layout = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#eeebf4]">
-      {/* Desktop Sidebar (always visible, fixed) */}
-      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:w-[250px] bg-gradient-to-b from-[#3a2459] via-[#2a1a45] to-[#22133a] z-40">
-        {sidebarContent}
-      </aside>
+    <div data-theme={theme} className="app-shell min-h-screen relative">
+      <KanagawaBackground theme={theme} />
 
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
+      {/* Mobile menu overlay */}
+      {isMobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-40 md:hidden"
-            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 w-72 bg-gradient-to-b from-[#3a2459] via-[#2a1a45] to-[#22133a] z-50 md:hidden animate-in slide-in-from-left duration-150 flex flex-col">
+          <div className="kanagawa-sidebar fixed inset-x-0 bottom-0 z-50 lg:hidden animate-in slide-in-from-bottom duration-200 flex flex-col max-h-[75vh] rounded-t-2xl border-t border-border-subtle shadow-2xl overflow-hidden">
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0" aria-hidden="true">
+              <div className="w-10 h-1 rounded-full bg-white/15" />
+            </div>
             <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center z-10"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-md bg-white/10 flex items-center justify-center z-10"
             >
-              <X className="w-4 h-4 text-white" />
+              <X className="w-4 h-4 text-ink-primary" strokeWidth={1.7} />
             </button>
-            {sidebarContent}
+            {mobileMenuContent}
           </div>
         </>
       )}
 
-      <div className="md:pl-[250px] flex flex-col min-h-screen">
-        {/* Shared Topbar */}
-        <header className="sticky top-0 z-30 bg-white/75 backdrop-blur-md border-b border-[#e0d7ef] px-4 md:px-8 py-3 md:py-0 md:h-[72px] flex items-center gap-3 md:gap-4">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden w-10 h-10 rounded-[11px] bg-white border border-[#e0d7ef] flex items-center justify-center flex-shrink-0"
-          >
-            <Menu className="w-5 h-5 text-[#5c3a8c]" />
-          </button>
+      <div className="flex flex-col min-h-screen dashboard-content">
+        {/* Shared header — logo, horizontal nav, search and actions */}
+        <header className="kanagawa-topbar sticky top-0 z-30 px-4 md:px-6 py-3 lg:py-0 lg:h-[72px] flex items-center gap-2 md:gap-3">
+          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-9 h-9 rounded-md bg-gradient-to-br from-cta-hover to-cta flex items-center justify-center flex-shrink-0">
+              <ToriiIcon className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <span className="hidden sm:inline font-display font-bold text-lg text-ink-primary">Valeria</span>
+          </Link>
 
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display font-extrabold text-lg md:text-[22px] text-[#121325] truncate">
+          <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto flex-1 min-w-0">
+            {NAV_ALL.map(renderHeaderNavItem)}
+          </nav>
+
+          {/* Mobile/tablet page title — the active pill communicates this on desktop */}
+          <div className="flex-1 min-w-0 lg:hidden">
+            <h1 className="font-display font-semibold text-lg text-ink-primary truncate">
               {pageHeader.title}
             </h1>
-            {pageHeader.subtitle && (
-              <p className="hidden md:block text-[12px] text-[#7b6b95]">{pageHeader.subtitle}</p>
-            )}
           </div>
 
-          <div className="hidden lg:flex items-center gap-2 bg-white border border-[#e0d7ef] rounded-[11px] px-4 py-2 w-[240px] flex-shrink-0 focus-within:border-[#ad8ed2] focus-within:ring-2 focus-within:ring-[#7c5ca8]/15 transition-shadow">
-            <Search className="w-4 h-4 text-[#9583b3] flex-shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar reserva, cliente..."
-              className="bg-transparent border-none outline-none text-sm text-[#121325] placeholder:text-[#9583b3] w-full"
-            />
-          </div>
+          <ThemeToggle />
 
           <div className="relative flex-shrink-0">
             <button
               onClick={() => setIsNotifOpen((open) => !open)}
-              className="relative w-[42px] h-[42px] rounded-[11px] bg-white border border-[#e0d7ef] hover:bg-[#faf8fd] flex items-center justify-center transition-colors"
+              className="relative w-9 h-9 rounded-md bg-surface border border-border-subtle hover:bg-surface-hover flex items-center justify-center transition-colors duration-fast ease-kanagawa flex-shrink-0"
             >
-              <Bell className="w-5 h-5 text-[#5c3a8c]" />
+              <Bell className="w-5 h-5 text-primary" strokeWidth={1.7} />
               {checkoutsToday.length > 0 && (
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#f97316]" />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-state-orange" />
               )}
             </button>
 
@@ -312,14 +349,14 @@ export const Layout = () => {
                   className="fixed inset-0 z-40"
                   onClick={() => setIsNotifOpen(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-[14px] border border-[#e7dff3] shadow-[0_16px_36px_rgba(92,58,140,.14)] z-50 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-[#eee5f6]">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#9583b3]">
+                <div className="kanagawa-card absolute right-0 top-full mt-2 w-72 z-50 overflow-hidden p-0">
+                  <div className="px-4 py-3 border-b border-border-subtle">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-ink-muted">
                       Checkouts de hoy
                     </p>
                   </div>
                   {checkoutsToday.length === 0 ? (
-                    <p className="px-4 py-5 text-sm text-[#7b6b95] text-center">Sin checkouts hoy</p>
+                    <p className="px-4 py-5 text-sm text-ink-secondary text-center">Sin checkouts hoy</p>
                   ) : (
                     <div className="max-h-72 overflow-y-auto">
                       {checkoutsToday.map((booking) => (
@@ -329,12 +366,12 @@ export const Layout = () => {
                             setIsNotifOpen(false);
                             navigate('/calendar');
                           }}
-                          className="w-full text-left px-4 py-3 hover:bg-[#faf8fd] transition-colors border-b border-[#f3eefa] last:border-b-0"
+                          className="w-full text-left px-4 py-3 hover:bg-surface-hover transition-colors duration-fast ease-kanagawa border-b border-border-subtle last:border-b-0"
                         >
-                          <p className="text-sm font-semibold text-[#121325]">
+                          <p className="text-sm font-semibold text-ink-primary">
                             {booking.client_name || 'Cliente'}
                           </p>
-                          <p className="text-xs text-[#7b6b95]">{booking.property_name || 'Propiedad'}</p>
+                          <p className="text-xs text-ink-secondary">{booking.property_name || 'Propiedad'}</p>
                         </button>
                       ))}
                     </div>
@@ -346,20 +383,32 @@ export const Layout = () => {
 
           <button
             onClick={openBookingModal}
-            className="flex items-center gap-2 bg-[#7c5ca8] hover:bg-[#6b4d95] hover:-translate-y-px text-white font-semibold px-4 py-2.5 rounded-[11px] shadow-[0_8px_22px_rgba(92,58,140,.32)] transition-all flex-shrink-0"
+            className="button-primary flex items-center gap-1.5 font-semibold px-3 py-2 text-sm flex-shrink-0 hover:-translate-y-px transition-all duration-fast ease-kanagawa"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" strokeWidth={1.7} />
             <span className="hidden sm:inline">Nueva reserva</span>
+          </button>
+
+          <button
+            onClick={() => setIsLogoutConfirmOpen(true)}
+            title={user?.name || 'Usuario'}
+            className="hidden lg:flex w-9 h-9 rounded-full bg-gradient-to-br from-primary-soft to-primary items-center justify-center font-bold text-primary-foreground text-sm overflow-hidden flex-shrink-0"
+          >
+            {user?.picture ? (
+              <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              user?.name?.charAt(0).toUpperCase() || 'V'
+            )}
           </button>
         </header>
 
-        <main className="flex-1 w-full max-w-[1220px] mx-auto px-4 md:px-[30px] pt-4 md:pt-[26px] pb-28 md:pb-10">
+        <main className="flex-1 w-full max-w-[1220px] mx-auto px-4 md:px-[30px] pt-4 md:pt-[26px] pb-28 lg:pb-10">
           <Outlet />
         </main>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#25163a] px-6 py-4 rounded-t-3xl shadow-2xl z-30">
+      <div className="kanagawa-sidebar lg:hidden fixed bottom-0 left-0 right-0 px-4 py-4 rounded-t-xl shadow-2xl z-30">
         <div className="flex justify-between items-center relative">
           {NAV_PRINCIPAL.slice(0, 2).map((item) => {
             const isActive = location.pathname === item.path;
@@ -368,43 +417,55 @@ export const Layout = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-1 transition-colors ${
-                  isActive ? 'text-white' : 'text-[#c9bce0] hover:text-white'
+                className={`flex flex-col items-center gap-1 transition-colors duration-fast ease-kanagawa ${
+                  isActive ? 'text-ink-primary' : 'text-ink-violet hover:text-ink-primary'
                 }`}
               >
-                <Icon className={`w-6 h-6 ${isActive ? 'fill-current' : ''}`} />
+                <Icon className="w-6 h-6" strokeWidth={1.7} />
                 <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
             );
           })}
 
-          <div className="w-12"></div>
+          <div className="w-10"></div>
 
-          <div className="absolute left-1/2 -top-10 -translate-x-1/2">
+          <div className="absolute left-1/2 -top-7 -translate-x-1/2">
             <button
               onClick={openBookingModal}
-              className="w-16 h-16 bg-[#7c5ca8] rounded-3xl flex items-center justify-center shadow-lg shadow-[#3a2459]/40 hover:scale-105 active:scale-95 transition-all text-white"
+              className="button-primary w-12 h-12 rounded-xl flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all duration-fast ease-kanagawa"
             >
-              <Plus className="w-8 h-8" />
+              <Plus className="w-6 h-6" strokeWidth={1.7} />
             </button>
           </div>
 
-          {NAV_PRINCIPAL.slice(2, 4).map((item) => {
+          {NAV_PRINCIPAL.slice(2, 3).map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-1 transition-colors ${
-                  isActive ? 'text-white' : 'text-[#c9bce0] hover:text-white'
+                className={`flex flex-col items-center gap-1 transition-colors duration-fast ease-kanagawa ${
+                  isActive ? 'text-ink-primary' : 'text-ink-violet hover:text-ink-primary'
                 }`}
               >
-                <Icon className={`w-6 h-6 ${isActive ? 'fill-current' : ''}`} />
+                <Icon className="w-6 h-6" strokeWidth={1.7} />
                 <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
             );
           })}
+
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className={`flex flex-col items-center gap-1 transition-colors duration-fast ease-kanagawa ${
+              [...NAV_GESTION, NAV_PRINCIPAL[3]].some((item) => location.pathname === item.path)
+                ? 'text-ink-primary'
+                : 'text-ink-violet hover:text-ink-primary'
+            }`}
+          >
+            <MoreHorizontal className="w-6 h-6" strokeWidth={1.7} />
+            <span className="text-[10px] font-medium">Más</span>
+          </button>
         </div>
       </div>
 

@@ -1,7 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, type ReactNode } from 'react';
 import { TrendingUp, TrendingDown, Download, Home, User } from 'lucide-react';
 import { getAccountingStats, getBookings, getDashboardStats, getExpenses } from '../services/api';
 import { Pagination } from '../components/Pagination';
+import { KanagawaCard, type KanagawaCardTone } from '../components/ui/KanagawaCard';
+import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
+import { kanagawaAssets } from '../theme/kanagawa-assets';
 
 const PAGE_SIZE = 10;
 
@@ -141,28 +145,30 @@ export const Finance = () => {
   const KpiCard = useMemo(
     () =>
       ({
-        emoji,
+        icon,
         title,
         value,
+        valueClassName,
         breakdown,
-        bg,
-        valueColor,
+        tone,
+        artwork,
       }: {
-        emoji: string;
+        icon: ReactNode;
         title: string;
         value: string;
+        valueClassName: string;
         breakdown: string;
-        bg: string;
-        valueColor: string;
+        tone: KanagawaCardTone;
+        artwork: typeof kanagawaAssets.cards.pesos;
       }) => (
-        <div className={`rounded-2xl p-6 border ${bg}`}>
+        <KanagawaCard tone={tone} artwork={artwork}>
           <div className="flex items-start justify-between mb-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-[#7b6b95]">{title}</p>
-            <span className="text-xl leading-none">{emoji}</span>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{title}</p>
+            {icon}
           </div>
-          <p className={`font-display font-extrabold text-[27px] tracking-tight leading-none ${valueColor}`}>{value}</p>
-          <p className="text-xs font-semibold mt-2 text-[#7b6b95]">{breakdown}</p>
-        </div>
+          <p className={`font-mono font-extrabold text-[27px] tracking-tight leading-none ${valueClassName}`}>{value}</p>
+          <p className="text-xs font-semibold mt-2 text-ink-secondary">{breakdown}</p>
+        </KanagawaCard>
       ),
     []
   );
@@ -170,7 +176,7 @@ export const Finance = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -186,50 +192,46 @@ export const Finance = () => {
       {/* KPI cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard
-          emoji="🇦🇷"
+          icon={<span className="text-xl leading-none">🇦🇷</span>}
           title="Recaudado en pesos"
           value={`$${dashboardStats.total_revenue_month_ars.toLocaleString()}`}
+          valueClassName="text-state-blue"
           breakdown={`Anticipos $${dashboardStats.total_advance_month_ars.toLocaleString()} · Saldos $${saldosArs.toLocaleString()}`}
-          bg="bg-[#eaf1fd] border-[#d6e4fb]"
-          valueColor="text-[#1d4ed8]"
+          tone="blue"
+          artwork={kanagawaAssets.cards.pesos}
         />
         <KpiCard
-          emoji="💵"
+          icon={<span className="text-xl leading-none">💵</span>}
           title="Recaudado en dólares"
           value={`U$D ${dashboardStats.total_revenue_month_usd.toLocaleString()}`}
+          valueClassName="text-state-green-strong"
           breakdown={`Anticipos U$D ${dashboardStats.total_advance_month_usd.toLocaleString()} · Saldos U$D ${saldosUsd.toLocaleString()}`}
-          bg="bg-[#e7f5ec] border-[#cdeadb]"
-          valueColor="text-[#1d7a3e]"
+          tone="green"
+          artwork={kanagawaAssets.cards.dolares}
         />
-        <div className="rounded-2xl p-6 bg-gradient-to-br from-[#3a2459] to-[#26173e] text-white relative overflow-hidden">
-          <div className="absolute -right-6 -top-6 w-28 h-28 bg-white/5 rounded-full blur-2xl"></div>
-          <div className="relative z-10">
-            <div className="flex items-start justify-between mb-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#b9a9d6]">Resultado del mes</p>
-              <TrendingUp className="w-5 h-5 text-white/80" />
-            </div>
-            <p className="font-display font-extrabold text-[27px] tracking-tight leading-none">
-              ${resultadoMes.toLocaleString()}
-            </p>
-            <p className="text-xs font-semibold mt-2 text-[#b9a9d6]">
-              Ingresos ${dashboardStats.total_revenue_month_ars.toLocaleString()} − Gastos ${monthExpensesArs.toLocaleString()}
-            </p>
-          </div>
-        </div>
+        <KpiCard
+          icon={<TrendingUp className="w-5 h-5 text-primary-soft" strokeWidth={1.7} />}
+          title="Resultado del mes"
+          value={`$${resultadoMes.toLocaleString()}`}
+          valueClassName="text-ink-primary"
+          breakdown={`Ingresos $${dashboardStats.total_revenue_month_ars.toLocaleString()} − Gastos $${monthExpensesArs.toLocaleString()}`}
+          tone="red"
+          artwork={kanagawaAssets.cards.resultado}
+        />
       </div>
 
       {/* Comparativa de temporadas (funcionalidad existente, retinteada) */}
-      <div className="bg-white rounded-2xl border border-[#e7dff3] shadow-card overflow-hidden">
-        <div className="p-6 border-b border-[#eee5f6] bg-[#faf8fd] flex flex-wrap items-center justify-between gap-4">
-          <h3 className="font-display font-extrabold text-lg text-[#121325] flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-brand-600" />
+      <KanagawaCard padded={false} className="overflow-hidden">
+        <div className="p-6 border-b border-border-subtle bg-background-alt flex flex-wrap items-center justify-between gap-4">
+          <h3 className="font-display font-extrabold text-lg text-ink-primary flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" strokeWidth={1.7} />
             Comparativa de temporadas
           </h3>
           <div className="flex flex-wrap items-center gap-3">
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="bg-white border border-[#e0d7ef] rounded-[10px] px-3 py-2 text-sm font-semibold text-[#5c3a8c] focus:outline-none focus:border-[#ad8ed2] focus:ring-[3px] focus:ring-[#7c5ca8]/15"
+              className="form-control px-3 py-2 text-sm font-semibold text-primary"
             >
               <option value={0}>Temporada completa</option>
               {monthsList.map((m, i) => (
@@ -241,15 +243,15 @@ export const Finance = () => {
                 <select
                   value={year1}
                   onChange={(e) => setYear1(parseInt(e.target.value))}
-                  className="bg-white border border-[#e0d7ef] rounded-[10px] px-3 py-2 text-sm font-semibold text-[#121325] focus:outline-none focus:border-[#ad8ed2]"
+                  className="form-control px-3 py-2 text-sm font-semibold text-ink-primary"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
-                <span className="text-[#9583b3] text-sm font-semibold">vs</span>
+                <span className="text-ink-muted text-sm font-semibold">vs</span>
                 <select
                   value={year2}
                   onChange={(e) => setYear2(parseInt(e.target.value))}
-                  className="bg-white border border-[#e0d7ef] rounded-[10px] px-3 py-2 text-sm font-semibold text-[#121325] focus:outline-none focus:border-[#ad8ed2]"
+                  className="form-control px-3 py-2 text-sm font-semibold text-ink-primary"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
@@ -259,39 +261,39 @@ export const Finance = () => {
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-xl p-4 bg-[#faf8fd] border border-[#eee5f6]">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#9583b3] mb-1">
+          <div className="rounded-xl p-4 bg-background-alt border border-border-subtle">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-ink-muted mb-1">
               {selectedMonth > 0 ? `${monthsList[selectedMonth - 1]} ${year2}` : 'Temporada anterior'}
             </p>
-            <p className="font-display font-extrabold text-xl text-[#7b6b95]">U$D {(data?.previous_season_total || 0).toLocaleString()}</p>
+            <p className="font-mono font-extrabold text-xl text-ink-secondary">U$D {(data?.previous_season_total || 0).toLocaleString()}</p>
           </div>
-          <div className="rounded-xl p-4 bg-[#f5f2fa] border border-[#e7dff3]">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-[#5c3a8c] mb-1">
+          <div className="rounded-xl p-4 bg-surface-violet border border-border">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1">
               {selectedMonth > 0 ? `${monthsList[selectedMonth - 1]} ${year1}` : 'Temporada actual'}
             </p>
-            <p className="font-display font-extrabold text-xl text-[#121325]">U$D {(data?.current_season_total || 0).toLocaleString()}</p>
+            <p className="font-mono font-extrabold text-xl text-ink-primary">U$D {(data?.current_season_total || 0).toLocaleString()}</p>
           </div>
-          <div className={`rounded-xl p-4 border flex items-center gap-2 ${diff >= 0 ? 'bg-[#e4f3ea] border-[#c7e8d3]' : 'bg-[#fdecec] border-[#f8c9c9]'}`}>
-            {diff >= 0 ? <TrendingUp className="w-5 h-5 text-[#2f8f4e]" /> : <TrendingDown className="w-5 h-5 text-[#dc2626]" />}
+          <div className={`rounded-xl p-4 border flex items-center gap-2 ${diff >= 0 ? 'bg-[rgba(125,143,116,0.16)] border-[rgba(125,143,116,0.28)]' : 'bg-[rgba(166,77,69,0.14)] border-[rgba(166,77,69,0.28)]'}`}>
+            {diff >= 0 ? <TrendingUp className="w-5 h-5 text-state-green-strong" strokeWidth={1.7} /> : <TrendingDown className="w-5 h-5 text-state-red-strong" strokeWidth={1.7} />}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: diff >= 0 ? '#2f8f4e' : '#dc2626' }}>Rendimiento</p>
-              <p className="font-display font-extrabold text-lg" style={{ color: diff >= 0 ? '#2f8f4e' : '#dc2626' }}>{Math.abs(percentChange).toFixed(1)}%</p>
+              <p className={`text-[10px] font-bold uppercase tracking-wide ${diff >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>Rendimiento</p>
+              <p className={`font-display font-extrabold text-lg ${diff >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>{Math.abs(percentChange).toFixed(1)}%</p>
             </div>
           </div>
         </div>
 
         {selectedMonth === 0 && (
-          <div className="overflow-x-auto border-t border-[#eee5f6]">
+          <div className="overflow-x-auto border-t border-border-subtle">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#faf8fd] text-left">
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Mes</th>
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Temp. anterior</th>
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Temp. actual</th>
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Diferencia</th>
+                <tr className="bg-background-alt text-left">
+                  <th className="px-6 py-3 table-head-cell">Mes</th>
+                  <th className="px-6 py-3 table-head-cell">Temp. anterior</th>
+                  <th className="px-6 py-3 table-head-cell">Temp. actual</th>
+                  <th className="px-6 py-3 table-head-cell">Diferencia</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#eee5f6]">
+              <tbody>
                 {months.map((monthName) => {
                   const current = data?.comparisons.find((c) => c.month_name === monthName && (c.month === 12 ? c.year === currentYear : c.year === currentYear + 1));
                   const previous = data?.comparisons.find((c) => c.month_name === monthName && (c.month === 12 ? c.year === currentYear - 1 : c.year === currentYear));
@@ -300,11 +302,11 @@ export const Finance = () => {
                   const mDiff = currentVal - previousVal;
                   const mPercent = previousVal ? (mDiff / previousVal) * 100 : 0;
                   return (
-                    <tr key={monthName} className="hover:bg-[#faf8fd] transition-colors">
-                      <td className="px-6 py-3.5 font-semibold text-[#121325] capitalize">{monthName}</td>
-                      <td className="px-6 py-3.5 text-[#9583b3]">U$D {previousVal.toLocaleString()}</td>
-                      <td className="px-6 py-3.5 font-display font-bold text-[#121325]">U$D {currentVal.toLocaleString()}</td>
-                      <td className="px-6 py-3.5 font-semibold" style={{ color: mDiff >= 0 ? '#2f8f4e' : '#dc2626' }}>
+                    <tr key={monthName} className="table-row">
+                      <td className="px-6 py-3.5 font-semibold text-ink-primary capitalize">{monthName}</td>
+                      <td className="px-6 py-3.5 font-mono text-ink-muted">U$D {previousVal.toLocaleString()}</td>
+                      <td className="px-6 py-3.5 font-mono font-bold text-ink-primary">U$D {currentVal.toLocaleString()}</td>
+                      <td className={`px-6 py-3.5 font-mono font-semibold ${mDiff >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>
                         {mDiff >= 0 ? '+' : ''}{mDiff.toLocaleString()} ({mPercent.toFixed(1)}%)
                       </td>
                     </tr>
@@ -314,59 +316,59 @@ export const Finance = () => {
             </table>
           </div>
         )}
-      </div>
+      </KanagawaCard>
 
       {/* Movimientos recientes: no existe un endpoint de pagos individuales en el
           backend (el modelo Payment existe pero no tiene ruta expuesta), así que
           esta tabla usa el historial real de reservas completadas — el dato más
           cercano disponible — en vez de inventar filas de pagos sueltos. */}
-      <div className="bg-white rounded-2xl border border-[#e7dff3] shadow-card overflow-hidden">
-        <div className="p-6 border-b border-[#eee5f6] bg-[#faf8fd] flex items-center justify-between">
-          <h3 className="font-display font-extrabold text-lg text-[#121325]">Movimientos recientes</h3>
-          <button
+      <KanagawaCard padded={false} className="overflow-hidden">
+        <div className="p-6 border-b border-border-subtle bg-background-alt flex items-center justify-between">
+          <h3 className="font-display font-extrabold text-lg text-ink-primary">Movimientos recientes</h3>
+          <Button
+            variant="secondary"
             onClick={() => downloadCsv(completedBookings)}
             disabled={completedBookings.length === 0}
-            className="px-4 py-2 bg-white border border-[#e0d7ef] hover:bg-[#f0ebf8] text-[#5c3a8c] rounded-[11px] text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4" strokeWidth={1.7} />
             Exportar
-          </button>
+          </Button>
         </div>
 
         {completedBookings.length === 0 ? (
-          <p className="px-6 py-12 text-center text-[#9583b3]">No hay movimientos registrados.</p>
+          <EmptyState title="No hay movimientos registrados." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#faf8fd] text-left">
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Fecha</th>
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Cliente</th>
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Concepto</th>
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3]">Propiedad</th>
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-wide text-[#9583b3] text-right">Monto</th>
+                <tr className="bg-background-alt text-left">
+                  <th className="px-6 py-3 table-head-cell">Fecha</th>
+                  <th className="px-6 py-3 table-head-cell">Cliente</th>
+                  <th className="px-6 py-3 table-head-cell">Concepto</th>
+                  <th className="px-6 py-3 table-head-cell">Propiedad</th>
+                  <th className="px-6 py-3 table-head-cell text-right">Monto</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#eee5f6]">
+              <tbody>
                 {paginatedMovements.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-[#faf8fd] transition-colors">
-                    <td className="px-6 py-3.5 text-[#7b6b95] whitespace-nowrap">{formatDate(booking.check_out)}</td>
+                  <tr key={booking.id} className="table-row">
+                    <td className="px-6 py-3.5 font-mono text-ink-secondary whitespace-nowrap">{formatDate(booking.check_out)}</td>
                     <td className="px-6 py-3.5">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-[10px] bg-[#ece6f6] text-[#5c3a8c] flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4" />
+                        <div className="w-8 h-8 rounded-[10px] bg-surface-violet text-primary flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4" strokeWidth={1.7} />
                         </div>
-                        <span className="font-semibold text-[#121325] truncate">{booking.client_name || 'Sin cliente'}</span>
+                        <span className="font-semibold text-ink-primary truncate">{booking.client_name || 'Sin cliente'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-3.5 text-[#5c3a8c] font-medium">Reserva completa</td>
-                    <td className="px-6 py-3.5 text-[#7b6b95]">
+                    <td className="px-6 py-3.5 text-primary font-medium">Reserva completa</td>
+                    <td className="px-6 py-3.5 text-ink-secondary">
                       <div className="flex items-center gap-1.5">
-                        <Home className="w-3.5 h-3.5 flex-shrink-0" />
+                        <Home className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.7} />
                         <span className="truncate">{booking.property_name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-3.5 text-right font-display font-bold text-[#121325] whitespace-nowrap">
+                    <td className="px-6 py-3.5 text-right font-mono font-bold text-ink-primary whitespace-nowrap">
                       💵 U$D {booking.total_price_usd.toLocaleString()}
                     </td>
                   </tr>
@@ -376,7 +378,7 @@ export const Finance = () => {
           </div>
         )}
         <Pagination currentPage={movementsPage} totalPages={movementsTotalPages} onPageChange={setMovementsPage} />
-      </div>
+      </KanagawaCard>
     </div>
   );
 };
