@@ -98,7 +98,12 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           <div className="border border-border-subtle rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
               <span className="text-sm text-ink-secondary">Precio total</span>
-              <span className="font-sans font-bold text-ink-primary">U$D {booking.total_price_usd.toLocaleString()}</span>
+              <span className="font-sans font-bold text-ink-primary">
+                {(booking.total_price_currency || 'USD') === 'USD'
+                  ? `U$D ${booking.total_price_usd.toLocaleString()}`
+                  : `${booking.total_price_currency} ${booking.total_price_usd.toLocaleString()}`
+                }
+              </span>
             </div>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
               <span className="text-sm text-ink-secondary">Anticipo pagado</span>
