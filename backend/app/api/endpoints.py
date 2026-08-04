@@ -105,22 +105,18 @@ async def create_booking(
         advance = Decimal(str(booking_data.advance_payment_usd or 0))
         exchange_rate = Decimal(str(booking_data.exchange_rate or 1.0))
         
-        # Convertir anticipo a USD según su moneda original
-        advance_in_total_currency = advance
-        advance_payment_usd = advance
-        
-        if booking_data.advance_payment_currency == 'ARS' and exchange_rate > 0:
-            # Anticipo en pesos: convertir a USD dividiendo por el tipo de cambio
-            advance_payment_usd = advance / exchange_rate
-        elif booking_data.advance_payment_currency == 'EUR' and exchange_rate > 0:
-            # Anticipo en EUR: usar tasa EUR/USD directa (simplificado)
-            advance_payment_usd = advance * exchange_rate
-        elif booking_data.advance_payment_currency == 'BRL' and exchange_rate > 0:
-            # Anticipo en BRL: usar tasa BRL/USD directa (simplificado)
-            advance_payment_usd = advance * exchange_rate
-        
         # Lógica de cálculo de saldo con conversión
-        left_to_pay = total_price - advance_payment_usd
+        advance_in_total_currency = advance
+        
+        # Caso común: Precio en USD y Anticipo en ARS
+        if booking_data.total_price_currency == 'USD' and booking_data.advance_payment_currency == 'ARS':
+            if exchange_rate > 0:
+                advance_in_total_currency = advance / exchange_rate
+        # Caso inverso: Precio en ARS y Anticipo en USD (menos común pero posible)
+        elif booking_data.total_price_currency == 'ARS' and booking_data.advance_payment_currency == 'USD':
+            advance_in_total_currency = advance * exchange_rate
+            
+        left_to_pay = total_price - advance_in_total_currency
 
         new_booking = Booking(
             id=uuid.uuid4(),
@@ -132,7 +128,7 @@ async def create_booking(
             guests_count=booking_data.guests_count,
             total_price_usd=total_price,
             total_price_currency=booking_data.total_price_currency,
-            advance_payment_usd=advance_payment_usd,
+            advance_payment_usd=advance,
             advance_payment_currency=booking_data.advance_payment_currency,
             balance_payment_usd=left_to_pay,
             deposit_ars=Decimal(str(booking_data.deposit_ars or 0)),
@@ -198,20 +194,17 @@ async def update_booking(
     if not left_to_pay_sent:
         total_price = booking_obj.total_price_usd
         advance = booking_obj.advance_payment_usd or Decimal(0)
-        advance_currency = booking_obj.advance_payment_currency or 'USD'
         exchange_rate = booking_obj.exchange_rate or Decimal(1.0)
 
-        # Convertir anticipo a USD según su moneda original y guardar
-        advance_in_usd = advance
-        if advance_currency == 'ARS' and exchange_rate > 0:
-            advance_in_usd = advance / exchange_rate
-        elif advance_currency == 'EUR' and exchange_rate > 0:
-            advance_in_usd = advance * exchange_rate
-        elif advance_currency == 'BRL' and exchange_rate > 0:
-            advance_in_usd = advance * exchange_rate
+        advance_in_total_currency = advance
 
-        booking_obj.advance_payment_usd = advance_in_usd
-        booking_obj.left_to_pay_usd = total_price - advance_in_usd
+        if booking_obj.total_price_currency == 'USD' and booking_obj.advance_payment_currency == 'ARS':
+            if exchange_rate > 0:
+                advance_in_total_currency = advance / exchange_rate
+        elif booking_obj.total_price_currency == 'ARS' and booking_obj.advance_payment_currency == 'USD':
+            advance_in_total_currency = advance * exchange_rate
+
+        booking_obj.left_to_pay_usd = total_price - advance_in_total_currency
         booking_obj.balance_payment_usd = booking_obj.left_to_pay_usd
 
     await db.commit()
