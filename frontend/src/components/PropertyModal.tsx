@@ -215,7 +215,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-4 pt-4 border-t border-border-subtle">
+          <div className="flex gap-4 pt-4 border-t border-border-subtle sticky bottom-0 bg-surface -mx-6 -mb-6 px-6 pb-6">
             <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
               Cancelar
             </Button>
