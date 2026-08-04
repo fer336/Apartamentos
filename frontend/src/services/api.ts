@@ -61,6 +61,11 @@ export const updateExchangeRate = async (usd_exchange_rate: number) => {
   return response.data;
 };
 
+export const getBlueExchangeRate = async () => {
+  const response = await api.get('/settings/exchange-rate/blue');
+  return response.data;
+};
+
 // Bookings
 export const getBookings = async (status?: string) => {
   const params = status ? { status } : {};

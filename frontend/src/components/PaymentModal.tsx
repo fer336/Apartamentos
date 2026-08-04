@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Calculator, ArrowRight, Split } from 'lucide-react';
+import { getBlueExchangeRate } from '../services/api';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -22,7 +23,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [amountARS, setAmountARS] = useState<number>(0);
 
   const [exchangeRate, setExchangeRate] = useState<number>(1200);
-  // const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [blueRate, setBlueRate] = useState<number | null>(null);
+
+  // Fetch blue rate on mount and when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      getBlueExchangeRate()
+        .then((data) => {
+          if (data?.promedio) {
+            setExchangeRate(data.promedio);
+            setBlueRate(data.promedio);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   // Inicializar valores
   useEffect(() => {

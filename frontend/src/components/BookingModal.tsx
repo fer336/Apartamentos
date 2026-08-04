@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, User, Home, DollarSign, Search } from 'lucide-react';
-import { getClients, getProperties, getExchangeRate } from '../services/api';
+import { getClients, getProperties, getExchangeRate, getBlueExchangeRate } from '../services/api';
 import { Button } from './ui/Button';
 import { ClientPickerModal } from './ClientPickerModal';
 
@@ -49,23 +49,25 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const fetchData = async () => {
-        // setLoading(true);
-        try {
-          const [clientsData, propertiesData, rateData] = await Promise.all([
-            getClients(),
-            getProperties(),
-            getExchangeRate()
-          ]);
-          setClients(clientsData);
-          setProperties(propertiesData);
-          if (rateData?.usd_exchange_rate) setDefaultExchangeRate(rateData.usd_exchange_rate);
-        } catch (error) {
-          console.error('Error loading data:', error);
-        } finally {
-          // setLoading(false);
-        }
-      };
+       const fetchData = async () => {
+         // setLoading(true);
+         try {
+           const [clientsData, propertiesData, rateData, blueRateData] = await Promise.all([
+             getClients(),
+             getProperties(),
+             getExchangeRate(),
+             getBlueExchangeRate(),
+           ]);
+           setClients(clientsData);
+           setProperties(propertiesData);
+           if (rateData?.usd_exchange_rate) setDefaultExchangeRate(rateData.usd_exchange_rate);
+           if (blueRateData?.promedio) setDefaultExchangeRate(blueRateData.promedio);
+         } catch (error) {
+           console.error('Error loading data:', error);
+         } finally {
+           // setLoading(false);
+         }
+       };
       fetchData();
     }
   }, [isOpen]);
@@ -88,7 +90,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         advance_payment_currency: booking.advance_payment_currency || 'USD',
         deposit_ars: booking.deposit_ars || 0,
         deposit_currency: booking.deposit_currency || 'ARS',
-        exchange_rate: booking.exchange_rate || 1200,
+        exchange_rate: defaultExchangeRate,
         status: booking.status || 'pending',
         payment_status: booking.payment_status || 'pending',
         service_status: booking.service_status || 'NO SERVICIOS',
@@ -517,7 +519,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
           </div>
 
           {/* Fixed Footer with Buttons */}
-          <div className="flex gap-4 p-6 border-t border-border-subtle bg-surface flex-none z-10">
+          <div className="flex gap-4 pt-4 border-t border-border-subtle sticky bottom-0 bg-surface -mx-6 -mb-6 px-6 pb-6">
             <Button
               type="button"
               variant="secondary"

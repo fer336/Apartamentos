@@ -324,6 +324,22 @@ class ExchangeRateUpdate(BaseModel):
     usd_exchange_rate: float
 
 
+class DolarBlueResponse(BaseModel):
+    moneda: str
+    casa: str
+    nombre: str
+    compra: float
+    venta: float
+    fechaActualizacion: str
+
+
+class BlueRateResponse(BaseModel):
+    compra: float
+    venta: float
+    promedio: float
+    fuente: str = "dolarapi"
+
+
 # --- EXPENSES (Gastos y Reparaciones) ---
 
 class ExpenseResponse(BaseModel):

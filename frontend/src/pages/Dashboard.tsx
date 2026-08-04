@@ -12,7 +12,7 @@ import {
   AlertTriangle,
   DollarSign,
 } from 'lucide-react';
-import { getDashboardStats, getProperties, getBookings, getExchangeRate, updateExchangeRate } from '../services/api';
+import { getDashboardStats, getProperties, getBookings, getExchangeRate, getBlueExchangeRate, updateExchangeRate } from '../services/api';
 import { DirectvManagerModal } from '../components/DirectvManagerModal';
 import { DecorativeCardImage } from '../components/ui/DecorativeCardImage';
 import { KanagawaCard, type KanagawaCardTone } from '../components/ui/KanagawaCard';
@@ -203,6 +203,8 @@ export const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDirectvModalOpen, setIsDirectvModalOpen] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [blueRate, setBlueRate] = useState<number | null>(null);
+  const [blueRateLoading, setBlueRateLoading] = useState(false);
   const [editingRate, setEditingRate] = useState(false);
   const [rateInput, setRateInput] = useState('');
 
@@ -230,6 +232,16 @@ export const Dashboard = () => {
       setExchangeRate(rateData.usd_exchange_rate);
     } catch (err) {
       console.error('Error fetching exchange rate:', err);
+    }
+
+    try {
+      setBlueRateLoading(true);
+      const blueData = await getBlueExchangeRate();
+      setBlueRate(blueData.promedio);
+    } catch (err) {
+      console.error('Error fetching blue exchange rate:', err);
+    } finally {
+      setBlueRateLoading(false);
     }
   };
 
@@ -378,9 +390,18 @@ export const Dashboard = () => {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 bg-surface-elevated border border-border-subtle rounded-md px-3 py-1.5">
+        <div className="flex items-center gap-3 bg-surface-elevated border border-border-subtle rounded-md px-3 py-1.5">
           <DollarSign className="w-4 h-4 text-ink-muted" strokeWidth={1.7} />
           <span className="text-xs font-bold text-ink-muted uppercase tracking-wide">Dólar</span>
+          {blueRateLoading ? (
+            <span className="text-xs text-ink-muted">cargando...</span>
+          ) : blueRate != null ? (
+            <span className="text-sm font-bold text-cta" title="Promedio Dólar Blue (compra+venta)/2">
+              ${blueRate.toLocaleString('es-AR')} <span className="text-[10px] font-normal text-ink-muted">(blue)</span>
+            </span>
+          ) : (
+            <span className="text-xs text-ink-muted">sin datos</span>
+          )}
           {editingRate ? (
             <>
               <input
@@ -398,9 +419,9 @@ export const Dashboard = () => {
           ) : (
             <button
               onClick={() => { setRateInput(exchangeRate != null ? String(exchangeRate) : ''); setEditingRate(true); }}
-              className="text-sm font-bold text-ink-primary hover:text-primary transition-colors"
+              className="text-xs font-bold text-ink-primary hover:text-primary transition-colors underline"
             >
-              {exchangeRate != null ? `$${exchangeRate.toLocaleString()}` : 'Definir'}
+              {exchangeRate != null ? `Manual: ${exchangeRate.toLocaleString()}` : 'Definir'}
             </button>
           )}
         </div>
