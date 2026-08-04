@@ -50,11 +50,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
   }, [booking, isOpen]);
 
-  // Lógica para modo Single
+   // Lógica para modo Single
   useEffect(() => {
     if (mode === 'single' && booking) {
       if (currency === 'ARS') {
-        setAmountARS((booking.left_to_pay_usd || 0) * exchangeRate);
+        setAmountARS(Math.round((booking.left_to_pay_usd || 0) * exchangeRate * 100) / 100);
         setAmountUSD(0); // En modo single ARS, el input visual es ARS
       } else {
         setAmountUSD(booking.left_to_pay_usd || 0);
@@ -69,7 +69,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     if (booking) {
       const remainingDebt = (booking.left_to_pay_usd || 0) - val;
       if (remainingDebt > 0) {
-        setAmountARS(remainingDebt * exchangeRate);
+        setAmountARS(Math.round(remainingDebt * exchangeRate * 100) / 100);
       } else {
         setAmountARS(0);
       }
@@ -77,9 +77,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   const handleMixedARSChange = (val: number) => {
-    setAmountARS(val);
-    // Opcional: Podríamos recalcular el USD restante, pero es más complejo de UX.
-    // Dejamos que el usuario ajuste.
+    setAmountARS(Math.round(val * 100) / 100);
   };
 
   const calculateTotalPaidInUSD = () => {
@@ -184,14 +182,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     value={exchangeRate}
                     onChange={(e) => {
                       const rate = parseFloat(e.target.value) || 0;
-                      setExchangeRate(rate);
-                      // Recalcular ARS si estamos en mixed
-                      if (mode === 'mixed') {
-                        const remaining = debt - amountUSD;
-                        if (remaining > 0) setAmountARS(remaining * rate);
-                      } else if (mode === 'single' && currency === 'ARS') {
-                        setAmountARS(debt * rate);
-                      }
+                       setExchangeRate(rate);
+                       // Recalcular ARS si estamos en mixed
+                       if (mode === 'mixed') {
+                         const remaining = debt - amountUSD;
+                         if (remaining > 0) setAmountARS(Math.round(remaining * rate * 100) / 100);
+                       } else if (mode === 'single' && currency === 'ARS') {
+                         setAmountARS(Math.round(debt * rate * 100) / 100);
+                       }
                     }}
                     className="w-full pl-6 pr-4 py-2 bg-surface border border-state-blue/25 rounded-lg font-bold text-state-blue focus:outline-none focus:ring-2 focus:ring-state-blue/20 text-right"
                   />
