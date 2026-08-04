@@ -150,7 +150,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {/* Deuda Total */}
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-bold text-ink-muted uppercase">Total a Pagar</span>
-              <span className="font-sans text-2xl font-black text-ink-primary">${debt.toLocaleString()} USD</span>
+              <span className="font-sans text-2xl font-black text-ink-primary">${debt.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD</span>
             </div>
 
             {/* Selector de Modo */}

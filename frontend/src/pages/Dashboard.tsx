@@ -354,7 +354,7 @@ export const Dashboard = () => {
           id: `saldo-${b.id}`,
           severity: 'warning',
           title: `Saldo pendiente: ${b.client_name || 'Sin cliente'}`,
-          description: `${b.property_name || ''} · U$D ${(b.left_to_pay_usd || 0).toLocaleString()}`,
+          description: `${b.property_name || ''} · U$D ${(b.left_to_pay_usd || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           action: 'Ver reserva',
           onAction: () => {
             window.location.href = '/calendar';
@@ -432,7 +432,7 @@ export const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               label="Ingresos del mes"
-              value={loading ? '...' : `$${stats.total_revenue_month.toLocaleString()}`}
+              value={loading ? '...' : `$${stats.total_revenue_month.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               subtitle="Mes actual"
               icon={TrendingUp}
               iconBg="rgba(125,143,116,0.16)"
@@ -470,7 +470,7 @@ export const Dashboard = () => {
             />
             <StatCard
               label="Saldos por cobrar"
-              value={loading ? '...' : `U$D ${receivables.total.toLocaleString()}`}
+              value={loading ? '...' : `U$D ${receivables.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               subtitle={receivables.count > 0 ? `en ${receivables.count} reserva${receivables.count > 1 ? 's' : ''}` : undefined}
               subtitleColor="var(--orange)"
               icon={Wallet}
@@ -588,7 +588,7 @@ export const Dashboard = () => {
                               className="py-3 text-right font-sans font-bold whitespace-nowrap"
                               style={{ color: isPaid ? 'var(--text-muted)' : 'var(--text-primary)' }}
                             >
-                              {isPaid ? 'Pagado' : `U$D ${(b.left_to_pay_usd || 0).toLocaleString()}`}
+                              {isPaid ? 'Pagado' : `U$D ${(b.left_to_pay_usd || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                             </td>
                           </tr>
                         );

@@ -454,7 +454,7 @@ export const Calendar = () => {
 
                       <div className="flex items-center justify-between mt-auto">
                         <p className={`font-sans font-bold ${isPaid ? 'text-ink-muted' : 'text-state-orange'}`}>
-                          {isPaid ? 'Pagado' : `U$D ${(b.left_to_pay_usd || 0).toLocaleString()}`}
+                          {isPaid ? 'Pagado' : `U$D ${(b.left_to_pay_usd || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </p>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleEditBooking(b); }}
