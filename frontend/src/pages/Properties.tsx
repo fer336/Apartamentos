@@ -8,8 +8,8 @@ import { TaskManager } from '../components/TaskManager';
 import { KanagawaCard } from '../components/ui/KanagawaCard';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
-import { kanagawaAssets, pickThemedArtwork } from '../theme/kanagawa-assets';
-import { useTheme } from '../theme/ThemeProvider';
+import { getEntityColor, getColorByKey } from '../utils/entityColor';
+import { getPropertyShortLabel } from '../utils/propertyLabel';
 
 interface Property {
   id: string;
@@ -22,6 +22,7 @@ interface Property {
   bathrooms: number;
   status: string;
   property_type: string;
+  color?: string;
   amenities: string[];
   description: string;
 }
@@ -44,12 +45,6 @@ const STATUS_CONFIG: Record<string, { label: string; chip: string }> = {
   },
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  apartment: 'Departamento',
-  house: 'Casa',
-  studio: 'Monoambiente',
-};
-
 const dateFromISO = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
@@ -61,7 +56,6 @@ const nightsBetween = (checkIn: string, checkOut: string) => {
 };
 
 export const Properties = () => {
-  const { theme } = useTheme();
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,8 +208,6 @@ export const Properties = () => {
     return amenities.slice(0, 4).map((a) => labels[a] || a).join(', ') + (amenities.length > 4 ? '...' : '');
   };
 
-  const PropertyArt = pickThemedArtwork(kanagawaAssets.cards.propertyLandscape, theme);
-
   return (
     <div className="space-y-6 font-sans">
       {errorMessage && (
@@ -292,6 +284,7 @@ export const Properties = () => {
             };
             const avgPrice = getAvgPricePerNight(property.id);
             const occupancy = getMonthOccupancy(property.id);
+            const propertyColor = getColorByKey(property.color) ?? getEntityColor(property.id);
 
             return (
               <KanagawaCard
@@ -299,8 +292,12 @@ export const Properties = () => {
                 padded={false}
                 className="hover:shadow-card-hover hover:-translate-y-[3px] transition-all duration-300 overflow-hidden flex flex-col"
               >
-                <div className="relative property-card-image w-full overflow-hidden">
-                  <PropertyArt className="h-full w-full opacity-70" />
+                <div className={`relative property-card-image w-full overflow-hidden flex items-center justify-center ${propertyColor.solid}`}>
+                  <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
+                    <span className="font-display text-xl font-extrabold text-ink-primary">
+                      {getPropertyShortLabel(property.name)}
+                    </span>
+                  </div>
                   <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${status.chip}`}>
                     {status.label}
                   </span>
@@ -308,24 +305,17 @@ export const Properties = () => {
 
                 <div className="p-[18px] flex-1 flex flex-col">
                   <h3 className="font-display text-base font-extrabold text-ink-primary mb-1">{property.name}</h3>
-                  <p className="text-xs text-ink-secondary flex items-center gap-1 mb-3">
-                    <MapPin className="w-3 h-3" strokeWidth={1.7} />
-                    {[property.city, property.state].filter(Boolean).join(', ') || property.address}
-                    {' · '}{TYPE_LABELS[property.property_type] || property.property_type}
-                  </p>
+                  {(property.city || property.state || property.address) && (
+                    <p className="text-xs text-ink-secondary flex items-center gap-1 mb-3">
+                      <MapPin className="w-3 h-3" strokeWidth={1.7} />
+                      {[property.city, property.state].filter(Boolean).join(', ') || property.address}
+                    </p>
+                  )}
 
                   <div className="flex items-center text-sm mb-3 divide-x divide-border-subtle">
                     <div className="flex-1 text-center">
                       <p className="font-display text-lg font-extrabold text-ink-primary leading-none">{property.capacity}</p>
                       <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wide mt-1">Huésp.</p>
-                    </div>
-                    <div className="flex-1 text-center">
-                      <p className="font-display text-lg font-extrabold text-ink-primary leading-none">{property.bedrooms}</p>
-                      <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wide mt-1">Dorm.</p>
-                    </div>
-                    <div className="flex-1 text-center">
-                      <p className="font-display text-lg font-extrabold text-ink-primary leading-none">{property.bathrooms}</p>
-                      <p className="text-[10px] text-ink-muted uppercase font-bold tracking-wide mt-1">Baños</p>
                     </div>
                   </div>
 
@@ -340,7 +330,7 @@ export const Properties = () => {
                     <div>
                       {avgPrice !== null ? (
                         <>
-                          <p className="font-mono text-base font-extrabold text-primary leading-none">
+                          <p className="font-sans text-base font-extrabold text-primary leading-none">
                             USD {Math.round(avgPrice).toLocaleString()} <span className="font-sans text-xs font-normal text-ink-muted">/noche</span>
                           </p>
                           <p className="text-[9px] text-ink-muted font-semibold uppercase tracking-wide mt-0.5">Promedio histórico</p>

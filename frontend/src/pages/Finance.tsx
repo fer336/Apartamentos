@@ -166,7 +166,7 @@ export const Finance = () => {
             <p className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{title}</p>
             {icon}
           </div>
-          <p className={`font-mono font-extrabold text-[27px] tracking-tight leading-none ${valueClassName}`}>{value}</p>
+          <p className={`font-sans font-extrabold text-[27px] tracking-tight leading-none ${valueClassName}`}>{value}</p>
           <p className="text-xs font-semibold mt-2 text-ink-secondary">{breakdown}</p>
         </KanagawaCard>
       ),
@@ -265,13 +265,13 @@ export const Finance = () => {
             <p className="text-[10px] font-bold uppercase tracking-wide text-ink-muted mb-1">
               {selectedMonth > 0 ? `${monthsList[selectedMonth - 1]} ${year2}` : 'Temporada anterior'}
             </p>
-            <p className="font-mono font-extrabold text-xl text-ink-secondary">U$D {(data?.previous_season_total || 0).toLocaleString()}</p>
+            <p className="font-sans font-extrabold text-xl text-ink-secondary">U$D {(data?.previous_season_total || 0).toLocaleString()}</p>
           </div>
           <div className="rounded-xl p-4 bg-surface-violet border border-border">
             <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1">
               {selectedMonth > 0 ? `${monthsList[selectedMonth - 1]} ${year1}` : 'Temporada actual'}
             </p>
-            <p className="font-mono font-extrabold text-xl text-ink-primary">U$D {(data?.current_season_total || 0).toLocaleString()}</p>
+            <p className="font-sans font-extrabold text-xl text-ink-primary">U$D {(data?.current_season_total || 0).toLocaleString()}</p>
           </div>
           <div className={`rounded-xl p-4 border flex items-center gap-2 ${diff >= 0 ? 'bg-[rgba(125,143,116,0.16)] border-[rgba(125,143,116,0.28)]' : 'bg-[rgba(166,77,69,0.14)] border-[rgba(166,77,69,0.28)]'}`}>
             {diff >= 0 ? <TrendingUp className="w-5 h-5 text-state-green-strong" strokeWidth={1.7} /> : <TrendingDown className="w-5 h-5 text-state-red-strong" strokeWidth={1.7} />}
@@ -304,8 +304,8 @@ export const Finance = () => {
                   return (
                     <tr key={monthName} className="table-row">
                       <td className="px-6 py-3.5 font-semibold text-ink-primary capitalize">{monthName}</td>
-                      <td className="px-6 py-3.5 font-mono text-ink-muted">U$D {previousVal.toLocaleString()}</td>
-                      <td className="px-6 py-3.5 font-mono font-bold text-ink-primary">U$D {currentVal.toLocaleString()}</td>
+                      <td className="px-6 py-3.5 font-sans text-ink-muted">U$D {previousVal.toLocaleString()}</td>
+                      <td className="px-6 py-3.5 font-sans font-bold text-ink-primary">U$D {currentVal.toLocaleString()}</td>
                       <td className={`px-6 py-3.5 font-mono font-semibold ${mDiff >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>
                         {mDiff >= 0 ? '+' : ''}{mDiff.toLocaleString()} ({mPercent.toFixed(1)}%)
                       </td>
@@ -368,7 +368,7 @@ export const Finance = () => {
                         <span className="truncate">{booking.property_name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-3.5 text-right font-mono font-bold text-ink-primary whitespace-nowrap">
+                    <td className="px-6 py-3.5 text-right font-sans font-bold text-ink-primary whitespace-nowrap">
                       💵 U$D {booking.total_price_usd.toLocaleString()}
                     </td>
                   </tr>

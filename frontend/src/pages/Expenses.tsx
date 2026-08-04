@@ -314,7 +314,7 @@ export const Expenses = () => {
       <div className="space-y-3">
         <div className="flex items-baseline justify-between">
           <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{label}</span>
-          <span className="font-display font-black text-lg text-state-red">
+          <span className="font-sans font-black text-lg text-state-red">
             {label === 'USD' ? 'U$D ' : '$'}{total.toLocaleString()}
           </span>
         </div>
@@ -330,7 +330,7 @@ export const Expenses = () => {
                   <span className="text-sm font-medium text-ink-primary truncate">{category.label}</span>
                 </div>
                 <div className="flex items-baseline gap-1.5 flex-shrink-0 ml-2">
-                  <span className="font-display font-bold text-sm text-ink-primary">
+                  <span className="font-sans font-bold text-sm text-ink-primary">
                     {label === 'USD' ? 'U$D ' : '$'}{amount.toLocaleString()}
                   </span>
                   <span className="text-xs font-semibold text-ink-muted">
@@ -517,7 +517,7 @@ export const Expenses = () => {
                             <Calendar className="w-3.5 h-3.5" strokeWidth={1.7} />
                             {new Date(expense.date).toLocaleDateString('es-AR')}
                           </div>
-                          <p className="font-display font-bold text-base text-state-red">
+                          <p className="font-sans font-bold text-base text-state-red">
                             {expense.currency === 'USD' ? 'U$D' : '$'} {expense.amount.toLocaleString()}
                           </p>
                         </div>
@@ -572,7 +572,7 @@ export const Expenses = () => {
                           <span className="text-sm text-ink-secondary truncate">{expense.property_name}</span>
                         </div>
                         <div className="col-span-2 text-right">
-                          <p className="font-display font-bold text-base text-state-red">
+                          <p className="font-sans font-bold text-base text-state-red">
                             {expense.currency === 'USD' ? 'U$D' : '$'} {expense.amount.toLocaleString()}
                           </p>
                           <Badge tone={getStatusTone(expense.status)}>

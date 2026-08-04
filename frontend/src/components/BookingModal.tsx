@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon, User, Home, DollarSign, Users } from 'lucide-react';
-import { getClients, getProperties } from '../services/api';
+import { X, Calendar as CalendarIcon, User, Home, DollarSign, Search } from 'lucide-react';
+import { getClients, getProperties, getExchangeRate } from '../services/api';
 import { Button } from './ui/Button';
+import { ClientPickerModal } from './ClientPickerModal';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -42,6 +43,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [clients, setClients] = useState<any[]>([]);
   const [properties, setProperties] = useState<any[]>([]);
   const [dateError, setDateError] = useState<string | null>(null);
+  const [isClientPickerOpen, setIsClientPickerOpen] = useState(false);
+  const [defaultExchangeRate, setDefaultExchangeRate] = useState<number>(1200);
   // const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -49,12 +52,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       const fetchData = async () => {
         // setLoading(true);
         try {
-          const [clientsData, propertiesData] = await Promise.all([
+          const [clientsData, propertiesData, rateData] = await Promise.all([
             getClients(),
-            getProperties()
+            getProperties(),
+            getExchangeRate()
           ]);
           setClients(clientsData);
           setProperties(propertiesData);
+          if (rateData?.usd_exchange_rate) setDefaultExchangeRate(rateData.usd_exchange_rate);
         } catch (error) {
           console.error('Error loading data:', error);
         } finally {
@@ -104,13 +109,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         advance_payment_currency: 'USD',
         deposit_ars: 0,
         deposit_currency: 'ARS',
-        exchange_rate: 1200,
+        exchange_rate: defaultExchangeRate,
         status: 'pending',
         payment_status: 'pending',
         service_status: 'NO SERVICIOS',
       });
     }
-  }, [booking, isOpen]);
+  }, [booking, isOpen, defaultExchangeRate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +155,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   if (!isOpen) return null;
 
   return (
+    <>
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
       <div className="bg-surface border border-border rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-in zoom-in duration-200 shadow-2xl overflow-hidden">
         {/* Header */}
@@ -205,17 +211,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <User className="w-4 h-4 text-state-blue" strokeWidth={1.7} />
                   Cliente *
                 </label>
-                <select
-                  required
-                  value={formData.client_id}
-                  onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                  className="form-control w-full px-4 py-3 focus:outline-none"
+                <button
+                  type="button"
+                  onClick={() => setIsClientPickerOpen(true)}
+                  className="form-control w-full px-4 py-3 focus:outline-none flex items-center justify-between gap-2 text-left"
                 >
-                  <option value="">Seleccionar Cliente</option>
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.full_name}</option>
-                  ))}
-                </select>
+                  <span className={formData.client_id ? 'text-foreground' : 'text-ink-muted'}>
+                    {formData.client_id
+                      ? clients.find(c => c.id === formData.client_id)?.full_name || 'Seleccionar Cliente'
+                      : 'Buscar cliente...'}
+                  </span>
+                  <Search className="w-4 h-4 text-ink-muted flex-shrink-0" strokeWidth={1.7} />
+                </button>
               </div>
             </div>
 
@@ -226,7 +233,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 Estadía
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-ink-secondary mb-2">Check-in *</label>
                   <input
@@ -288,31 +295,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     <p className="text-xs mt-1 font-medium text-state-red">{dateError}</p>
                   )}
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-ink-secondary mb-2">Total Huéspedes</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.guests_count || ''}
-                      onChange={(e) => {
-                        const total = parseInt(e.target.value) || 1;
-                        setFormData(prev => ({
-                          ...prev,
-                          guests_count: total
-                        }));
-                      }}
-                      className="form-control w-full px-4 py-3 focus:outline-none pl-10"
-                      readOnly
-                    />
-                    <Users className="w-5 h-5 text-ink-violet absolute left-3 top-3.5" strokeWidth={1.7} />
-                  </div>
-                </div>
               </div>
 
               {/* Detalle de Huéspedes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
                 <div>
                   <label className="block text-sm font-medium text-ink-secondary mb-2">👨‍👩‍👧 Adultos *</label>
                   <input
@@ -363,6 +349,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       />
                       <div className="w-14 h-7 bg-surface-hover peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-soft/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-surface-elevated after:border-border after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary"></div>
                       <span className="ml-3 text-sm font-medium text-ink-secondary">{formData.pets ? 'Sí' : 'No'}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-ink-secondary mb-2">🧹 Servicios</label>
+                  <div className="flex items-center h-[50px]">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.service_status === 'SERVICIOS'}
+                        onChange={(e) => setFormData(prev => ({ ...prev, service_status: e.target.checked ? 'SERVICIOS' : 'NO SERVICIOS' }))}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-surface-hover peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-soft/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-surface-elevated after:border-border after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary"></div>
+                      <span className="ml-3 text-sm font-medium text-ink-secondary">{formData.service_status === 'SERVICIOS' ? 'Sí' : 'No'}</span>
                     </label>
                   </div>
                 </div>
@@ -483,7 +485,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             </div>
 
             {/* Estados */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Estado Reserva</label>
                 <select
@@ -511,18 +513,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <option value="fully_paid">Totalmente Pagado</option>
                 </select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Servicios</label>
-                <select
-                  value={formData.service_status}
-                  onChange={(e) => setFormData({ ...formData, service_status: e.target.value })}
-                  className="form-control w-full px-4 py-3 focus:outline-none"
-                >
-                  <option value="SERVICIOS">SERVICIOS</option>
-                  <option value="NO SERVICIOS">NO SERVICIOS</option>
-                </select>
-              </div>
             </div>
           </div>
 
@@ -547,5 +537,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         </form>
       </div >
     </div >
+    <ClientPickerModal
+      isOpen={isClientPickerOpen}
+      onClose={() => setIsClientPickerOpen(false)}
+      clients={clients}
+      onSelect={(client) => {
+        setFormData({ ...formData, client_id: client.id });
+        setIsClientPickerOpen(false);
+      }}
+    />
+    </>
   );
 };

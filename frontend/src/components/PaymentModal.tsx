@@ -135,7 +135,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {/* Deuda Total */}
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-bold text-ink-muted uppercase">Total a Pagar</span>
-              <span className="font-display text-2xl font-black text-ink-primary">${debt.toLocaleString()} USD</span>
+              <span className="font-sans text-2xl font-black text-ink-primary">${debt.toLocaleString()} USD</span>
             </div>
 
             {/* Selector de Modo */}
@@ -258,7 +258,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <div className={`rounded-xl p-4 flex justify-between items-center ${isCovered ? 'bg-state-green/16 text-state-green-strong' : 'bg-state-red/10 text-state-red'}`}>
               <span className="text-sm font-bold">Total Pagado (USD)</span>
               <div className="text-right">
-                <div className="font-display text-xl font-black">${totalPaidUSD.toFixed(2)}</div>
+                <div className="font-sans text-xl font-black">${totalPaidUSD.toFixed(2)}</div>
                 {!isCovered && (
                   <div className="text-xs font-bold opacity-75">Faltan ${remainingAfterPayment.toFixed(2)}</div>
                 )}

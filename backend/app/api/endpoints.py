@@ -5,7 +5,7 @@ from sqlalchemy import select, func, and_, delete
 import io
 import csv
 from app.core.database import get_db
-from app.models.models import Booking, Property, Client, User, DirectvDevice, Task, Expense
+from app.models.models import Booking, Property, Client, User, DirectvDevice, Task, Expense, Organization
 from app.routers.auth import get_current_user
 from app.schemas.schemas import (
     BookingResponse,
@@ -27,6 +27,8 @@ from app.schemas.schemas import (
     SeasonStats,
     AccountingStats,
     ExpenseResponse,
+    ExchangeRateResponse,
+    ExchangeRateUpdate,
 )
 from typing import List, Optional
 from datetime import date, datetime, timedelta, timezone
@@ -466,6 +468,7 @@ async def create_property(
         description=property_data.description,
         status=property_data.status,
         property_type=property_data.property_type,
+        color=property_data.color,
         amenities=property_data.amenities,
         check_in_day=property_data.check_in_day,
         check_out_day=property_data.check_out_day,
@@ -633,6 +636,38 @@ async def delete_client(
     await db.commit()
     
     return {"message": "Cliente eliminado exitosamente"}
+
+
+# --- SETTINGS ENDPOINTS ---
+
+@router.get("/settings/exchange-rate", response_model=ExchangeRateResponse)
+async def get_exchange_rate(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = select(Organization).where(Organization.id == current_user.organization_id)
+    result = await db.execute(query)
+    org = result.scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organización no encontrada")
+    return org
+
+
+@router.put("/settings/exchange-rate", response_model=ExchangeRateResponse)
+async def update_exchange_rate(
+    data: ExchangeRateUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = select(Organization).where(Organization.id == current_user.organization_id)
+    result = await db.execute(query)
+    org = result.scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organización no encontrada")
+    org.usd_exchange_rate = data.usd_exchange_rate
+    await db.commit()
+    await db.refresh(org)
+    return org
 
 
 @router.get("/dashboard/stats", response_model=DashboardStats)

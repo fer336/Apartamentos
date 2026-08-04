@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/octopustrack-design-system-73d966e1-696a-485d-bd29-ad2932dc1cc6/colors_and_type.css">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:'Figtree',system-ui,sans-serif;background:#eeebf4;color:#121325;-webkit-font-smoothing:antialiased}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#d3c7e6;border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:#bda9db;background-clip:padding-box}
+  a{color:#7c5ca8;text-decoration:none}
+  a:hover{color:#5c3a8c}
+  button{font-family:inherit}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .scr{animation:fadeUp .4s cubic-bezier(.22,1,.36,1)}
+</style>
+</helmet>
+
+<div style="display:flex;height:100vh;width:100%;overflow:hidden">
+
+  <!-- SIDEBAR -->
+  <aside style="width:250px;flex:none;background:linear-gradient(185deg,#3a2459 0%,#2a1a45 55%,#22133a 100%);display:flex;flex-direction:column;padding:22px 16px 16px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-60px;right:-70px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(157,132,191,.35),transparent 70%);filter:blur(30px);pointer-events:none"></div>
+
+    <div style="display:flex;align-items:center;gap:11px;padding:2px 8px 22px;position:relative">
+      <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(140deg,#ad8ed2,#7c5ca8);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(92,58,140,.5)">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>
+      </div>
+      <div style="line-height:1.05">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:15.5px;color:#fff;letter-spacing:-.01em">Valeria</div>
+        <div style="font-size:10px;color:#b9a9d6;font-weight:500;letter-spacing:.02em">Administración</div>
+      </div>
+    </div>
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:.16em;color:#8f7db0;padding:0 10px 8px">PRINCIPAL</div>
+    <nav style="display:flex;flex-direction:column;gap:3px">
+      <button onClick="{{ goInicio }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:none;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;width:100%;text-align:left;transition:background .15s,color .15s;background:{{ nav.inicio.bg }};color:{{ nav.inicio.col }}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>Inicio</button>
+      <button onClick="{{ goCalendario }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:none;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;width:100%;text-align:left;transition:background .15s,color .15s;background:{{ nav.calendario.bg }};color:{{ nav.calendario.col }}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendario</button>
+      <button onClick="{{ goPropiedades }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:none;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;width:100%;text-align:left;transition:background .15s,color .15s;background:{{ nav.propiedades.bg }};color:{{ nav.propiedades.col }}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>Propiedades</button>
+      <button onClick="{{ goClientes }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:none;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;width:100%;text-align:left;transition:background .15s,color .15s;background:{{ nav.clientes.bg }};color:{{ nav.clientes.col }}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Clientes</button>
+    </nav>
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:.16em;color:#8f7db0;padding:20px 10px 8px">GESTIÓN</div>
+    <nav style="display:flex;flex-direction:column;gap:3px">
+      <button onClick="{{ goContabilidad }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:none;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;width:100%;text-align:left;transition:background .15s,color .15s;background:{{ nav.contabilidad.bg }};color:{{ nav.contabilidad.col }}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/><path d="M16 12h.01"/><path d="M21 12V8a1 1 0 0 0-1-1h-4a2 2 0 0 0 0 8h4a1 1 0 0 0 1-1"/></svg>Contabilidad</button>
+      <button onClick="{{ goGastos }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:none;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;width:100%;text-align:left;transition:background .15s,color .15s;background:{{ nav.gastos.bg }};color:{{ nav.gastos.col }}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Gastos</button>
+      <button onClick="{{ goInventario }}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:none;border-radius:11px;cursor:pointer;font-size:14px;font-weight:600;width:100%;text-align:left;transition:background .15s,color .15s;background:{{ nav.inventario.bg }};color:{{ nav.inventario.col }}">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg>Inventario</button>
+    </nav>
+
+    <div style="margin-top:auto;padding-top:16px">
+      <button onClick="{{ goInicio }}" style="display:flex;align-items:center;gap:11px;width:100%;padding:9px 10px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.05);cursor:pointer;text-align:left">
+        <div style="width:34px;height:34px;flex:none;border-radius:9px;background:linear-gradient(140deg,#c3abdf,#7c5ca8);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px">V</div>
+        <div style="line-height:1.15;overflow:hidden">
+          <div style="font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Valeria M.</div>
+          <div style="font-size:10.5px;color:#b9a9d6">Propietaria</div>
+        </div>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b9a9d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0;background:#eeebf4">
+
+    <!-- TOPBAR -->
+    <header style="flex:none;height:72px;display:flex;align-items:center;gap:16px;padding:0 30px;background:rgba(255,255,255,.75);backdrop-filter:blur(12px);border-bottom:1px solid #e0d7ef">
+      <div style="min-width:0">
+        <h1 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;color:#121325;line-height:1">{{ pageTitle }}</h1>
+        <div style="font-size:12px;color:#7b6b95;font-weight:500;margin-top:2px">{{ pageSub }}</div>
+      </div>
+
+      <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+        <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e0d7ef;border-radius:11px;padding:9px 13px;width:240px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9583b3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Buscar reserva, cliente…" style="border:none;outline:none;background:transparent;font-size:13.5px;color:#121325;width:100%;font-family:inherit">
+        </div>
+        <button style="width:42px;height:42px;flex:none;border-radius:11px;background:#fff;border:1px solid #e0d7ef;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative" style-hover="border-color:#c3abdf">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5c3a8c" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:#f97316;border:1.5px solid #fff"></span>
+        </button>
+        <button onClick="{{ openReserva }}" style="display:flex;align-items:center;gap:8px;background:#7c5ca8;color:#fff;border:none;border-radius:11px;padding:11px 17px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.32);white-space:nowrap;transition:transform .15s,background .15s" style-hover="background:#6b4d95;transform:translateY(-1px)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span onClick="{{ openReserva }}">Nueva reserva</span></button>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div style="flex:1;overflow-y:auto;padding:26px 30px 40px">
+
+      <sc-if value="{{ isInicio }}" hint-placeholder-val="{{ true }}">
+        <div class="scr" style="max-width:1220px;margin:0 auto">
+
+          <!-- view switcher -->
+          <div style="display:inline-flex;gap:3px;background:#e2daf0;border-radius:12px;padding:4px;margin-bottom:22px">
+            <button onClick="{{ setGeneral }}" style="border:none;cursor:pointer;font-size:13px;font-weight:600;padding:8px 18px;border-radius:9px;transition:all .15s;background:{{ view.general.bg }};color:{{ view.general.col }};box-shadow:{{ view.general.sh }}">Vista general</button>
+            <button onClick="{{ setOperativa }}" style="border:none;cursor:pointer;font-size:13px;font-weight:600;padding:8px 18px;border-radius:9px;transition:all .15s;background:{{ view.operativa.bg }};color:{{ view.operativa.col }};box-shadow:{{ view.operativa.sh }}">Vista operativa</button>
+          </div>
+
+          <sc-if value="{{ isGeneral }}" hint-placeholder-val="{{ true }}">
+          <div class="scr">
+            <!-- KPIs -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
+              <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;padding:18px 18px 16px;box-shadow:0 1px 2px rgba(18,19,37,.04)">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <span style="font-size:11px;font-weight:700;letter-spacing:.03em;color:#8b7aab;text-transform:uppercase">{{ k.label }}</span>
+                    <div style="width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:{{ k.iconBg }};color:{{ k.iconCol }}">{{ k.icon }}</div>
+                  </div>
+                  <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:27px;letter-spacing:-.02em;color:#121325;line-height:1">{{ k.value }}</div>
+                  <div style="font-size:12px;color:{{ k.subCol }};font-weight:600;margin-top:7px;display:flex;align-items:center;gap:4px">{{ k.sub }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- disponibilidad + directv -->
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px">
+              <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;padding:20px 22px;box-shadow:0 1px 2px rgba(18,19,37,.04)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                  <div>
+                    <h3 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#121325">Disponibilidad de temporada</h3>
+                    <p style="margin:2px 0 0;font-size:12.5px;color:#7b6b95">Noches libres por mes · todas las propiedades</p>
+                  </div>
+                  <span style="font-size:11px;font-weight:700;color:#5c3a8c;background:#f0ebf8;padding:6px 11px;border-radius:8px">2025</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+                  <sc-for list="{{ forecast }}" as="m" hint-placeholder-count="6">
+                    <div style="border:1px solid #ece4f6;border-radius:13px;padding:13px 11px;background:#faf8fd">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                        <span style="font-size:12.5px;font-weight:700;color:#121325">{{ m.name }}</span>
+                        <span style="width:8px;height:8px;border-radius:50%;background:{{ m.dot }}"></span>
+                      </div>
+                      <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#121325;line-height:1">{{ m.free }}</div>
+                      <div style="font-size:10px;font-weight:700;letter-spacing:.05em;color:#9583b3;text-transform:uppercase;margin:3px 0 10px">noches libres</div>
+                      <div style="height:6px;border-radius:4px;background:#eae1f5;overflow:hidden"><div style="height:100%;border-radius:4px;width:{{ m.pct }};background:{{ m.bar }}"></div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="background:linear-gradient(160deg,#3a2459,#26173e);border-radius:16px;padding:20px;color:#fff;position:relative;overflow:hidden">
+                <div style="position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(157,132,191,.4),transparent 70%);filter:blur(20px)"></div>
+                <div style="display:flex;align-items:center;gap:9px;margin-bottom:15px;position:relative">
+                  <div style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c3abdf" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="15" x="2" y="7" rx="2"/><path d="m17 2-5 5-5-5"/></svg>
+                  </div>
+                  <div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:15px">DirecTV</div><div style="font-size:10.5px;color:#b9a9d6">Vencimiento por equipo</div></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px;position:relative">
+                  <sc-for list="{{ directv }}" as="d" hint-placeholder-count="2">
+                    <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                      <div style="flex:1;min-width:0">
+                        <div style="font-size:9.5px;font-weight:700;letter-spacing:.06em;color:#b9a9d6;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.loc }}</div>
+                        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:12.5px;font-weight:700;color:#fff;margin-top:1px">{{ d.card }}</div>
+                      </div>
+                      <div style="text-align:center;background:{{ d.chipBg }};border-radius:9px;padding:5px 10px">
+                        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:19px;color:{{ d.chipCol }};line-height:1">{{ d.days }}</div>
+                        <div style="font-size:8px;font-weight:700;letter-spacing:.05em;color:{{ d.chipCol }};text-transform:uppercase">días</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <!-- próximas reservas -->
+            <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;box-shadow:0 1px 2px rgba(18,19,37,.04);overflow:hidden">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px">
+                <h3 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#121325">Próximas reservas</h3>
+                <button onClick="{{ goCalendario }}" style="font-size:12.5px;font-weight:600;color:#7c5ca8;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px">Ver calendario <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+              </div>
+              <div style="display:grid;grid-template-columns:1.4fr 1.4fr 1fr .8fr .9fr;gap:12px;padding:0 22px 10px;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:#9583b3;text-transform:uppercase;border-bottom:1px solid #eee5f6">
+                <span>Cliente</span><span>Propiedad</span><span>Estadía</span><span>Estado</span><span style="text-align:right">Saldo</span>
+              </div>
+              <sc-for list="{{ proximas }}" as="b" hint-placeholder-count="5">
+                <div onClick="{{ openDetalle }}" style="display:grid;grid-template-columns:1.4fr 1.4fr 1fr .8fr .9fr;gap:12px;padding:14px 22px;align-items:center;border-bottom:1px solid #f3eefa;cursor:pointer;transition:background .12s" style-hover="background:#faf8fd">
+                  <div style="display:flex;align-items:center;gap:11px;min-width:0">
+                    <div style="width:36px;height:36px;flex:none;border-radius:10px;background:{{ b.avBg }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:{{ b.avCol }}">{{ b.initials }}</div>
+                    <div style="min-width:0"><div style="font-size:13.5px;font-weight:700;color:#121325;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.client }}</div><div style="font-size:11px;color:#9583b3;font-family:'SF Mono',monospace">{{ b.code }}</div></div>
+                  </div>
+                  <div style="font-size:13px;color:#3d3355;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.prop }}</div>
+                  <div style="font-size:12.5px;color:#5c3a8c;font-weight:600">{{ b.stay }}</div>
+                  <div><span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:7px;background:{{ b.stBg }};color:{{ b.stCol }};white-space:nowrap">{{ b.status }}</span></div>
+                  <div style="text-align:right;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:{{ b.balCol }}">{{ b.balance }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isOperativa }}" hint-placeholder-val="{{ true }}">
+          <div class="scr">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+              <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;padding:20px 22px;box-shadow:0 1px 2px rgba(18,19,37,.04)">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                  <div style="width:34px;height:34px;border-radius:10px;background:#e4f3ea;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f8f4e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></div>
+                  <div><h3 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325">Check-in de hoy</h3><p style="margin:0;font-size:12px;color:#7b6b95">2 llegadas · a partir de 14:00</p></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ checkins }}" as="c" hint-placeholder-count="2">
+                    <div style="border:1px solid #ece4f6;border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:12px">
+                      <div style="width:38px;height:38px;flex:none;border-radius:10px;background:#e4f3ea;display:flex;align-items:center;justify-content:center;font-weight:800;color:#2f8f4e;font-size:13px">{{ c.initials }}</div>
+                      <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700;color:#121325">{{ c.client }}</div><div style="font-size:12px;color:#7b6b95">{{ c.prop }} · {{ c.guests }}</div></div>
+                      <div style="text-align:right"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:15px;color:#121325">{{ c.time }}</div><span style="font-size:10px;font-weight:700;color:#c2410c;background:#fdecdd;padding:2px 8px;border-radius:6px">{{ c.tag }}</span></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;padding:20px 22px;box-shadow:0 1px 2px rgba(18,19,37,.04)">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                  <div style="width:34px;height:34px;border-radius:10px;background:#fdeaea;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg></div>
+                  <div><h3 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325">Check-out de hoy</h3><p style="margin:0;font-size:12px;color:#7b6b95">1 salida · antes de 11:00</p></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ checkouts }}" as="c" hint-placeholder-count="1">
+                    <div style="border:1px solid #ece4f6;border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:12px">
+                      <div style="width:38px;height:38px;flex:none;border-radius:10px;background:#fdeaea;display:flex;align-items:center;justify-content:center;font-weight:800;color:#dc2626;font-size:13px">{{ c.initials }}</div>
+                      <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700;color:#121325">{{ c.client }}</div><div style="font-size:12px;color:#7b6b95">{{ c.prop }}</div></div>
+                      <div style="text-align:right"><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:15px;color:#121325">{{ c.time }}</div><span style="font-size:10px;font-weight:700;color:#5c3a8c;background:#f0ebf8;padding:2px 8px;border-radius:6px">{{ c.tag }}</span></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;padding:20px 22px;box-shadow:0 1px 2px rgba(18,19,37,.04)">
+              <h3 style="margin:0 0 15px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325">Pendientes que requieren atención</h3>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <sc-for list="{{ alertas }}" as="a" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:12px;background:{{ a.bg }};border:1px solid {{ a.bd }}">
+                    <div style="width:32px;height:32px;flex:none;border-radius:9px;background:{{ a.icBg }};display:flex;align-items:center;justify-content:center;color:{{ a.icCol }}">{{ a.icon }}</div>
+                    <div style="flex:1"><div style="font-size:13.5px;font-weight:700;color:#121325">{{ a.title }}</div><div style="font-size:12px;color:#6d5d8a">{{ a.desc }}</div></div>
+                    <button style="font-size:12px;font-weight:600;color:#7c5ca8;background:#fff;border:1px solid #e0d7ef;border-radius:8px;padding:7px 13px;cursor:pointer;white-space:nowrap">{{ a.action }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCalendario }}" hint-placeholder-val="{{ false }}">
+        <div class="scr" style="max-width:1220px;margin:0 auto">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="display:flex;gap:2px;background:#fff;border:1px solid #e0d7ef;border-radius:10px;padding:3px">
+                <button style="width:32px;height:32px;border:none;background:none;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:#f0ebf8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5c3a8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+                <button style="width:32px;height:32px;border:none;background:none;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:#f0ebf8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5c3a8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+              </div>
+              <h2 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;color:#121325;letter-spacing:-.02em">Julio 2025</h2>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="display:flex;align-items:center;gap:13px">
+                <sc-for list="{{ calLegend }}" as="l" hint-placeholder-count="4">
+                  <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6d5d8a"><span style="width:10px;height:10px;border-radius:3px;background:{{ l.col }}"></span>{{ l.name }}</span>
+                </sc-for>
+              </div>
+              <button style="display:flex;align-items:center;gap:7px;background:#7c5ca8;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.28)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span onClick="{{ openReserva }}">Nueva reserva</span></button>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;padding:16px 18px 18px;box-shadow:0 1px 2px rgba(18,19,37,.04)">
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px">
+              <sc-for list="{{ calWeekdays }}" as="w" hint-placeholder-count="7">
+                <div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:.06em;color:#9583b3;text-transform:uppercase;padding-bottom:2px">{{ w }}</div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">
+              <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
+                <div style="min-height:96px;border-radius:11px;padding:7px;background:{{ c.cellBg }};border:1px solid {{ c.cellBd }}">
+                  <div style="display:flex;justify-content:flex-end"><span style="font-size:12px;font-weight:700;color:{{ c.numCol }};width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:{{ c.numBg }}">{{ c.day }}</span></div>
+                  <div style="display:flex;flex-direction:column;gap:3px;margin-top:3px">
+                    <sc-for list="{{ c.chips }}" as="ch" hint-placeholder-count="0">
+                      <div style="font-size:10.5px;font-weight:700;color:#fff;background:{{ ch.col }};border-radius:5px;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:{{ ch.op }}">{{ ch.label }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isPropiedades }}" hint-placeholder-val="{{ false }}">
+        <div class="scr" style="max-width:1220px;margin:0 auto">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <div style="display:flex;gap:8px">
+              <span style="font-size:13px;font-weight:700;color:#fff;background:#7c5ca8;padding:8px 15px;border-radius:9px">Todas · 6</span>
+              <span style="font-size:13px;font-weight:600;color:#6d5d8a;background:#fff;border:1px solid #e7dff3;padding:8px 15px;border-radius:9px">Disponibles · 3</span>
+              <span style="font-size:13px;font-weight:600;color:#6d5d8a;background:#fff;border:1px solid #e7dff3;padding:8px 15px;border-radius:9px">Ocupadas · 2</span>
+            </div>
+            <button style="display:flex;align-items:center;gap:7px;background:#7c5ca8;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.28)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span onClick="{{ openPropiedad }}">Agregar propiedad</span></button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px">
+            <sc-for list="{{ properties }}" as="p" hint-placeholder-count="6">
+              <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(18,19,37,.04);transition:transform .18s,box-shadow .18s" style-hover="transform:translateY(-3px);box-shadow:0 16px 36px rgba(92,58,140,.14)">
+                <div style="height:96px;background:linear-gradient(135deg,#c3abdf,#7c5ca8);position:relative;display:flex;align-items:flex-end;padding:12px">
+                  <div style="position:absolute;top:12px;right:12px"><span style="font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:7px;background:{{ p.stBg }};color:{{ p.stCol }}">{{ p.status }}</span></div>
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>
+                </div>
+                <div style="padding:15px 17px 17px">
+                  <h3 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325">{{ p.name }}</h3>
+                  <div style="display:flex;align-items:center;gap:5px;margin-top:3px;font-size:12.5px;color:#7b6b95"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9583b3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>{{ p.zone }} · {{ p.type }}</div>
+                  <div style="display:flex;gap:14px;margin:14px 0;padding:12px 0;border-top:1px solid #f3eefa;border-bottom:1px solid #f3eefa">
+                    <div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325">{{ p.cap }}</div><div style="font-size:10px;color:#9583b3;font-weight:600">HUÉSPEDES</div></div>
+                    <div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325">{{ p.br }}</div><div style="font-size:10px;color:#9583b3;font-weight:600">AMB.</div></div>
+                    <div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325">{{ p.ba }}</div><div style="font-size:10px;color:#9583b3;font-weight:600">BAÑOS</div></div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#5c3a8c">{{ p.rate }}</span><span style="font-size:12px;color:#9583b3"> /noche</span></div>
+                    <div style="text-align:right"><div style="font-size:11px;color:#9583b3;font-weight:600">Ocupación</div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:14px;color:#2f8f4e">{{ p.occ }}%</div></div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isClientes }}" hint-placeholder-val="{{ false }}">
+        <div class="scr" style="max-width:1220px;margin:0 auto">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e0d7ef;border-radius:11px;padding:10px 14px;width:320px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9583b3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input placeholder="Buscar por nombre, DNI o teléfono…" style="border:none;outline:none;background:transparent;font-size:13.5px;color:#121325;width:100%;font-family:inherit">
+            </div>
+            <button style="display:flex;align-items:center;gap:7px;background:#7c5ca8;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.28)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span onClick="{{ openCliente }}">Nuevo cliente</span></button>
+          </div>
+          <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;box-shadow:0 1px 2px rgba(18,19,37,.04);overflow:hidden">
+            <div style="display:grid;grid-template-columns:1.6fr 1.2fr 1.4fr .7fr .8fr .7fr;gap:14px;padding:14px 22px;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:#9583b3;text-transform:uppercase;border-bottom:1px solid #eee5f6;background:#faf8fd">
+              <span>Cliente</span><span>Documento</span><span>Contacto</span><span>Estadías</span><span>Rating</span><span style="text-align:right">Última</span>
+            </div>
+            <sc-for list="{{ clients }}" as="c" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:1.6fr 1.2fr 1.4fr .7fr .8fr .7fr;gap:14px;padding:15px 22px;align-items:center;border-bottom:1px solid #f3eefa;cursor:pointer;transition:background .12s" style-hover="background:#faf8fd">
+                <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                  <div style="width:40px;height:40px;flex:none;border-radius:11px;background:{{ c.avBg }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:{{ c.avCol }}">{{ c.ini }}</div>
+                  <div style="font-size:14px;font-weight:700;color:#121325;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div>
+                </div>
+                <div style="font-size:12.5px;color:#5c3a8c;font-weight:600;font-family:'SF Mono',monospace">{{ c.doc }}</div>
+                <div style="min-width:0"><div style="font-size:12.5px;color:#3d3355;font-weight:600">{{ c.phone }}</div><div style="font-size:11.5px;color:#9583b3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.email }}</div></div>
+                <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:15px;color:#121325">{{ c.trips }}</div>
+                <div style="font-size:13px;color:#f59e0b;font-weight:700">{{ c.rating }} ★</div>
+                <div style="text-align:right;font-size:12.5px;color:#7b6b95;font-weight:600">{{ c.last }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isContabilidad }}" hint-placeholder-val="{{ false }}">
+        <div class="scr" style="max-width:1220px;margin:0 auto">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+            <div style="background:linear-gradient(150deg,#eaf1fd,#f4f8ff);border:1px solid #d6e4fb;border-radius:16px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#2563eb;text-transform:uppercase">Recaudado en Pesos</span><span style="font-size:22px">🇦🇷</span></div>
+              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:30px;letter-spacing:-.02em;color:#1d4ed8;line-height:1">$8.640.500</div>
+              <div style="font-size:12.5px;color:#2563eb;font-weight:600;margin-top:8px">Anticipos: $2.140.000 · Saldos: $6.500.500</div>
+            </div>
+            <div style="background:linear-gradient(150deg,#e7f5ec,#f3fbf5);border:1px solid #cbe9d5;border-radius:16px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#2f8f4e;text-transform:uppercase">Recaudado en Dólares</span><span style="font-size:22px">💵</span></div>
+              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:30px;letter-spacing:-.02em;color:#1d7a3e;line-height:1">U$D 12.870</div>
+              <div style="font-size:12.5px;color:#2f8f4e;font-weight:600;margin-top:8px">Anticipos: U$D 3.860 · Saldos: U$D 9.010</div>
+            </div>
+            <div style="background:linear-gradient(150deg,#3a2459,#26173e);border-radius:16px;padding:20px;color:#fff;position:relative;overflow:hidden">
+              <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(157,132,191,.4),transparent 70%);filter:blur(18px)"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:relative"><span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#c3abdf;text-transform:uppercase">Resultado del mes</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c3abdf" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg></div>
+              <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:30px;letter-spacing:-.02em;line-height:1;position:relative">$4.820.500</div>
+              <div style="font-size:12.5px;color:#b9a9d6;font-weight:600;margin-top:8px;position:relative">Ingresos $5.235.700 − Gastos $415.200</div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;box-shadow:0 1px 2px rgba(18,19,37,.04);overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px">
+              <h3 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#121325">Movimientos recientes</h3>
+              <button style="font-size:12.5px;font-weight:600;color:#7c5ca8;background:#f0ebf8;border:none;border-radius:8px;padding:7px 13px;cursor:pointer;display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Exportar</button>
+            </div>
+            <div style="display:grid;grid-template-columns:.7fr 1.4fr 1.2fr 1.2fr .9fr;gap:14px;padding:0 22px 10px;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:#9583b3;text-transform:uppercase;border-bottom:1px solid #eee5f6">
+              <span>Fecha</span><span>Cliente</span><span>Concepto</span><span>Método</span><span style="text-align:right">Monto</span>
+            </div>
+            <sc-for list="{{ payments }}" as="p" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:.7fr 1.4fr 1.2fr 1.2fr .9fr;gap:14px;padding:14px 22px;align-items:center;border-bottom:1px solid #f3eefa">
+                <div style="font-size:12.5px;color:#7b6b95;font-weight:600">{{ p.date }}</div>
+                <div style="font-size:13.5px;color:#121325;font-weight:700">{{ p.client }}</div>
+                <div style="font-size:12.5px;color:#5c3a8c;font-weight:600">{{ p.type }}</div>
+                <div style="font-size:12.5px;color:#6d5d8a">{{ p.method }}</div>
+                <div style="text-align:right;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:#121325">{{ p.flag }} {{ p.amount }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isGastos }}" hint-placeholder-val="{{ false }}">
+        <div class="scr" style="max-width:1220px;margin:0 auto;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start">
+          <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;box-shadow:0 1px 2px rgba(18,19,37,.04);overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px">
+              <h3 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:17px;color:#121325">Egresos del mes</h3>
+              <button style="display:flex;align-items:center;gap:7px;background:#7c5ca8;color:#fff;border:none;border-radius:10px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span onClick="{{ openGasto }}">Registrar gasto</span></button>
+            </div>
+            <div style="display:grid;grid-template-columns:.7fr 1fr 1.5fr 1.1fr .9fr;gap:12px;padding:0 22px 10px;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:#9583b3;text-transform:uppercase;border-bottom:1px solid #eee5f6">
+              <span>Fecha</span><span>Categoría</span><span>Descripción</span><span>Propiedad</span><span style="text-align:right">Monto</span>
+            </div>
+            <sc-for list="{{ expenses }}" as="e" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:.7fr 1fr 1.5fr 1.1fr .9fr;gap:12px;padding:14px 22px;align-items:center;border-bottom:1px solid #f3eefa">
+                <div style="font-size:12.5px;color:#7b6b95;font-weight:600">{{ e.date }}</div>
+                <div><span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:{{ e.catBg }};color:{{ e.catCol }};white-space:nowrap">{{ e.cat }}</span></div>
+                <div style="font-size:13px;color:#121325;font-weight:600">{{ e.desc }}</div>
+                <div style="font-size:12px;color:#6d5d8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.prop }}</div>
+                <div style="text-align:right;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:#dc2626">{{ e.amount }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(18,19,37,.04)">
+            <h3 style="margin:0 0 4px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325">Por categoría</h3>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;color:#dc2626;letter-spacing:-.02em;margin-bottom:16px">$407.700</div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <sc-for list="{{ expCats }}" as="c" hint-placeholder-count="5">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <span style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#3d3355"><span style="width:9px;height:9px;border-radius:3px;background:{{ c.col }}"></span>{{ c.label }}</span>
+                    <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:13px;color:#121325">{{ c.val }}</span>
+                  </div>
+                  <div style="height:6px;border-radius:4px;background:#f0ebf8;overflow:hidden"><div style="height:100%;border-radius:4px;width:{{ c.pct }};background:{{ c.col }}"></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isInventario }}" hint-placeholder-val="{{ false }}">
+        <div class="scr" style="max-width:1220px;margin:0 auto">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <div style="display:flex;align-items:center;gap:9px;font-size:13px;color:#6d5d8a"><span style="font-weight:700;color:#121325">Depto Costanera 1A</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9583b3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            <button style="display:flex;align-items:center;gap:7px;background:#7c5ca8;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.28)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg><span onClick="{{ openItem }}">Agregar item</span></button>
+          </div>
+          <div style="background:#fff;border:1px solid #e7dff3;border-radius:16px;box-shadow:0 1px 2px rgba(18,19,37,.04);overflow:hidden">
+            <div style="display:grid;grid-template-columns:2fr 1.2fr .8fr 1fr;gap:14px;padding:14px 22px;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:#9583b3;text-transform:uppercase;border-bottom:1px solid #eee5f6;background:#faf8fd">
+              <span>Item</span><span>Categoría</span><span>Cantidad</span><span style="text-align:right">Estado</span>
+            </div>
+            <sc-for list="{{ inventory }}" as="i" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:2fr 1.2fr .8fr 1fr;gap:14px;padding:15px 22px;align-items:center;border-bottom:1px solid #f3eefa">
+                <div style="font-size:13.5px;font-weight:700;color:#121325">{{ i.item }}</div>
+                <div style="font-size:12.5px;color:#6d5d8a">{{ i.cat }}</div>
+                <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:15px;color:#121325">{{ i.qty }}</div>
+                <div style="text-align:right"><span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:7px;background:{{ i.condBg }};color:{{ i.condCol }}">{{ i.cond }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+<sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeModal }}" style="position:fixed;inset:0;z-index:100;background:rgba(18,19,37,.45);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:44px 20px;overflow-y:auto;animation:fadeUp .18s ease">
+
+    <!-- NUEVA RESERVA -->
+    <sc-if value="{{ isReserva }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ stop }}" style="width:100%;max-width:580px;background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(18,19,37,.4);overflow:hidden;animation:fadeUp .22s cubic-bezier(.22,1,.36,1)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:22px 24px 18px;border-bottom:1px solid #eee5f6">
+          <div><div style="font-size:11px;font-weight:700;letter-spacing:.14em;color:#9583b3;text-transform:uppercase;margin-bottom:4px">Reservas</div><h2 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#121325;letter-spacing:-.01em">Nueva reserva</h2></div>
+          <button onClick="{{ closeModal }}" style="width:34px;height:34px;flex:none;border-radius:9px;border:1px solid #e7dff3;background:#faf8fd;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#f0ebf8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5c3a8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div style="padding:22px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Propiedad</label>
+            <select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Depto Costanera 1A</option><option>Casa del Bosque</option><option>Studio Centro</option><option>Depto Vista al Mar</option><option>Cabaña Los Pinos</option></select></div>
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Cliente</label>
+            <select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Buscar o crear cliente…</option><option>Familia Gómez</option><option>Lucía Medina</option><option>Roberto Torres</option></select></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Check-in</label><input type="date" value="2025-07-12" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Check-out</label><input type="date" value="2025-07-19" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Huéspedes</label><input type="number" value="4" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Precio total (USD)</label><input type="text" value="1.400" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div style="grid-column:1/-1;background:#f5f2fa;border:1px solid #e7dff3;border-radius:12px;padding:13px 15px;display:flex;gap:24px">
+            <div><div style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#9583b3;text-transform:uppercase">Anticipo (30%)</div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#5c3a8c;margin-top:2px">U$D 420</div></div>
+            <div><div style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#9583b3;text-transform:uppercase">Saldo (70%)</div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#121325;margin-top:2px">U$D 980</div></div>
+            <div style="margin-left:auto;align-self:center"><div style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#9583b3;text-transform:uppercase">Depósito (ARS)</div><input type="text" value="120.000" style="width:110px;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:8px;padding:6px 10px;font-size:13px;color:#121325;font-family:inherit;background:#fff;margin-top:3px"></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #eee5f6;background:#faf8fd">
+          <button onClick="{{ closeModal }}" style="padding:11px 18px;border-radius:10px;border:1px solid #e0d7ef;background:#fff;color:#5c3a8c;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#f0ebf8">Cancelar</button>
+          <button onClick="{{ closeModal }}" style="display:flex;align-items:center;gap:7px;padding:11px 20px;border-radius:10px;border:none;background:#7c5ca8;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.3)" style-hover="background:#6b4d95">Crear reserva <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- NUEVA PROPIEDAD -->
+    <sc-if value="{{ isPropiedad }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ stop }}" style="width:100%;max-width:600px;background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(18,19,37,.4);overflow:hidden;animation:fadeUp .22s cubic-bezier(.22,1,.36,1)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:22px 24px 18px;border-bottom:1px solid #eee5f6">
+          <div><div style="font-size:11px;font-weight:700;letter-spacing:.14em;color:#9583b3;text-transform:uppercase;margin-bottom:4px">Propiedades</div><h2 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#121325;letter-spacing:-.01em">Nueva propiedad</h2></div>
+          <button onClick="{{ closeModal }}" style="width:34px;height:34px;flex:none;border-radius:9px;border:1px solid #e7dff3;background:#faf8fd;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#f0ebf8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5c3a8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div style="padding:22px 24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Nombre de la propiedad</label><input type="text" placeholder="Ej: Depto Costanera 1A" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Tipo</label><select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Departamento</option><option>Casa</option><option>Monoambiente</option><option>Cabaña</option></select></div>
+          <div style="grid-column:span 2"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Zona</label><input type="text" placeholder="Ej: Frente al mar" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Huéspedes</label><input type="number" value="4" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Ambientes</label><input type="number" value="2" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Baños</label><input type="number" value="1" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Precio/noche (USD)</label><input type="text" value="90" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div style="grid-column:span 2"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Estado</label><select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Disponible</option><option>Ocupada</option><option>Mantenimiento</option></select></div>
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:9px">Comodidades</label><div style="display:flex;flex-wrap:wrap;gap:8px"><span style="font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;background:#ece6f6;color:#5c3a8c;cursor:pointer">WiFi</span><span style="font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;background:#ece6f6;color:#5c3a8c;cursor:pointer">Aire acond.</span><span style="font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;background:#f4f2f8;color:#9583b3;cursor:pointer;border:1px dashed #d9caeb">+ TV</span><span style="font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;background:#f4f2f8;color:#9583b3;cursor:pointer;border:1px dashed #d9caeb">+ Cocina</span><span style="font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:9px;background:#f4f2f8;color:#9583b3;cursor:pointer;border:1px dashed #d9caeb">+ Cochera</span></div></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #eee5f6;background:#faf8fd">
+          <button onClick="{{ closeModal }}" style="padding:11px 18px;border-radius:10px;border:1px solid #e0d7ef;background:#fff;color:#5c3a8c;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#f0ebf8">Cancelar</button>
+          <button onClick="{{ closeModal }}" style="display:flex;align-items:center;gap:7px;padding:11px 20px;border-radius:10px;border:none;background:#7c5ca8;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.3)" style-hover="background:#6b4d95">Crear propiedad <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- NUEVO CLIENTE -->
+    <sc-if value="{{ isCliente }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ stop }}" style="width:100%;max-width:540px;background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(18,19,37,.4);overflow:hidden;animation:fadeUp .22s cubic-bezier(.22,1,.36,1)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:22px 24px 18px;border-bottom:1px solid #eee5f6">
+          <div><div style="font-size:11px;font-weight:700;letter-spacing:.14em;color:#9583b3;text-transform:uppercase;margin-bottom:4px">Clientes</div><h2 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#121325;letter-spacing:-.01em">Nuevo cliente</h2></div>
+          <button onClick="{{ closeModal }}" style="width:34px;height:34px;flex:none;border-radius:9px;border:1px solid #e7dff3;background:#faf8fd;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#f0ebf8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5c3a8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div style="padding:22px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Nombre completo</label><input type="text" placeholder="Nombre y apellido" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Tipo doc.</label><select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>DNI</option><option>Pasaporte</option><option>Otro</option></select></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Número</label><input type="text" placeholder="28.445.109" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Email</label><input type="email" placeholder="cliente@mail.com" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Teléfono</label><input type="tel" placeholder="+54 9 11 …" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">WhatsApp</label><input type="tel" placeholder="+54 9 11 …" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Nacionalidad</label><input type="text" value="Argentina" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Notas internas</label><textarea rows="2" placeholder="Preferencias, observaciones…" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;resize:vertical" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #eee5f6;background:#faf8fd">
+          <button onClick="{{ closeModal }}" style="padding:11px 18px;border-radius:10px;border:1px solid #e0d7ef;background:#fff;color:#5c3a8c;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#f0ebf8">Cancelar</button>
+          <button onClick="{{ closeModal }}" style="display:flex;align-items:center;gap:7px;padding:11px 20px;border-radius:10px;border:none;background:#7c5ca8;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.3)" style-hover="background:#6b4d95">Guardar cliente</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- REGISTRAR GASTO -->
+    <sc-if value="{{ isGasto }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ stop }}" style="width:100%;max-width:540px;background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(18,19,37,.4);overflow:hidden;animation:fadeUp .22s cubic-bezier(.22,1,.36,1)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:22px 24px 18px;border-bottom:1px solid #eee5f6">
+          <div><div style="font-size:11px;font-weight:700;letter-spacing:.14em;color:#9583b3;text-transform:uppercase;margin-bottom:4px">Gastos</div><h2 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#121325;letter-spacing:-.01em">Registrar gasto</h2></div>
+          <button onClick="{{ closeModal }}" style="width:34px;height:34px;flex:none;border-radius:9px;border:1px solid #e7dff3;background:#faf8fd;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#f0ebf8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5c3a8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div style="padding:22px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Categoría</label><select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Mantenimiento</option><option>Limpieza</option><option>Servicios</option><option>Insumos</option><option>Impuestos</option><option>Otro</option></select></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Fecha</label><input type="date" value="2025-07-06" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Descripción</label><input type="text" placeholder="Ej: Reparación aire acondicionado" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Propiedad</label><select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Todas</option><option>Depto Costanera 1A</option><option>Casa del Bosque</option><option>Studio Centro</option></select></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Monto</label><input type="text" placeholder="180.000" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Método de pago</label><select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Efectivo</option><option>Transferencia</option><option>Mercado Pago</option><option>Tarjeta</option></select></div>
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Comprobante</label><div style="border:1.5px dashed #d9caeb;border-radius:12px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:6px;background:#faf8fd;cursor:pointer" style-hover="border-color:#ad8ed2;background:#f5f2fa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9583b3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg><span style="font-size:13px;color:#7b6b95;font-weight:500">Arrastrá una foto del comprobante o <span style="color:#7c5ca8;font-weight:600">buscá un archivo</span></span></div></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #eee5f6;background:#faf8fd">
+          <button onClick="{{ closeModal }}" style="padding:11px 18px;border-radius:10px;border:1px solid #e0d7ef;background:#fff;color:#5c3a8c;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#f0ebf8">Cancelar</button>
+          <button onClick="{{ closeModal }}" style="padding:11px 20px;border-radius:10px;border:none;background:#7c5ca8;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.3)" style-hover="background:#6b4d95">Registrar gasto</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- AGREGAR ITEM -->
+    <sc-if value="{{ isItem }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ stop }}" style="width:100%;max-width:480px;background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(18,19,37,.4);overflow:hidden;animation:fadeUp .22s cubic-bezier(.22,1,.36,1)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:22px 24px 18px;border-bottom:1px solid #eee5f6">
+          <div><div style="font-size:11px;font-weight:700;letter-spacing:.14em;color:#9583b3;text-transform:uppercase;margin-bottom:4px">Inventario</div><h2 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px;color:#121325;letter-spacing:-.01em">Agregar item</h2></div>
+          <button onClick="{{ closeModal }}" style="width:34px;height:34px;flex:none;border-radius:9px;border:1px solid #e7dff3;background:#faf8fd;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#f0ebf8"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5c3a8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div style="padding:22px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Item</label><input type="text" placeholder="Ej: Juego de sábanas" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div style="grid-column:1/-1"><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Categoría</label><select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Ropa blanca</option><option>Cocina</option><option>Electrónica</option><option>Electrodomésticos</option><option>Mobiliario</option></select></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Cantidad</label><input type="number" value="12" style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"></div>
+          <div><label style="display:block;font-size:12.5px;font-weight:600;color:#5c3a8c;margin-bottom:7px">Estado</label><select style="width:100%;box-sizing:border-box;border:1px solid #e0d7ef;border-radius:10px;padding:11px 13px;font-size:14px;color:#121325;font-family:inherit;background:#fff;cursor:pointer" style-focus="border-color:#ad8ed2;box-shadow:0 0 0 3px rgba(124,92,168,.15);outline:none"><option>Nuevo</option><option>Bueno</option><option>Regular</option><option>A revisar</option></select></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid #eee5f6;background:#faf8fd">
+          <button onClick="{{ closeModal }}" style="padding:11px 18px;border-radius:10px;border:1px solid #e0d7ef;background:#fff;color:#5c3a8c;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#f0ebf8">Cancelar</button>
+          <button onClick="{{ closeModal }}" style="padding:11px 20px;border-radius:10px;border:none;background:#7c5ca8;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.3)" style-hover="background:#6b4d95">Agregar item</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- DETALLE DE RESERVA -->
+    <sc-if value="{{ isDetalle }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ stop }}" style="width:100%;max-width:500px;background:#fff;border-radius:20px;box-shadow:0 30px 80px rgba(18,19,37,.4);overflow:hidden;animation:fadeUp .22s cubic-bezier(.22,1,.36,1)">
+        <div style="padding:22px 24px;background:linear-gradient(150deg,#3a2459,#26173e);color:#fff;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(157,132,191,.4),transparent 70%);filter:blur(20px)"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;position:relative">
+            <div><div style="font-family:'SF Mono',monospace;font-size:12px;color:#c3abdf;margin-bottom:6px">BK-2025-018</div><h2 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.01em">Familia Gómez</h2><div style="font-size:13px;color:#c9bce0;margin-top:3px">Depto Costanera 1A · 4 huéspedes</div></div>
+            <button onClick="{{ closeModal }}" style="width:34px;height:34px;flex:none;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <span style="display:inline-block;margin-top:14px;font-size:11px;font-weight:700;padding:5px 11px;border-radius:8px;background:rgba(126,207,134,.2);color:#7ecf86;position:relative">Confirmada · Seña paga</span>
+        </div>
+        <div style="padding:22px 24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+            <div style="background:#faf8fd;border:1px solid #eee5f6;border-radius:12px;padding:13px 15px"><div style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#9583b3;text-transform:uppercase">Check-in</div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325;margin-top:3px">12 Jul · 14:00</div></div>
+            <div style="background:#faf8fd;border:1px solid #eee5f6;border-radius:12px;padding:13px 15px"><div style="font-size:11px;font-weight:700;letter-spacing:.04em;color:#9583b3;text-transform:uppercase">Check-out</div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:#121325;margin-top:3px">19 Jul · 11:00</div></div>
+          </div>
+          <div style="border:1px solid #eee5f6;border-radius:12px;overflow:hidden;margin-bottom:18px">
+            <div style="display:flex;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #f3eefa"><span style="font-size:13px;color:#6d5d8a">Precio total</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:#121325">U$D 1.400</span></div>
+            <div style="display:flex;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #f3eefa"><span style="font-size:13px;color:#6d5d8a">Anticipo (30%)</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:#2f8f4e">U$D 420 · Pagado</span></div>
+            <div style="display:flex;justify-content:space-between;padding:12px 15px"><span style="font-size:13px;color:#6d5d8a">Saldo pendiente</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:14px;color:#c2410c">U$D 980</span></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button onClick="{{ closeModal }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:10px;border:none;background:#7c5ca8;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 8px 22px rgba(92,58,140,.3)" style-hover="background:#6b4d95"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Registrar check-in</button>
+            <button onClick="{{ closeModal }}" style="flex:1;padding:12px;border-radius:10px;border:1px solid #e0d7ef;background:#fff;color:#5c3a8c;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#f0ebf8">Cobrar saldo</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</sc-if></x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { section: 'inicio', view: 'general', modal: null };
+
+  go(s){ this.setState({ section: s }); }
+  openModal(m){ this.setState({ modal: m }); }
+  closeModal(){ this.setState({ modal: null }); }
+
+  navItem(k){
+    const on = this.state.section === k;
+    return { bg: on ? 'rgba(255,255,255,.13)' : 'transparent', col: on ? '#ffffff' : '#c9bce0' };
+  }
+
+  icon(paths, col){
+    return React.createElement('svg', {width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:col,strokeWidth:1.9,strokeLinecap:'round',strokeLinejoin:'round',
+      dangerouslySetInnerHTML:{__html:paths}});
+  }
+
+  renderVals(){
+    const s = this.state.section;
+    const titles = {
+      inicio:['Inicio','Resumen general de tu operación'],
+      calendario:['Calendario','Reservas y disponibilidad'],
+      propiedades:['Propiedades','Tus unidades en alquiler'],
+      clientes:['Clientes','Inquilinos y contactos'],
+      contabilidad:['Contabilidad','Ingresos en pesos y dólares'],
+      gastos:['Gastos y reparaciones','Egresos operativos por propiedad'],
+      inventario:['Inventario','Items por propiedad'],
+    };
+    const view = (v)=> this.state.view===v
+      ? { bg:'#fff', col:'#5c3a8c', sh:'0 1px 3px rgba(18,19,37,.12)' }
+      : { bg:'transparent', col:'#8b7aab', sh:'none' };
+
+    const kpis = [
+      { label:'Ingresos del mes', value:'$4.820.500', sub:'▲ 12% vs. mes anterior', subCol:'#2f8f4e', iconBg:'#e4f3ea', iconCol:'#2f8f4e',
+        icon:this.icon('<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>','#2f8f4e') },
+      { label:'Ocupación', value:'78%', sub:'24 de 31 noches', subCol:'#7b6b95', iconBg:'#ece6f6', iconCol:'#7c5ca8',
+        icon:this.icon('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>','#7c5ca8') },
+      { label:'Reservas activas', value:'9', sub:'3 llegan esta semana', subCol:'#7b6b95', iconBg:'#e6eefc', iconCol:'#2563eb',
+        icon:this.icon('<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4"/>','#2563eb') },
+      { label:'Saldos por cobrar', value:'U$D 3.150', sub:'en 4 reservas', subCol:'#c2410c', iconBg:'#fdecdd', iconCol:'#f97316',
+        icon:this.icon('<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>','#f97316') },
+    ];
+
+    const fc = (name,free,pct,st)=>{
+      const c = st==='full' ? ['#2f8f4e','#dc2626'][0] : st==='low' ? '#f97316' : st==='none' ? '#dc2626' : '#7c5ca8';
+      const bar = st==='none' ? '#e6b0b0' : st==='low' ? '#f5a259' : '#9d84bf';
+      const dot = st==='none' ? '#dc2626' : st==='low' ? '#f97316' : '#2f8f4e';
+      return { name, free, pct, dot, bar };
+    };
+    const forecast = [ fc('Ene',0,'6%','none'), fc('Feb',3,'18%','low'), fc('Mar',12,'40%','ok'), fc('Abr',19,'63%','ok'), fc('May',24,'80%','ok'), fc('Jun',22,'73%','ok') ];
+
+    const directv = [
+      { loc:'Depto Costanera 1A', card:'0012 4456', days:12, chipBg:'rgba(126,207,134,.16)', chipCol:'#7ecf86' },
+      { loc:'Casa del Bosque', card:'0098 1123', days:3, chipBg:'rgba(220,38,38,.18)', chipCol:'#fca5a5' },
+    ];
+
+    const bk = (initials,client,code,prop,stay,status,st,balance,paid)=>{
+      const stMap = {
+        confirmada:['#e4f3ea','#2f8f4e'], seña:['#fdf0e2','#c2410c'], pendiente:['#f0ebf8','#5c3a8c'], activa:['#e6eefc','#2563eb'],
+      };
+      const av = [['#ece6f6','#7c5ca8'],['#e6eefc','#2563eb'],['#e4f3ea','#2f8f4e'],['#fdecec','#dc2626'],['#fdf0e2','#c2410c']];
+      const a = av[initials.charCodeAt(0)%5];
+      return { initials, client, code, prop, stay, status, stBg:stMap[st][0], stCol:stMap[st][1], balance, balCol: paid?'#9583b3':'#121325', avBg:a[0], avCol:a[1] };
+    };
+    const proximas = [
+      bk('FG','Familia Gómez','BK-2025-018','Depto Costanera 1A','12 – 19 Jul','Confirmada','confirmada','U$D 420',false),
+      bk('LM','Lucía Medina','BK-2025-019','Casa del Bosque','14 – 21 Jul','Seña','seña','U$D 680',false),
+      bk('RT','Roberto Torres','BK-2025-020','Studio Centro','15 – 18 Jul','Pendiente','pendiente','U$D 210',false),
+      bk('PA','Paula Ávila','BK-2025-021','Depto Vista al Mar','18 – 25 Jul','Confirmada','confirmada','Pagado',true),
+      bk('DS','Diego Sosa','BK-2025-022','Cabaña Los Pinos','20 – 27 Jul','Seña','seña','U$D 540',false),
+    ];
+
+    const checkins = [
+      { initials:'FG', client:'Familia Gómez', prop:'Depto Costanera 1A', guests:'4 huéspedes', time:'14:00', tag:'Seña paga' },
+      { initials:'RT', client:'Roberto Torres', prop:'Studio Centro', guests:'2 huéspedes', time:'16:30', tag:'Cobrar saldo' },
+    ];
+    const checkouts = [
+      { initials:'MC', client:'Marta Cabrera', prop:'Depto Vista al Mar', time:'11:00', tag:'Revisar depósito' },
+    ];
+
+    const alertas = [
+      { bg:'#fdf0e2', bd:'#f7ddc0', icBg:'#fdecdd', icCol:'#f97316', title:'DirecTV Casa del Bosque vence en 3 días', desc:'Recargá la tarjeta 0098 1123 antes del check-in', action:'Recargar',
+        icon:this.icon('<rect width="20" height="15" x="2" y="7" rx="2"/><path d="m17 2-5 5-5-5"/>','#f97316') },
+      { bg:'#fdecec', bd:'#f7cccc', icBg:'#fdeaea', icCol:'#dc2626', title:'Saldo pendiente · Roberto Torres', desc:'U$D 210 a cobrar en el check-in de hoy', action:'Ver reserva',
+        icon:this.icon('<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>','#dc2626') },
+      { bg:'#f5f2fa', bd:'#e7dff3', icBg:'#ece6f6', icCol:'#7c5ca8', title:'Check-out con inspección pendiente', desc:'Depto Vista al Mar · revisar inventario y depósito', action:'Inspeccionar',
+        icon:this.icon('<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>','#7c5ca8') },
+    ];
+
+    // ---- Propiedades ----
+    const prop = (name,type,zone,cap,br,ba,st,rate,occ)=>{
+      const stMap={ disponible:['#e4f3ea','#2f8f4e'], ocupada:['#e6eefc','#2563eb'], mantenimiento:['#fdf0e2','#c2410c'] };
+      return { name, type, zone, cap, br, ba, status:st.charAt(0).toUpperCase()+st.slice(1), stBg:stMap[st][0], stCol:stMap[st][1], rate, occ };
+    };
+    const properties = [
+      prop('Depto Costanera 1A','Departamento','Frente al mar',5,2,1,'ocupada','U$D 90',82),
+      prop('Casa del Bosque','Casa','Zona arbolada',8,3,2,'disponible','U$D 140',64),
+      prop('Studio Centro','Monoambiente','Centro',2,1,1,'disponible','U$D 55',71),
+      prop('Depto Vista al Mar','Departamento','Costanera norte',4,2,1,'ocupada','U$D 110',88),
+      prop('Cabaña Los Pinos','Cabaña','Bosque de pinos',6,2,1,'mantenimiento','U$D 95',55),
+      prop('Depto Peatonal 3B','Departamento','Peatonal',3,1,1,'disponible','U$D 70',60),
+    ];
+
+    // ---- Clientes ----
+    const cli = (n,doc,phone,email,trips,rating,last)=>{
+      const av=[['#ece6f6','#7c5ca8'],['#e6eefc','#2563eb'],['#e4f3ea','#2f8f4e'],['#fdecec','#dc2626'],['#fdf0e2','#c2410c']];
+      const a=av[n.charCodeAt(0)%5];
+      const ini=n.split(' ').map(x=>x[0]).slice(0,2).join('');
+      return { name:n, ini, doc, phone, email, trips, rating, last, avBg:a[0], avCol:a[1] };
+    };
+    const clients = [
+      cli('Familia Gómez','DNI 28.445.109','+54 9 11 5023-8891','gomez.fam@mail.com',4,5,'Jul 2025'),
+      cli('Lucía Medina','DNI 31.009.552','+54 9 223 415-2210','lu.medina@mail.com',2,5,'Jul 2025'),
+      cli('Roberto Torres','DNI 24.771.003','+54 9 11 6688-1120','r.torres@mail.com',6,4,'Jul 2025'),
+      cli('Paula Ávila','DNI 35.220.487','+54 9 351 220-9087','paula.avila@mail.com',1,5,'Jun 2025'),
+      cli('Diego Sosa','DNI 29.884.201','+54 9 11 4412-7756','diego.sosa@mail.com',3,4,'May 2025'),
+      cli('Marta Cabrera','DNI 22.115.630','+54 9 223 778-3341','m.cabrera@mail.com',5,5,'Jul 2025'),
+    ];
+
+    // ---- Contabilidad ----
+    const payRow = (date,client,type,method,cur,amount,flag)=>({date,client,type,method,cur,amount,flag});
+    const payments = [
+      payRow('06 Jul','Familia Gómez','Seña 30%','Transferencia','USD','U$D 480','💵'),
+      payRow('05 Jul','Paula Ávila','Saldo 70%','Transferencia','USD','U$D 770','💵'),
+      payRow('04 Jul','Lucía Medina','Depósito','Efectivo','ARS','$120.000','🇦🇷'),
+      payRow('03 Jul','Diego Sosa','Seña 30%','Mercado Pago','ARS','$186.500','🇦🇷'),
+      payRow('02 Jul','Roberto Torres','Saldo 70%','Transferencia','USD','U$D 350','💵'),
+      payRow('01 Jul','Marta Cabrera','Reserva completa','Transferencia','USD','U$D 1.240','💵'),
+    ];
+
+    // ---- Gastos ----
+    const exp = (date,cat,desc,prop,method,cur,amount,catCol,catBg)=>({date,cat,desc,prop,method,cur,amount,catCol,catBg});
+    const expenses = [
+      exp('06 Jul','Limpieza','Limpieza post check-out','Depto Vista al Mar','Efectivo','ARS','$45.000','#2563eb','#e6eefc'),
+      exp('05 Jul','Mantenimiento','Reparación aire acondicionado','Casa del Bosque','Transferencia','ARS','$180.000','#f97316','#fdf0e2'),
+      exp('04 Jul','Servicios','Recarga DirecTV','Casa del Bosque','Mercado Pago','ARS','$32.000','#7c5ca8','#ece6f6'),
+      exp('02 Jul','Insumos','Amenities y ropa blanca','Todas','Transferencia','ARS','$96.500','#2f8f4e','#e4f3ea'),
+      exp('01 Jul','Impuestos','Tasa municipal','Depto Costanera 1A','Transferencia','ARS','$54.200','#dc2626','#fdecec'),
+    ];
+    const expCats = [
+      { label:'Mantenimiento', val:'$180.000', col:'#f97316', pct:'42%' },
+      { label:'Insumos', val:'$96.500', col:'#2f8f4e', pct:'22%' },
+      { label:'Impuestos', val:'$54.200', col:'#dc2626', pct:'13%' },
+      { label:'Limpieza', val:'$45.000', col:'#2563eb', pct:'11%' },
+      { label:'Servicios', val:'$32.000', col:'#7c5ca8', pct:'8%' },
+    ];
+
+    // ---- Inventario ----
+    const inv = (item,cat,qty,cond,condCol,condBg)=>({item,cat,qty,cond,condCol,condBg});
+    const inventory = [
+      inv('Juego de sábanas','Ropa blanca',12,'Bueno','#2f8f4e','#e4f3ea'),
+      inv('Toallas','Ropa blanca',20,'Bueno','#2f8f4e','#e4f3ea'),
+      inv('Vajilla completa','Cocina',6,'Regular','#c2410c','#fdf0e2'),
+      inv('Televisor Smart','Electrónica',3,'Bueno','#2f8f4e','#e4f3ea'),
+      inv('Aire acondicionado','Electrodomésticos',3,'A revisar','#dc2626','#fdecec'),
+      inv('Juego de ollas','Cocina',4,'Nuevo','#7c5ca8','#ece6f6'),
+    ];
+
+    // ---- Calendario (Julio 2025, semana empieza lunes; Jul 1 = martes) ----
+    const bookings = [
+      { name:'Gómez', col:'#7c5ca8', bg:'#ece6f6', from:12, to:18 },
+      { name:'Medina', col:'#2f8f4e', bg:'#e4f3ea', from:14, to:21 },
+      { name:'Ávila', col:'#2563eb', bg:'#e6eefc', from:19, to:25 },
+      { name:'Sosa', col:'#f97316', bg:'#fdf0e2', from:20, to:27 },
+    ];
+    const offset = 1, daysInMonth = 31, today = 8;
+    const calCells = [];
+    for (let i=0;i<offset;i++) calCells.push({ key:'b'+i, day:'', chips:[], cellBg:'transparent', cellBd:'transparent', numCol:'transparent', numBg:'transparent' });
+    for (let d=1;d<=daysInMonth;d++){
+      const chips = bookings.filter(b=> d>=b.from && d<=b.to).map(b=>({
+        col:b.col, label: d===b.from ? b.name : '', op: d===b.from ? '1' : '0.55', key:b.name+d
+      }));
+      const isToday = d===today;
+      calCells.push({ key:'d'+d, day:d, chips,
+        cellBg: isToday ? '#f5f2fa' : '#faf8fd', cellBd: isToday ? '#c3abdf' : '#f0ebf8',
+        numCol: isToday ? '#fff' : '#6d5d8a', numBg: isToday ? '#7c5ca8' : 'transparent' });
+    }
+    const calWeekdays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const calLegend = bookings.map(b=>({ name:b.name, col:b.col, key:b.name }));
+
+    return {
+      pageTitle: titles[s][0], pageSub: titles[s][1],
+      properties, clients, payments, expenses, expCats, inventory, calCells, calWeekdays, calLegend,
+      nav: { inicio:this.navItem('inicio'), calendario:this.navItem('calendario'), propiedades:this.navItem('propiedades'),
+             clientes:this.navItem('clientes'), contabilidad:this.navItem('contabilidad'), gastos:this.navItem('gastos'), inventario:this.navItem('inventario') },
+      goInicio:()=>this.go('inicio'), goCalendario:()=>this.go('calendario'), goPropiedades:()=>this.go('propiedades'),
+      goClientes:()=>this.go('clientes'), goContabilidad:()=>this.go('contabilidad'), goGastos:()=>this.go('gastos'), goInventario:()=>this.go('inventario'),
+      isInicio: s==='inicio', isCalendario: s==='calendario', isPropiedades: s==='propiedades', isClientes: s==='clientes',
+      isContabilidad: s==='contabilidad', isGastos: s==='gastos', isInventario: s==='inventario',
+      view: { general:view('general'), operativa:view('operativa') },
+      setGeneral:()=>this.setState({view:'general'}), setOperativa:()=>this.setState({view:'operativa'}),
+      isGeneral: this.state.view==='general', isOperativa: this.state.view==='operativa',
+      kpis, forecast, directv, proximas, checkins, checkouts, alertas,
+      // modales
+      modalOpen: this.state.modal !== null,
+      isReserva: this.state.modal==='reserva', isPropiedad: this.state.modal==='propiedad',
+      isCliente: this.state.modal==='cliente', isGasto: this.state.modal==='gasto',
+      isItem: this.state.modal==='item', isDetalle: this.state.modal==='detalle',
+      openReserva:()=>this.openModal('reserva'), openPropiedad:()=>this.openModal('propiedad'),
+      openCliente:()=>this.openModal('cliente'), openGasto:()=>this.openModal('gasto'),
+      openItem:()=>this.openModal('item'), openDetalle:()=>this.openModal('detalle'),
+      closeModal:()=>this.closeModal(), stop:(e)=>e.stopPropagation(),
+      soon: 'Sección en construcción',
+    };
+  }
+}
+</script>
+</body>
+</html>

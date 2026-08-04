@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import {
-  ChevronLeft, ChevronRight, Users, BedDouble, Bath, Pencil,
+  ChevronLeft, ChevronRight, Sparkles, PawPrint, Pencil, User, Baby,
 } from 'lucide-react';
 import { getBookings, getProperties, createBooking, updateBooking, deleteBooking } from '../services/api';
 import { BookingModal } from '../components/BookingModal';
@@ -11,8 +11,8 @@ import { CheckoutModal } from '../components/CheckoutModal';
 import { BookingDetailModal } from '../components/BookingDetailModal';
 import { Pagination } from '../components/Pagination';
 import { KanagawaCard } from '../components/ui/KanagawaCard';
-import { kanagawaAssets, pickThemedArtwork } from '../theme/kanagawa-assets';
-import { useTheme } from '../theme/ThemeProvider';
+import { getEntityColor, getColorByKey } from '../utils/entityColor';
+import { getPropertyShortLabel } from '../utils/propertyLabel';
 
 const PAGE_SIZE = 10;
 
@@ -41,31 +41,11 @@ interface Booking {
 
 interface Property {
   id: string;
-  bedrooms: number;
-  bathrooms: number;
+  name: string;
   city?: string;
   state?: string;
+  color?: string;
 }
-
-// Paleta fija para diferenciar clientes en la grilla del calendario (hash estable por client_id)
-const CLIENT_COLORS = [
-  { solid: 'bg-primary', dot: 'bg-primary' },
-  { solid: 'bg-state-green', dot: 'bg-state-green' },
-  { solid: 'bg-state-blue', dot: 'bg-state-blue' },
-  { solid: 'bg-state-orange', dot: 'bg-state-orange' },
-  { solid: 'bg-state-red', dot: 'bg-state-red' },
-  { solid: 'bg-state-yellow', dot: 'bg-state-yellow' },
-  { solid: 'bg-state-cyan', dot: 'bg-state-cyan' },
-  { solid: 'bg-state-green-strong', dot: 'bg-state-green-strong' },
-];
-
-const getClientColor = (clientId: string) => {
-  let hash = 0;
-  for (let i = 0; i < clientId.length; i++) {
-    hash = (hash * 31 + clientId.charCodeAt(i)) >>> 0;
-  }
-  return CLIENT_COLORS[hash % CLIENT_COLORS.length];
-};
 
 const getSurname = (fullName?: string) => {
   if (!fullName) return '';
@@ -79,7 +59,6 @@ const formatShortDate = (dateStr: string) => {
 };
 
 export const Calendar = () => {
-  const { theme } = useTheme();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,6 +162,14 @@ export const Calendar = () => {
     }
   };
 
+  const STATUS_LABELS: Record<string, string> = {
+    pending: 'Pendiente',
+    confirmed: 'Confirmada',
+    active: 'Activa',
+    completed: 'Finalizada',
+    cancelled: 'Cancelada',
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'text-state-blue bg-[rgba(118,102,154,0.14)] border-[rgba(118,102,154,0.28)]';
@@ -263,7 +250,6 @@ export const Calendar = () => {
   const listTotalPages = Math.max(1, Math.ceil(monthBookings.length / PAGE_SIZE));
   const paginatedMonthBookings = monthBookings.slice((listPage - 1) * PAGE_SIZE, listPage * PAGE_SIZE);
   const propertyById = new Map(properties.map((p) => [p.id, p]));
-  const PropertyArt = pickThemedArtwork(kanagawaAssets.cards.propertyLandscape, theme);
 
   return (
     <div className="space-y-6 pb-20 font-sans">
@@ -304,7 +290,7 @@ export const Calendar = () => {
             <div className="flex items-center gap-3 flex-wrap">
               {Array.from(visibleClients.entries()).map(([clientId, name]) => (
                 <div key={clientId} className="flex items-center gap-1.5 text-xs font-semibold text-ink-secondary">
-                  <span className={`w-2.5 h-2.5 rounded-full ${getClientColor(clientId).dot}`}></span>
+                  <span className={`w-2.5 h-2.5 rounded-full ${getEntityColor(clientId).dot}`}></span>
                   {getSurname(name)}
                 </div>
               ))}
@@ -350,7 +336,7 @@ export const Calendar = () => {
                     {dayBookings.map(b => {
                       const [ciY, ciM, ciD] = b.check_in.split('-').map(Number);
                       const isCheckInDay = ciY === year && (ciM - 1) === month && ciD === day;
-                      const color = getClientColor(b.client_id);
+                      const color = getEntityColor(b.client_id);
                       return isCheckInDay ? (
                         <div
                           key={b.id}
@@ -386,8 +372,13 @@ export const Calendar = () => {
               {paginatedMonthBookings.map(b => {
                 const isPaid = (b.left_to_pay_usd || 0) <= 0;
                 const property = propertyById.get(b.property_id);
+                const propertyColor = getColorByKey(property?.color) ?? getEntityColor(b.property_id);
                 const [ciDay] = b.check_in.split('-').slice(2);
                 const ciMonthShort = formatShortDate(b.check_in).split(' ')[1];
+                const hasServices = b.service_status === 'SERVICIOS';
+                const hasPets = !!b.pets;
+                const adults = b.adults ?? b.guests_count;
+                const children = b.children ?? 0;
 
                 return (
                   <KanagawaCard
@@ -396,46 +387,69 @@ export const Calendar = () => {
                     className="cursor-pointer hover:shadow-card-hover hover:-translate-y-[3px] transition-all duration-300 overflow-hidden flex flex-col"
                     onClick={() => setSelectedBooking(b)}
                   >
-                    <div className="relative property-card-image w-full overflow-hidden">
-                      <PropertyArt className="h-full w-full" />
-                      <div className="absolute top-3 left-3 bg-background/80 backdrop-blur-sm rounded-md px-2.5 py-1 text-center">
+                    <div className={`relative property-card-image w-full overflow-hidden flex items-center justify-center ${propertyColor.solid}`}>
+                      <div className="w-14 h-14 rounded-full bg-surface flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
+                        <span className="font-display text-lg font-extrabold text-ink-primary">
+                          {getPropertyShortLabel(b.property_name)}
+                        </span>
+                      </div>
+                      <div className="absolute top-3 left-3 bg-surface rounded-md px-2.5 py-1 text-center">
                         <p className="font-display font-extrabold text-lg text-ink-primary leading-none">{ciDay}</p>
                         <p className="text-[9px] font-bold uppercase text-ink-muted leading-none mt-0.5">{ciMonthShort}</p>
                       </div>
                       <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(b.status)}`}>
-                        {b.status}
+                        {STATUS_LABELS[b.status] || b.status}
                       </span>
                     </div>
 
                     <div className="p-[18px] flex-1 flex flex-col">
                       <p className="font-semibold text-ink-primary truncate">{b.client_name || 'Sin cliente'}</p>
-                      <p className="text-[11px] font-mono text-ink-muted mb-3">{b.booking_number}</p>
                       <p className="text-xs text-ink-secondary mb-3">
                         {b.property_name}
                         {(property?.city || property?.state) && ` · ${[property?.city, property?.state].filter(Boolean).join(', ')}`}
                       </p>
 
                       <div className="flex items-center text-sm mb-3 divide-x divide-border-subtle border-t border-border-subtle pt-3">
-                        <div className="flex-1 flex items-center justify-center gap-1.5 text-ink-secondary">
-                          <Users className="w-3.5 h-3.5" strokeWidth={1.7} />
-                          <span className="font-semibold">{b.guests_count}</span>
+                        <div className="flex-1 flex flex-col items-center justify-center gap-1">
+                          <div className="w-7 h-7 rounded-full bg-surface-elevated text-ink-secondary flex items-center justify-center">
+                            <User className="w-3.5 h-3.5" strokeWidth={1.7} />
+                          </div>
+                          <span className="text-xs font-bold text-ink-primary">{adults}</span>
                         </div>
-                        {property && (
-                          <>
-                            <div className="flex-1 flex items-center justify-center gap-1.5 text-ink-secondary">
-                              <BedDouble className="w-3.5 h-3.5" strokeWidth={1.7} />
-                              <span className="font-semibold">{property.bedrooms}</span>
+                        {children > 0 && (
+                          <div className="flex-1 flex flex-col items-center justify-center gap-1">
+                            <div className="w-7 h-7 rounded-full bg-surface-elevated text-ink-secondary flex items-center justify-center">
+                              <Baby className="w-3.5 h-3.5" strokeWidth={1.7} />
                             </div>
-                            <div className="flex-1 flex items-center justify-center gap-1.5 text-ink-secondary">
-                              <Bath className="w-3.5 h-3.5" strokeWidth={1.7} />
-                              <span className="font-semibold">{property.bathrooms}</span>
+                            <span className="text-xs font-bold text-ink-primary">{children}</span>
+                          </div>
+                        )}
+                        {hasServices && (
+                          <div className="flex-1 flex flex-col items-center justify-center gap-1">
+                            <div
+                              title="Con servicios"
+                              className="w-7 h-7 rounded-full flex items-center justify-center bg-state-cyan/20 text-state-cyan"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" strokeWidth={1.7} />
                             </div>
-                          </>
+                            <span className="text-[9px] font-bold uppercase text-ink-muted">Serv.</span>
+                          </div>
+                        )}
+                        {hasPets && (
+                          <div className="flex-1 flex flex-col items-center justify-center gap-1">
+                            <div
+                              title="Con mascota"
+                              className="w-7 h-7 rounded-full flex items-center justify-center bg-state-orange/20 text-state-orange"
+                            >
+                              <PawPrint className="w-3.5 h-3.5" strokeWidth={1.7} />
+                            </div>
+                            <span className="text-[9px] font-bold uppercase text-ink-muted">Mascota</span>
+                          </div>
                         )}
                       </div>
 
                       <div className="flex items-center justify-between mt-auto">
-                        <p className={`font-display font-bold ${isPaid ? 'text-ink-muted' : 'text-state-orange'}`}>
+                        <p className={`font-sans font-bold ${isPaid ? 'text-ink-muted' : 'text-state-orange'}`}>
                           {isPaid ? 'Pagado' : `U$D ${(b.left_to_pay_usd || 0).toLocaleString()}`}
                         </p>
                         <button

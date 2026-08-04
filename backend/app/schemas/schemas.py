@@ -104,11 +104,12 @@ class PropertyResponse(BaseModel):
     description: Optional[str] = None
     status: str
     property_type: str
+    color: Optional[str] = None
     amenities: Optional[List[str]] = []
     check_in_day: Optional[int] = 5
     check_out_day: Optional[int] = 5
     rental_unit: Optional[str] = 'days'
-    
+
     @field_serializer('id')
     def serialize_uuid(self, value: UUID, _info) -> str:
         return str(value)
@@ -128,16 +129,17 @@ class PropertyResponse(BaseModel):
 
 class PropertyCreate(BaseModel):
     name: str
-    address: str
+    address: str = ''
     city: Optional[str] = None
     state: Optional[str] = None
     country: str = 'Argentina'
     capacity: int
-    bedrooms: int
+    bedrooms: Optional[int] = 1
     bathrooms: Optional[float] = 1.0
     description: Optional[str] = None
     status: str = 'available'
     property_type: str = 'apartment'
+    color: Optional[str] = None
     amenities: List[str] = []
     check_in_day: int = 5
     check_out_day: int = 5
@@ -156,6 +158,7 @@ class PropertyUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     property_type: Optional[str] = None
+    color: Optional[str] = None
     amenities: Optional[List[str]] = None
     check_in_day: Optional[int] = None
     check_out_day: Optional[int] = None
@@ -308,6 +311,17 @@ class AccountingStats(BaseModel):
     current_season_total: float
     previous_season_total: float
     comparisons: List[SeasonStats]
+
+
+class ExchangeRateResponse(BaseModel):
+    usd_exchange_rate: float
+
+    class Config:
+        from_attributes = True
+
+
+class ExchangeRateUpdate(BaseModel):
+    usd_exchange_rate: float
 
 
 # --- EXPENSES (Gastos y Reparaciones) ---

@@ -95,18 +95,18 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           <div className="border border-border-subtle rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
               <span className="text-sm text-ink-secondary">Precio total</span>
-              <span className="font-display font-bold text-ink-primary">U$D {booking.total_price_usd.toLocaleString()}</span>
+              <span className="font-sans font-bold text-ink-primary">U$D {booking.total_price_usd.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
               <span className="text-sm text-ink-secondary">Anticipo pagado</span>
-              <span className="font-display font-bold text-state-green-strong">U$D {(booking.advance_payment_usd || 0).toLocaleString()}</span>
+              <span className="font-sans font-bold text-state-green-strong">U$D {(booking.advance_payment_usd || 0).toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-ink-secondary">Saldo pendiente</span>
               {isFullyPaid ? (
                 <span className="font-display font-bold text-ink-muted">Pagado</span>
               ) : (
-                <span className="font-display font-bold text-state-orange">U$D {leftToPay.toLocaleString()}</span>
+                <span className="font-sans font-bold text-state-orange">U$D {leftToPay.toLocaleString()}</span>
               )}
             </div>
           </div>

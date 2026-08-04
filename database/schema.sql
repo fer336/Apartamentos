@@ -44,6 +44,7 @@ CREATE TABLE properties (
     description TEXT,
     status VARCHAR(50) DEFAULT 'available', -- 'available', 'occupied', 'maintenance', 'inactive'
     property_type VARCHAR(50) DEFAULT 'apartment', -- 'apartment', 'house', 'studio', 'villa'
+    color VARCHAR(20),
     amenities JSONB DEFAULT '[]', -- ["wifi", "ac", "tv", "kitchen", "parking"]
     photos JSONB DEFAULT '[]', -- [{"url": "...", "caption": "..."}]
     house_rules TEXT,

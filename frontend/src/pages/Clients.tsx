@@ -1,27 +1,16 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Search, Plus, Edit, Trash2, Users as UsersIcon, Star } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Users as UsersIcon } from 'lucide-react';
 import { getClients, getBookings, createClient, updateClient, deleteClient } from '../services/api';
+import { ClientCard, type Client } from '../components/ClientCard';
 import { ClientModal } from '../components/ClientModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Pagination } from '../components/Pagination';
 import { KanagawaCard } from '../components/ui/KanagawaCard';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
+import { getEntityColor } from '../utils/entityColor';
 
 const PAGE_SIZE = 10;
-
-interface Client {
-  id: string;
-  full_name: string;
-  email: string | null;
-  phone: string | null;
-  nationality: string | null;
-  document_type?: string;
-  document_id?: string;
-  whatsapp?: string;
-  notes?: string;
-  rating?: number | null;
-}
 
 interface Booking {
   id: string;
@@ -29,28 +18,10 @@ interface Booking {
   status: string;
   check_in: string;
   check_out: string;
+  booking_number?: string;
+  property_name?: string;
+  checkout_notes?: string;
 }
-
-// Misma paleta y hash estable por id que usa Calendar.tsx, para que el color de
-// un cliente sea consistente en toda la app (grilla del calendario y esta tabla).
-const CLIENT_COLORS = [
-  'bg-primary',
-  'bg-state-green',
-  'bg-state-blue',
-  'bg-state-orange',
-  'bg-state-red',
-  'bg-state-yellow',
-  'bg-state-cyan',
-  'bg-state-green-strong',
-];
-
-const getClientColor = (clientId: string) => {
-  let hash = 0;
-  for (let i = 0; i < clientId.length; i++) {
-    hash = (hash * 31 + clientId.charCodeAt(i)) >>> 0;
-  }
-  return CLIENT_COLORS[hash % CLIENT_COLORS.length];
-};
 
 const dateFromISO = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number);
@@ -120,8 +91,7 @@ export const Clients = () => {
     if (!q) return clients;
     return clients.filter((c) =>
       c.full_name.toLowerCase().includes(q) ||
-      (c.document_id || '').toLowerCase().includes(q) ||
-      (c.phone || '').toLowerCase().includes(q)
+      (c.whatsapp || '').toLowerCase().includes(q)
     );
   }, [clients, searchQuery]);
 
@@ -138,6 +108,15 @@ export const Clients = () => {
 
   const getInitials = (name: string) =>
     name.split(' ').map((word) => word[0]).slice(0, 2).join('').toUpperCase();
+
+  const getCardStats = (client: Client) => {
+    const stats = statsByClient.get(client.id);
+    if (!stats) return undefined;
+    return {
+      bookingsCount: stats.count,
+      lastBookingDate: stats.lastDate ? stats.lastDate.toISOString() : null,
+    };
+  };
 
   const handleSaveClient = async (clientData: any) => {
     try {
@@ -200,7 +179,7 @@ export const Clients = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre, DNI o teléfono…"
+            placeholder="Buscar por nombre o WhatsApp…"
             className="form-control w-full pl-10 pr-4 py-2.5 text-sm placeholder:text-ink-muted"
           />
         </div>
@@ -223,7 +202,7 @@ export const Clients = () => {
           <EmptyState
             icon={<UsersIcon className="w-8 h-8" strokeWidth={1.7} />}
             title={searchQuery ? 'Sin resultados' : 'No hay clientes'}
-            description={searchQuery ? 'Probá con otro nombre, DNI o teléfono.' : 'Agrega tu primer cliente para comenzar'}
+            description={searchQuery ? 'Probá con otro nombre o WhatsApp.' : 'Agrega tu primer cliente para comenzar'}
             action={!searchQuery && (
               <Button variant="primary" onClick={() => { setEditingClient(undefined); setIsModalOpen(true); }}>
                 <Plus className="w-5 h-5" strokeWidth={1.7} />
@@ -233,16 +212,34 @@ export const Clients = () => {
           />
         </KanagawaCard>
       ) : (
-        <KanagawaCard padded={false} className="overflow-hidden">
-          <div className="overflow-x-auto">
+        <>
+          <div className="lg:hidden space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-[18px]">
+              {paginatedClients.map((client) => (
+                <ClientCard
+                  key={client.id}
+                  client={client}
+                  stats={getCardStats(client)}
+                  onEdit={handleEditClient}
+                  onDelete={handleDeleteClick}
+                />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <KanagawaCard padded={false} className="overflow-hidden">
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+              </KanagawaCard>
+            )}
+          </div>
+
+          <KanagawaCard padded={false} className="hidden lg:block overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-background-alt text-left">
                   <th className="table-head-cell px-5 py-3">Cliente</th>
-                  <th className="table-head-cell px-5 py-3">Documento</th>
                   <th className="table-head-cell px-5 py-3">Contacto</th>
                   <th className="table-head-cell px-5 py-3">Estadías</th>
-                  <th className="table-head-cell px-5 py-3">Rating</th>
                   <th className="table-head-cell px-5 py-3 text-right">Última</th>
                   <th className="px-5 py-3 w-24"></th>
                 </tr>
@@ -254,40 +251,21 @@ export const Clients = () => {
                     <tr key={client.id} className="table-row">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-[11px] ${getClientColor(client.id)} flex items-center justify-center text-primary-foreground font-bold text-sm flex-shrink-0`}>
+                          <div className={`w-10 h-10 rounded-[11px] ${getEntityColor(client.id).solid} flex items-center justify-center text-primary-foreground font-bold text-sm flex-shrink-0`}>
                             {getInitials(client.full_name)}
                           </div>
                           <span className="font-semibold text-ink-primary truncate">{client.full_name}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        {client.document_id ? (
-                          <span className="font-mono text-ink-secondary">
-                            {client.document_type || 'DNI'} {client.document_id}
-                          </span>
-                        ) : (
-                          <span className="text-ink-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5">
                         <div className="flex flex-col gap-0.5">
-                          {client.phone && <span className="text-ink-primary">{client.phone}</span>}
+                          {client.whatsapp && <span className="text-ink-primary">{client.whatsapp}</span>}
                           {client.email && <span className="text-xs text-ink-secondary truncate">{client.email}</span>}
-                          {!client.phone && !client.email && <span className="text-ink-muted">—</span>}
+                          {!client.whatsapp && !client.email && <span className="text-ink-muted">—</span>}
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="font-display font-extrabold text-ink-primary">{stats?.count ?? 0}</span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {client.rating != null ? (
-                          <span className="flex items-center gap-1 text-state-yellow font-semibold">
-                            <Star className="w-3.5 h-3.5 fill-current" strokeWidth={1.7} />
-                            {client.rating}
-                          </span>
-                        ) : (
-                          <span className="text-ink-muted">—</span>
-                        )}
+                        <span className="font-display font-extrabold text-2xl text-ink-primary">{stats?.count ?? 0}</span>
                       </td>
                       <td className="px-5 py-3.5 text-right text-ink-secondary">
                         {stats?.lastDate ? formatMonthYear(stats.lastDate) : '—'}
@@ -320,6 +298,7 @@ export const Clients = () => {
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </div>
         </KanagawaCard>
+        </>
       )}
 
       <ClientModal
@@ -327,6 +306,7 @@ export const Clients = () => {
         onClose={() => { setIsModalOpen(false); setEditingClient(undefined); }}
         onSave={handleSaveClient}
         client={editingClient}
+        bookings={bookings.filter((b) => b.client_id === editingClient?.id)}
       />
 
       <ConfirmModal

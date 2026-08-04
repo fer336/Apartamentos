@@ -11,6 +11,7 @@ class Organization(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     slug = Column(String(50), unique=True)
+    usd_exchange_rate = Column(Numeric(10, 2), nullable=False, default=1200)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
@@ -84,6 +85,7 @@ class Property(Base):
     description = Column(Text)
     status = Column(String(50), default='available')
     property_type = Column(String(50), default='apartment')
+    color = Column(String(20), nullable=True)
     amenities = Column(JSONB, default=[])
     photos = Column(JSONB, default=[])
     

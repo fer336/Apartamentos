@@ -10,8 +10,9 @@ import {
   LogIn,
   LogOut,
   AlertTriangle,
+  DollarSign,
 } from 'lucide-react';
-import { getDashboardStats, getProperties, getBookings } from '../services/api';
+import { getDashboardStats, getProperties, getBookings, getExchangeRate, updateExchangeRate } from '../services/api';
 import { DirectvManagerModal } from '../components/DirectvManagerModal';
 import { DecorativeCardImage } from '../components/ui/DecorativeCardImage';
 import { KanagawaCard, type KanagawaCardTone } from '../components/ui/KanagawaCard';
@@ -107,7 +108,7 @@ const StatCard = ({
         <Icon className="w-4 h-4" strokeWidth={1.7} />
       </div>
     </div>
-    <p className="font-display font-bold text-[27px] tracking-tight leading-none" style={{ color: valueColor }}>{value}</p>
+    <p className="font-sans font-bold text-[27px] tracking-tight leading-none" style={{ color: valueColor }}>{value}</p>
     {subtitle && (
       <p className="text-xs font-semibold mt-2" style={{ color: subtitleColor || 'var(--text-secondary)' }}>
         {subtitle}
@@ -201,6 +202,9 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDirectvModalOpen, setIsDirectvModalOpen] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [editingRate, setEditingRate] = useState(false);
+  const [rateInput, setRateInput] = useState('');
 
   const fetchAll = async () => {
     try {
@@ -220,11 +224,30 @@ export const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+
+    try {
+      const rateData = await getExchangeRate();
+      setExchangeRate(rateData.usd_exchange_rate);
+    } catch (err) {
+      console.error('Error fetching exchange rate:', err);
+    }
   };
 
   useEffect(() => {
     fetchAll();
   }, []);
+
+  const handleSaveRate = async () => {
+    const value = parseFloat(rateInput);
+    if (!value || value <= 0) return;
+    try {
+      await updateExchangeRate(value);
+      setExchangeRate(value);
+      setEditingRate(false);
+    } catch (err) {
+      console.error('Error updating exchange rate:', err);
+    }
+  };
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
@@ -339,19 +362,48 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* Switcher Vista general / operativa */}
-      <div className="inline-flex bg-surface-elevated rounded-md p-1 border border-border-subtle">
-        {(['general', 'operativa'] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-fast ease-kanagawa ${
-              view === v ? 'bg-surface text-cta shadow-sm' : 'text-ink-muted hover:text-cta'
-            }`}
-          >
-            {v === 'general' ? 'Vista general' : 'Vista operativa'}
-          </button>
-        ))}
+      {/* Switcher Vista general / operativa + tipo de cambio */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="inline-flex bg-surface-elevated rounded-md p-1 border border-border-subtle">
+          {(['general', 'operativa'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-fast ease-kanagawa ${
+                view === v ? 'bg-surface text-cta shadow-sm' : 'text-ink-muted hover:text-cta'
+              }`}
+            >
+              {v === 'general' ? 'Vista general' : 'Vista operativa'}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 bg-surface-elevated border border-border-subtle rounded-md px-3 py-1.5">
+          <DollarSign className="w-4 h-4 text-ink-muted" strokeWidth={1.7} />
+          <span className="text-xs font-bold text-ink-muted uppercase tracking-wide">Dólar</span>
+          {editingRate ? (
+            <>
+              <input
+                type="number"
+                step="0.01"
+                autoFocus
+                value={rateInput}
+                onChange={(e) => setRateInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveRate()}
+                className="w-20 px-2 py-1 rounded border border-border bg-surface text-sm font-bold focus:outline-none focus:border-primary"
+              />
+              <button onClick={handleSaveRate} className="text-xs font-bold text-cta hover:underline">Guardar</button>
+              <button onClick={() => setEditingRate(false)} className="text-xs text-ink-muted hover:underline">Cancelar</button>
+            </>
+          ) : (
+            <button
+              onClick={() => { setRateInput(exchangeRate != null ? String(exchangeRate) : ''); setEditingRate(true); }}
+              className="text-sm font-bold text-ink-primary hover:text-primary transition-colors"
+            >
+              {exchangeRate != null ? `$${exchangeRate.toLocaleString()}` : 'Definir'}
+            </button>
+          )}
+        </div>
       </div>
 
       {view === 'general' ? (
@@ -512,7 +564,7 @@ export const Dashboard = () => {
                               </span>
                             </td>
                             <td
-                              className="py-3 text-right font-display font-bold whitespace-nowrap"
+                              className="py-3 text-right font-sans font-bold whitespace-nowrap"
                               style={{ color: isPaid ? 'var(--text-muted)' : 'var(--text-primary)' }}
                             >
                               {isPaid ? 'Pagado' : `U$D ${(b.left_to_pay_usd || 0).toLocaleString()}`}

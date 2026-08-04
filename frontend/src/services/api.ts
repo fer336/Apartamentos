@@ -51,6 +51,16 @@ export const getAccountingStats = async (month?: number, year1?: number, year2?:
   return response.data;
 };
 
+export const getExchangeRate = async () => {
+  const response = await api.get('/settings/exchange-rate');
+  return response.data;
+};
+
+export const updateExchangeRate = async (usd_exchange_rate: number) => {
+  const response = await api.put('/settings/exchange-rate', { usd_exchange_rate });
+  return response.data;
+};
+
 // Bookings
 export const getBookings = async (status?: string) => {
   const params = status ? { status } : {};
