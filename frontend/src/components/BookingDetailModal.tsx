@@ -8,7 +8,10 @@ interface DetailBooking {
   status: string;
   guests_count: number;
   total_price_usd: number;
+  total_price_currency?: string;
   advance_payment_usd?: number;
+  advance_payment_currency?: string;
+  exchange_rate?: number;
   left_to_pay_usd?: number;
   property_name?: string;
   client_name?: string;
@@ -99,7 +102,12 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
             </div>
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
               <span className="text-sm text-ink-secondary">Anticipo pagado</span>
-              <span className="font-sans font-bold text-state-green-strong">U$D {(booking.advance_payment_usd || 0).toLocaleString()}</span>
+              <span className="font-sans font-bold text-state-green-strong">
+                {(booking.advance_payment_currency || 'USD') === 'USD'
+                  ? `U$D ${(booking.advance_payment_usd || 0).toLocaleString()}`
+                  : `${booking.advance_payment_currency} ${(booking.advance_payment_usd || 0).toLocaleString()}`
+                }
+              </span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-ink-secondary">Saldo pendiente</span>

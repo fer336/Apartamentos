@@ -16,28 +16,32 @@ import { getPropertyShortLabel } from '../utils/propertyLabel';
 
 const PAGE_SIZE = 10;
 
-interface Booking {
-  id: string;
-  booking_number: string;
-  check_in: string;
-  check_out: string;
-  status: string;
-  guests_count: number;
-  adults?: number;
-  children?: number;
-  pets?: boolean;
-  total_price_usd: number;
-  advance_payment_usd?: number;
-  left_to_pay_usd?: number;
-  property_id: string;
-  client_id: string;
-  property_name?: string;
-  client_name?: string;
-  deposit_ars?: number;
-  payment_status?: string;
-  service_status?: string;
-  checkout_notes?: string;
-}
+ interface Booking {
+   id: string;
+   booking_number: string;
+   check_in: string;
+   check_out: string;
+   status: string;
+   guests_count: number;
+   adults?: number;
+   children?: number;
+   pets?: boolean;
+   total_price_usd: number;
+   total_price_currency?: string;
+   advance_payment_usd?: number;
+   advance_payment_currency?: string;
+   exchange_rate?: number;
+   left_to_pay_usd?: number;
+   property_id: string;
+   client_id: string;
+   property_name?: string;
+   client_name?: string;
+   deposit_ars?: number;
+   deposit_currency?: string;
+   payment_status?: string;
+   service_status?: string;
+   checkout_notes?: string;
+ }
 
 interface Property {
   id: string;
