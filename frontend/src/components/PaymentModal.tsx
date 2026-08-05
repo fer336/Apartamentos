@@ -22,17 +22,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [amountUSD, setAmountUSD] = useState<number>(0);
   const [amountARS, setAmountARS] = useState<number>(0);
 
-  const [exchangeRate, setExchangeRate] = useState<number>(1200);
-  const [blueRate, setBlueRate] = useState<number | null>(null);
+   const [exchangeRate, setExchangeRate] = useState<number>(1200);
 
-  // Fetch blue rate on mount and when modal opens
+   // Fetch blue rate on mount and when modal opens
   useEffect(() => {
     if (isOpen) {
       getBlueExchangeRate()
         .then((data) => {
           if (data?.promedio) {
             setExchangeRate(data.promedio);
-            setBlueRate(data.promedio);
           }
         })
         .catch(() => {});
