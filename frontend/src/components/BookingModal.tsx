@@ -90,7 +90,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         advance_payment_currency: booking.advance_payment_currency || 'USD',
         deposit_ars: booking.deposit_ars || 0,
         deposit_currency: booking.deposit_currency || 'ARS',
-        exchange_rate: defaultExchangeRate,
+        exchange_rate: booking.exchange_rate || defaultExchangeRate,
         status: booking.status || 'pending',
         payment_status: booking.payment_status || 'pending',
         service_status: booking.service_status || 'NO SERVICIOS',

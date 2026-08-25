@@ -29,6 +29,8 @@ class BookingResponse(BaseModel):
     deposit_currency: Optional[str] = 'ARS'
     exchange_rate: Optional[Decimal] = 1.0
     left_to_pay_usd: Optional[Decimal] = None
+    advance_payment_date: Optional[date] = None
+    balance_settled_at: Optional[date] = None
     status: str
     payment_status: str
     service_status: Optional[str] = None

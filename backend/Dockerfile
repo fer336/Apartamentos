@@ -19,5 +19,8 @@ COPY . .
 EXPOSE 8000
 
 # Start application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# Aplica migraciones pendientes (alembic upgrade head es idempotente: si ya
+# están aplicadas, no hace nada) antes de levantar el servidor, así cada
+# redeploy deja el schema al día sin pasos manuales en el servidor.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips '*'"]
 

@@ -38,6 +38,8 @@ interface CompletedBooking {
   check_in: string;
   check_out: string;
   total_price_usd: number;
+  advance_payment_date?: string;
+  balance_settled_at?: string;
 }
 
 const monthsList = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -85,10 +87,18 @@ export const Finance = () => {
   const [year1, setYear1] = useState<number>(new Date().getFullYear());
   const [year2, setYear2] = useState<number>(new Date().getFullYear() - 1);
   const [movementsPage, setMovementsPage] = useState(1);
+  // Año de "Movimientos recientes" (independiente de la comparativa de
+  // temporadas): a diferencia del dashboard de inicio, acá sí se puede
+  // revisar cualquier año viejo.
+  const [movementsYear, setMovementsYear] = useState<number>(new Date().getFullYear());
 
   useEffect(() => {
     setMovementsPage(1);
   }, [selectedMonth, year1, year2]);
+
+  useEffect(() => {
+    setMovementsPage(1);
+  }, [movementsYear]);
 
   const fetchData = async () => {
     try {
@@ -135,7 +145,9 @@ export const Finance = () => {
   const diff = (data?.current_season_total || 0) - (data?.previous_season_total || 0);
   const percentChange = data?.previous_season_total ? (diff / data.previous_season_total) * 100 : 0;
 
-  const months = ['Diciembre', 'Enero', 'Febrero', 'Marzo'];
+  // El backend ahora compara el año calendario completo actual vs el anterior
+  // (12 meses cada uno), ya no la "temporada" Dic-Mar.
+  const months = monthsList;
   const currentYear = data?.comparisons[0]?.year || new Date().getFullYear();
 
   const saldosArs = Math.max(0, dashboardStats.total_revenue_month_ars - dashboardStats.total_advance_month_ars);
@@ -181,8 +193,14 @@ export const Finance = () => {
     );
   }
 
-  const movementsTotalPages = Math.max(1, Math.ceil(completedBookings.length / PAGE_SIZE));
-  const paginatedMovements = completedBookings.slice(
+  // Filtramos por la fecha real de cobro (seña o saldo). Reservas viejas sin
+  // esas fechas (previas a este cambio) usan check_out como respaldo.
+  const movementsForYear = completedBookings.filter((b) => {
+    const movementDate = b.balance_settled_at || b.advance_payment_date || b.check_out;
+    return movementDate?.slice(0, 4) === String(movementsYear);
+  });
+  const movementsTotalPages = Math.max(1, Math.ceil(movementsForYear.length / PAGE_SIZE));
+  const paginatedMovements = movementsForYear.slice(
     (movementsPage - 1) * PAGE_SIZE,
     movementsPage * PAGE_SIZE
   );
@@ -295,8 +313,8 @@ export const Finance = () => {
               </thead>
               <tbody>
                 {months.map((monthName) => {
-                  const current = data?.comparisons.find((c) => c.month_name === monthName && (c.month === 12 ? c.year === currentYear : c.year === currentYear + 1));
-                  const previous = data?.comparisons.find((c) => c.month_name === monthName && (c.month === 12 ? c.year === currentYear - 1 : c.year === currentYear));
+                  const current = data?.comparisons.find((c) => c.month_name === monthName && c.year === currentYear);
+                  const previous = data?.comparisons.find((c) => c.month_name === monthName && c.year === currentYear - 1);
                   const currentVal = current?.total_revenue || 0;
                   const previousVal = previous?.total_revenue || 0;
                   const mDiff = currentVal - previousVal;
@@ -323,19 +341,28 @@ export const Finance = () => {
           esta tabla usa el historial real de reservas completadas — el dato más
           cercano disponible — en vez de inventar filas de pagos sueltos. */}
       <KanagawaCard padded={false} className="overflow-hidden">
-        <div className="p-6 border-b border-border-subtle bg-background-alt flex items-center justify-between">
+        <div className="p-6 border-b border-border-subtle bg-background-alt flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-display font-extrabold text-lg text-ink-primary">Movimientos recientes</h3>
-          <Button
-            variant="secondary"
-            onClick={() => downloadCsv(completedBookings)}
-            disabled={completedBookings.length === 0}
-          >
-            <Download className="w-4 h-4" strokeWidth={1.7} />
-            Exportar
-          </Button>
+          <div className="flex items-center gap-3">
+            <select
+              value={movementsYear}
+              onChange={(e) => setMovementsYear(parseInt(e.target.value))}
+              className="form-control px-3 py-2 text-sm font-semibold text-ink-primary"
+            >
+              {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <Button
+              variant="secondary"
+              onClick={() => downloadCsv(movementsForYear)}
+              disabled={movementsForYear.length === 0}
+            >
+              <Download className="w-4 h-4" strokeWidth={1.7} />
+              Exportar
+            </Button>
+          </div>
         </div>
 
-        {completedBookings.length === 0 ? (
+        {movementsForYear.length === 0 ? (
           <EmptyState title="No hay movimientos registrados." />
         ) : (
           <div className="overflow-x-auto">
@@ -352,7 +379,9 @@ export const Finance = () => {
               <tbody>
                 {paginatedMovements.map((booking) => (
                   <tr key={booking.id} className="table-row">
-                    <td className="px-6 py-3.5 font-mono text-ink-secondary whitespace-nowrap">{formatDate(booking.check_out)}</td>
+                    <td className="px-6 py-3.5 font-mono text-ink-secondary whitespace-nowrap">
+                      {formatDate(booking.balance_settled_at || booking.advance_payment_date || booking.check_out)}
+                    </td>
                     <td className="px-6 py-3.5">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-[10px] bg-surface-violet text-primary flex items-center justify-center flex-shrink-0">

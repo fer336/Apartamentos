@@ -135,6 +135,7 @@ async def create_booking(
             deposit_currency=booking_data.deposit_currency,
             exchange_rate=exchange_rate,
             left_to_pay_usd=left_to_pay,
+            advance_payment_date=date.today() if advance > 0 else None,
             status=booking_data.status,
             payment_status=booking_data.payment_status,
             service_status=booking_data.service_status
@@ -179,6 +180,8 @@ async def update_booking(
     if not booking_obj:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
     
+    old_advance_payment_usd = booking_obj.advance_payment_usd or Decimal(0)
+
     update_data = booking_data.model_dump(exclude_unset=True)
 
     # Verificar si se envió left_to_pay_usd explícitamente (ej: al saldar)
@@ -188,6 +191,21 @@ async def update_booking(
         if field in ['total_price_usd', 'advance_payment_usd', 'deposit_ars', 'exchange_rate', 'balance_payment_usd', 'left_to_pay_usd']:
              value = Decimal(str(value))
         setattr(booking_obj, field, value)
+
+    # Fechas reales de cobro (para contabilidad): PaymentModal siempre salda el
+    # TOTAL restante en un solo envío (left_to_pay_usd: 0, advance_payment_usd =
+    # seña vieja + lo pagado ahora). Separamos ese envío en seña + saldo, cada
+    # uno con su propia fecha, en vez de perder cuándo se cobró la seña original.
+    is_settlement = left_to_pay_sent and (booking_obj.left_to_pay_usd or Decimal(0)) == Decimal(0)
+
+    if is_settlement:
+        new_advance_from_payload = booking_obj.advance_payment_usd or Decimal(0)
+        settled_amount = new_advance_from_payload - old_advance_payment_usd
+        booking_obj.advance_payment_usd = old_advance_payment_usd
+        booking_obj.balance_payment_usd = settled_amount
+        booking_obj.balance_settled_at = date.today()
+    elif 'advance_payment_usd' in update_data and (booking_obj.advance_payment_usd or Decimal(0)) != old_advance_payment_usd:
+        booking_obj.advance_payment_date = date.today()
 
     # Solo recalcular saldo si NO se envió left_to_pay_usd explícitamente
     # Esto permite que al saldar una reserva se envíe left_to_pay_usd: 0 directamente
@@ -724,6 +742,11 @@ async def get_dashboard_stats(
     else:
         next_month_start = date(current_month_start.year, current_month_start.month + 1, 1)
 
+    # Ventana del año actual: el dashboard de inicio nunca debe mostrar datos de
+    # años anteriores (eso es tarea exclusiva de Contabilidad)
+    current_year_start = date(date.today().year, 1, 1)
+    next_year_start = date(date.today().year + 1, 1, 1)
+
     revenue_month_query = select(func.sum(Booking.total_price_usd)).where(
         and_(
             Booking.status != 'cancelled',
@@ -809,11 +832,13 @@ async def get_dashboard_stats(
         Property.organization_id == org_id
     )
 
-    # 6. Reservas activas (confirmadas o en curso)
+    # 6. Reservas activas (confirmadas o en curso) del año actual
     active_bookings_query = select(func.count(Booking.id)).where(
         and_(
             Booking.organization_id == org_id,
-            Booking.status.in_(['confirmed', 'active'])
+            Booking.status.in_(['confirmed', 'active']),
+            Booking.check_in >= current_year_start,
+            Booking.check_in < next_year_start
         )
     )
 
@@ -1072,18 +1097,29 @@ async def get_accounting_stats(
                 end_date = date(y + 1, 1, 1)
             else:
                 end_date = date(y, m + 1, 1)
-                
-            revenue_query = select(func.sum(Booking.total_price_usd)).where(
+
+            # Ingreso real: se atribuye al mes en que se cobró la seña o el saldo
+            # (advance_payment_date / balance_settled_at), no al mes de la estadía
+            # (check_in) — una reserva puede pagarse meses antes o después de
+            # alquilarse.
+            advance_query = select(func.sum(Booking.advance_payment_usd)).where(
                 and_(
                     Booking.organization_id == org_id,
-                    Booking.status.in_(['confirmed', 'active', 'completed']),
-                    Booking.check_in >= start_date,
-                    Booking.check_in < end_date
+                    Booking.advance_payment_date >= start_date,
+                    Booking.advance_payment_date < end_date,
                 )
             )
-            revenue_result = await db.execute(revenue_query)
-            total_revenue = revenue_result.scalar() or Decimal('0')
-            
+            balance_query = select(func.sum(Booking.balance_payment_usd)).where(
+                and_(
+                    Booking.organization_id == org_id,
+                    Booking.balance_settled_at >= start_date,
+                    Booking.balance_settled_at < end_date,
+                )
+            )
+            advance_result = await db.execute(advance_query)
+            balance_result = await db.execute(balance_query)
+            total_revenue = (advance_result.scalar() or Decimal('0')) + (balance_result.scalar() or Decimal('0'))
+
             count_query = select(func.count(Booking.id)).where(
                 and_(
                     Booking.organization_id == org_id,
@@ -1094,7 +1130,7 @@ async def get_accounting_stats(
             )
             count_result = await db.execute(count_query)
             bookings_count = count_result.scalar() or 0
-            
+
             all_stats.append(SeasonStats(
                 year=y,
                 month=m,
@@ -1103,56 +1139,56 @@ async def get_accounting_stats(
                 bookings_count=bookings_count,
                 occupancy_rate=0.0
             ))
-            
+
         return AccountingStats(
             current_season_total=all_stats[0].total_revenue,
             previous_season_total=all_stats[1].total_revenue,
             comparisons=all_stats
         )
 
-    # Lógica por defecto (Temporada Dic-Mar)
-    # Si estamos en Ene-Mar, la temporada empezó en Dic del año anterior
-    # Si estamos en Dic, la temporada es el año actual + Ene-Mar del siguiente
-    if current_date.month <= 3:
-        current_season_year = current_date.year - 1
-    else:
-        current_season_year = current_date.year
-        
-    seasons = [current_season_year, current_season_year - 1]
+    # Lógica por defecto: año calendario actual vs año anterior, completos (12
+    # meses cada uno). Antes esto solo consultaba la "temporada" Dic-Mar, así que
+    # un pago cobrado en cualquier otro mes (ej. una seña de Agosto) nunca se
+    # mostraba en la vista por defecto.
+    current_year = current_date.year
+    previous_year = current_year - 1
+
+    years = [current_year, previous_year]
     all_stats = []
-    
+
     month_names = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-    
-    for year in seasons:
-        # Meses: Dic (year), Ene (year+1), Feb (year+1), Mar (year+1)
-        target_months = [
-            (year, 12),
-            (year + 1, 1),
-            (year + 1, 2),
-            (year + 1, 3)
-        ]
-        
+
+    for year in years:
+        target_months = [(year, m) for m in range(1, 13)]
+
         for y, m in target_months:
-            # Calcular ingresos y ocupación para este mes/año
+            # Calcular ingresos para este mes/año
             start_date = date(y, m, 1)
             if m == 12:
                 end_date = date(y + 1, 1, 1)
             else:
                 end_date = date(y, m + 1, 1)
-                
-            # Ingresos
-            revenue_query = select(func.sum(Booking.total_price_usd)).where(
+
+            # Ingreso real: atribuido a la fecha de cobro, no a la fecha de la estadía
+            advance_query = select(func.sum(Booking.advance_payment_usd)).where(
                 and_(
                     Booking.organization_id == org_id,
-                    Booking.status.in_(['confirmed', 'active', 'completed']),
-                    Booking.check_in >= start_date,
-                    Booking.check_in < end_date
+                    Booking.advance_payment_date >= start_date,
+                    Booking.advance_payment_date < end_date,
                 )
             )
-            revenue_result = await db.execute(revenue_query)
-            total_revenue = revenue_result.scalar() or Decimal('0')
-            
-            # Cantidad de reservas
+            balance_query = select(func.sum(Booking.balance_payment_usd)).where(
+                and_(
+                    Booking.organization_id == org_id,
+                    Booking.balance_settled_at >= start_date,
+                    Booking.balance_settled_at < end_date,
+                )
+            )
+            advance_result = await db.execute(advance_query)
+            balance_result = await db.execute(balance_query)
+            total_revenue = (advance_result.scalar() or Decimal('0')) + (balance_result.scalar() or Decimal('0'))
+
+            # Cantidad de reservas que empiezan ese mes (métrica distinta: ocupación, no ingreso)
             count_query = select(func.count(Booking.id)).where(
                 and_(
                     Booking.organization_id == org_id,
@@ -1163,24 +1199,18 @@ async def get_accounting_stats(
             )
             count_result = await db.execute(count_query)
             bookings_count = count_result.scalar() or 0
-            
-            # Ocupación (simplificada: promedio de días ocupados)
-            # Para un análisis real de rentabilidad, esto sirve como base
+
             all_stats.append(SeasonStats(
                 year=y,
                 month=m,
                 month_name=month_names[m],
                 total_revenue=float(total_revenue),
                 bookings_count=bookings_count,
-                occupancy_rate=0.0 # Se podría calcular con más detalle si fuera necesario
+                occupancy_rate=0.0
             ))
 
-    # Recalcular totales correctamente
-    current_season_months = [(current_season_year, 12), (current_season_year + 1, 1), (current_season_year + 1, 2), (current_season_year + 1, 3)]
-    prev_season_months = [(current_season_year - 1, 12), (current_season_year, 1), (current_season_year, 2), (current_season_year, 3)]
-    
-    current_total = sum(s.total_revenue for s in all_stats if (s.year, s.month) in current_season_months)
-    previous_total = sum(s.total_revenue for s in all_stats if (s.year, s.month) in prev_season_months)
+    current_total = sum(s.total_revenue for s in all_stats if s.year == current_year)
+    previous_total = sum(s.total_revenue for s in all_stats if s.year == previous_year)
 
     return AccountingStats(
         current_season_total=current_total,

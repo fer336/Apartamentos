@@ -262,6 +262,7 @@ export const Dashboard = () => {
   };
 
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
 
   // active_bookings y occupancy_rate ahora vienen calculados de verdad desde
   // /dashboard/stats. checkinsThisWeek/checkinsToday/checkoutsToday siguen
@@ -305,12 +306,17 @@ export const Dashboard = () => {
   }, [bookings, properties]);
 
   const receivables = useMemo(() => {
+    // El dashboard de inicio solo muestra el año actual (datos de años
+    // anteriores se revisan en Contabilidad, no acá)
     const pending = bookings.filter(
-      (b) => !['cancelled', 'completed'].includes(b.status) && (b.left_to_pay_usd || 0) > 0
+      (b) =>
+        !['cancelled', 'completed'].includes(b.status) &&
+        (b.left_to_pay_usd || 0) > 0 &&
+        b.check_in?.slice(0, 4) === String(currentYear)
     );
     const total = pending.reduce((sum, b) => sum + (b.left_to_pay_usd || 0), 0);
     return { total, count: pending.length, bookings: pending };
-  }, [bookings]);
+  }, [bookings, currentYear]);
 
   const upcomingBookings = useMemo(() => {
     return bookings

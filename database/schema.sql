@@ -115,7 +115,9 @@ CREATE TABLE bookings (
     balance_payment_usd DECIMAL(10, 2), -- 70% restante
     deposit_ars DECIMAL(12, 2) DEFAULT 0,
     left_to_pay_usd DECIMAL(10, 2) DEFAULT 0,
-    
+    advance_payment_date DATE, -- Fecha real en que se cobró la seña (para contabilidad)
+    balance_settled_at DATE, -- Fecha real en que se saldó el resto (para contabilidad)
+
     -- Estados
     status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'confirmed', 'active', 'completed', 'cancelled'
     payment_status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'advance_paid', 'fully_paid'

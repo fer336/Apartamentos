@@ -56,7 +56,10 @@ class Booking(Base):
     exchange_rate = Column(Numeric(10, 2), default=1.0)
     
     left_to_pay_usd = Column(Numeric(10, 2), default=0)
-    
+
+    advance_payment_date = Column(Date, nullable=True)
+    balance_settled_at = Column(Date, nullable=True)
+
     status = Column(String(50), default='pending')
     payment_status = Column(String(50), default='pending')
     service_status = Column(String(50))
