@@ -25,6 +25,7 @@ class BookingResponse(BaseModel):
     advance_payment_usd: Optional[Decimal] = None
     advance_payment_currency: Optional[str] = 'USD'
     balance_payment_usd: Optional[Decimal] = None
+    balance_payment_ars: Optional[Decimal] = None
     deposit_ars: Optional[Decimal] = None
     deposit_currency: Optional[str] = 'ARS'
     exchange_rate: Optional[Decimal] = 1.0
@@ -36,12 +37,12 @@ class BookingResponse(BaseModel):
     service_status: Optional[str] = None
     checkout_notes: Optional[str] = None
     created_at: datetime
-    
+
     @field_serializer('id', 'property_id', 'client_id')
     def serialize_uuid(self, value: UUID, _info) -> str:
         return str(value)
-    
-    @field_serializer('total_price_usd', 'advance_payment_usd', 'balance_payment_usd', 'deposit_ars', 'left_to_pay_usd', 'exchange_rate')
+
+    @field_serializer('total_price_usd', 'advance_payment_usd', 'balance_payment_usd', 'balance_payment_ars', 'deposit_ars', 'left_to_pay_usd', 'exchange_rate')
     def serialize_decimal(self, value: Optional[Decimal], _info) -> Optional[float]:
         return float(value) if value is not None else None
     
@@ -84,6 +85,8 @@ class BookingUpdate(BaseModel):
     advance_payment_currency: Optional[str] = None
     balance_payment_usd: Optional[float] = None
     left_to_pay_usd: Optional[float] = None
+    settled_amount_ars: Optional[float] = None
+    settled_amount_usd: Optional[float] = None
     deposit_ars: Optional[float] = None
     deposit_currency: Optional[str] = None
     exchange_rate: Optional[float] = None
@@ -305,13 +308,16 @@ class SeasonStats(BaseModel):
     year: int
     month: int
     month_name: str
-    total_revenue: float
+    total_revenue_ars: float
+    total_revenue_usd: float
     bookings_count: int
     occupancy_rate: float
 
 class AccountingStats(BaseModel):
-    current_season_total: float
-    previous_season_total: float
+    current_season_total_ars: float
+    current_season_total_usd: float
+    previous_season_total_ars: float
+    previous_season_total_usd: float
     comparisons: List[SeasonStats]
 
 

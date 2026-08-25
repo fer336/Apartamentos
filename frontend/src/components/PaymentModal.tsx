@@ -89,18 +89,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const finalTotalUSD = calculateTotalPaidInUSD();
-
     // Preparamos los datos
-    // IMPORTANTE: Enviamos advance_payment_currency: 'USD' para que el backend
-    // no intente convertir el monto (ya está calculado en USD)
+    // IMPORTANTE: mandamos el saldo pagado separado por moneda (settled_amount_ars /
+    // settled_amount_usd) en vez de sumarlo a advance_payment_usd — la seña original
+    // puede estar en una moneda distinta a la del saldo, y sumarlas a lo bruto
+    // mezclaba pesos y dólares en un solo número.
     const updateData = {
-      advance_payment_usd: (booking.advance_payment_usd || 0) + finalTotalUSD,
-      advance_payment_currency: 'USD',
+      settled_amount_ars: amountARS,
+      settled_amount_usd: amountUSD,
       payment_status: 'fully_paid',
       status: 'active',
       left_to_pay_usd: 0,
-      balance_payment_usd: 0
     };
 
     onConfirm(updateData);

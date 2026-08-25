@@ -49,7 +49,8 @@ class Booking(Base):
     advance_payment_currency = Column(String(3), default='USD')
     
     balance_payment_usd = Column(Numeric(10, 2))
-    
+    balance_payment_ars = Column(Numeric(12, 2), default=0)
+
     deposit_ars = Column(Numeric(12, 2), default=0)
     deposit_currency = Column(String(3), default='ARS')
     

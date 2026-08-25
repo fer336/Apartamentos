@@ -126,6 +126,9 @@ async def create_booking(
             check_in=booking_data.check_in,
             check_out=booking_data.check_out,
             guests_count=booking_data.guests_count,
+            adults=booking_data.adults,
+            children=booking_data.children,
+            pets=booking_data.pets,
             total_price_usd=total_price,
             total_price_currency=booking_data.total_price_currency,
             advance_payment_usd=advance,
@@ -193,16 +196,15 @@ async def update_booking(
         setattr(booking_obj, field, value)
 
     # Fechas reales de cobro (para contabilidad): PaymentModal siempre salda el
-    # TOTAL restante en un solo envío (left_to_pay_usd: 0, advance_payment_usd =
-    # seña vieja + lo pagado ahora). Separamos ese envío en seña + saldo, cada
-    # uno con su propia fecha, en vez de perder cuándo se cobró la seña original.
+    # TOTAL restante en un solo envío (left_to_pay_usd: 0, settled_amount_ars /
+    # settled_amount_usd con lo pagado ahora en cada moneda). La seña original
+    # (advance_payment_usd, con su propia moneda) no se toca en este envío —
+    # el saldo se guarda aparte, sin mezclar monedas ni pisar la seña.
     is_settlement = left_to_pay_sent and (booking_obj.left_to_pay_usd or Decimal(0)) == Decimal(0)
 
     if is_settlement:
-        new_advance_from_payload = booking_obj.advance_payment_usd or Decimal(0)
-        settled_amount = new_advance_from_payload - old_advance_payment_usd
-        booking_obj.advance_payment_usd = old_advance_payment_usd
-        booking_obj.balance_payment_usd = settled_amount
+        booking_obj.balance_payment_ars = Decimal(str(update_data.get('settled_amount_ars') or 0))
+        booking_obj.balance_payment_usd = Decimal(str(update_data.get('settled_amount_usd') or 0))
         booking_obj.balance_settled_at = date.today()
     elif 'advance_payment_usd' in update_data and (booking_obj.advance_payment_usd or Decimal(0)) != old_advance_payment_usd:
         booking_obj.advance_payment_date = date.today()
@@ -1101,24 +1103,44 @@ async def get_accounting_stats(
             # Ingreso real: se atribuye al mes en que se cobró la seña o el saldo
             # (advance_payment_date / balance_settled_at), no al mes de la estadía
             # (check_in) — una reserva puede pagarse meses antes o después de
-            # alquilarse.
-            advance_query = select(func.sum(Booking.advance_payment_usd)).where(
+            # alquilarse. Separado por moneda: advance_payment_usd guarda el monto
+            # en la moneda de advance_payment_currency, no siempre USD.
+            advance_ars_query = select(func.sum(Booking.advance_payment_usd)).where(
                 and_(
                     Booking.organization_id == org_id,
+                    Booking.advance_payment_currency == 'ARS',
                     Booking.advance_payment_date >= start_date,
                     Booking.advance_payment_date < end_date,
                 )
             )
-            balance_query = select(func.sum(Booking.balance_payment_usd)).where(
+            advance_usd_query = select(func.sum(Booking.advance_payment_usd)).where(
+                and_(
+                    Booking.organization_id == org_id,
+                    Booking.advance_payment_currency == 'USD',
+                    Booking.advance_payment_date >= start_date,
+                    Booking.advance_payment_date < end_date,
+                )
+            )
+            balance_ars_query = select(func.sum(Booking.balance_payment_ars)).where(
                 and_(
                     Booking.organization_id == org_id,
                     Booking.balance_settled_at >= start_date,
                     Booking.balance_settled_at < end_date,
                 )
             )
-            advance_result = await db.execute(advance_query)
-            balance_result = await db.execute(balance_query)
-            total_revenue = (advance_result.scalar() or Decimal('0')) + (balance_result.scalar() or Decimal('0'))
+            balance_usd_query = select(func.sum(Booking.balance_payment_usd)).where(
+                and_(
+                    Booking.organization_id == org_id,
+                    Booking.balance_settled_at >= start_date,
+                    Booking.balance_settled_at < end_date,
+                )
+            )
+            advance_ars_result = await db.execute(advance_ars_query)
+            advance_usd_result = await db.execute(advance_usd_query)
+            balance_ars_result = await db.execute(balance_ars_query)
+            balance_usd_result = await db.execute(balance_usd_query)
+            total_revenue_ars = float(advance_ars_result.scalar() or 0) + float(balance_ars_result.scalar() or 0)
+            total_revenue_usd = float(advance_usd_result.scalar() or 0) + float(balance_usd_result.scalar() or 0)
 
             count_query = select(func.count(Booking.id)).where(
                 and_(
@@ -1135,14 +1157,17 @@ async def get_accounting_stats(
                 year=y,
                 month=m,
                 month_name=month_names[m],
-                total_revenue=float(total_revenue),
+                total_revenue_ars=total_revenue_ars,
+                total_revenue_usd=total_revenue_usd,
                 bookings_count=bookings_count,
                 occupancy_rate=0.0
             ))
 
         return AccountingStats(
-            current_season_total=all_stats[0].total_revenue,
-            previous_season_total=all_stats[1].total_revenue,
+            current_season_total_ars=all_stats[0].total_revenue_ars,
+            current_season_total_usd=all_stats[0].total_revenue_usd,
+            previous_season_total_ars=all_stats[1].total_revenue_ars,
+            previous_season_total_usd=all_stats[1].total_revenue_usd,
             comparisons=all_stats
         )
 
@@ -1169,24 +1194,45 @@ async def get_accounting_stats(
             else:
                 end_date = date(y, m + 1, 1)
 
-            # Ingreso real: atribuido a la fecha de cobro, no a la fecha de la estadía
-            advance_query = select(func.sum(Booking.advance_payment_usd)).where(
+            # Ingreso real: atribuido a la fecha de cobro, no a la fecha de la estadía,
+            # separado por moneda (advance_payment_usd guarda el monto en la moneda
+            # de advance_payment_currency, no siempre USD).
+            advance_ars_query = select(func.sum(Booking.advance_payment_usd)).where(
                 and_(
                     Booking.organization_id == org_id,
+                    Booking.advance_payment_currency == 'ARS',
                     Booking.advance_payment_date >= start_date,
                     Booking.advance_payment_date < end_date,
                 )
             )
-            balance_query = select(func.sum(Booking.balance_payment_usd)).where(
+            advance_usd_query = select(func.sum(Booking.advance_payment_usd)).where(
+                and_(
+                    Booking.organization_id == org_id,
+                    Booking.advance_payment_currency == 'USD',
+                    Booking.advance_payment_date >= start_date,
+                    Booking.advance_payment_date < end_date,
+                )
+            )
+            balance_ars_query = select(func.sum(Booking.balance_payment_ars)).where(
                 and_(
                     Booking.organization_id == org_id,
                     Booking.balance_settled_at >= start_date,
                     Booking.balance_settled_at < end_date,
                 )
             )
-            advance_result = await db.execute(advance_query)
-            balance_result = await db.execute(balance_query)
-            total_revenue = (advance_result.scalar() or Decimal('0')) + (balance_result.scalar() or Decimal('0'))
+            balance_usd_query = select(func.sum(Booking.balance_payment_usd)).where(
+                and_(
+                    Booking.organization_id == org_id,
+                    Booking.balance_settled_at >= start_date,
+                    Booking.balance_settled_at < end_date,
+                )
+            )
+            advance_ars_result = await db.execute(advance_ars_query)
+            advance_usd_result = await db.execute(advance_usd_query)
+            balance_ars_result = await db.execute(balance_ars_query)
+            balance_usd_result = await db.execute(balance_usd_query)
+            total_revenue_ars = float(advance_ars_result.scalar() or 0) + float(balance_ars_result.scalar() or 0)
+            total_revenue_usd = float(advance_usd_result.scalar() or 0) + float(balance_usd_result.scalar() or 0)
 
             # Cantidad de reservas que empiezan ese mes (métrica distinta: ocupación, no ingreso)
             count_query = select(func.count(Booking.id)).where(
@@ -1204,17 +1250,22 @@ async def get_accounting_stats(
                 year=y,
                 month=m,
                 month_name=month_names[m],
-                total_revenue=float(total_revenue),
+                total_revenue_ars=total_revenue_ars,
+                total_revenue_usd=total_revenue_usd,
                 bookings_count=bookings_count,
                 occupancy_rate=0.0
             ))
 
-    current_total = sum(s.total_revenue for s in all_stats if s.year == current_year)
-    previous_total = sum(s.total_revenue for s in all_stats if s.year == previous_year)
+    current_total_ars = sum(s.total_revenue_ars for s in all_stats if s.year == current_year)
+    current_total_usd = sum(s.total_revenue_usd for s in all_stats if s.year == current_year)
+    previous_total_ars = sum(s.total_revenue_ars for s in all_stats if s.year == previous_year)
+    previous_total_usd = sum(s.total_revenue_usd for s in all_stats if s.year == previous_year)
 
     return AccountingStats(
-        current_season_total=current_total,
-        previous_season_total=previous_total,
+        current_season_total_ars=current_total_ars,
+        current_season_total_usd=current_total_usd,
+        previous_season_total_ars=previous_total_ars,
+        previous_season_total_usd=previous_total_usd,
         comparisons=all_stats
     )
 

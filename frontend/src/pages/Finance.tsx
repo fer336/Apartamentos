@@ -13,14 +13,17 @@ interface SeasonStats {
   year: number;
   month: number;
   month_name: string;
-  total_revenue: number;
+  total_revenue_ars: number;
+  total_revenue_usd: number;
   bookings_count: number;
   occupancy_rate: number;
 }
 
 interface AccountingData {
-  current_season_total: number;
-  previous_season_total: number;
+  current_season_total_ars: number;
+  current_season_total_usd: number;
+  previous_season_total_ars: number;
+  previous_season_total_usd: number;
   comparisons: SeasonStats[];
 }
 
@@ -38,6 +41,7 @@ interface CompletedBooking {
   check_in: string;
   check_out: string;
   total_price_usd: number;
+  total_price_currency?: string;
   advance_payment_date?: string;
   balance_settled_at?: string;
 }
@@ -52,13 +56,14 @@ const formatDate = (dateString: string) => {
 };
 
 const downloadCsv = (rows: CompletedBooking[]) => {
-  const header = ['Fecha check-in', 'Fecha check-out', 'Cliente', 'Propiedad', 'Monto USD'];
+  const header = ['Fecha check-in', 'Fecha check-out', 'Cliente', 'Propiedad', 'Monto', 'Moneda'];
   const lines = rows.map((b) => [
     b.check_in,
     b.check_out,
     b.client_name || '',
     b.property_name || '',
     String(b.total_price_usd ?? 0),
+    b.total_price_currency || 'USD',
   ]);
   const csv = [header, ...lines].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -142,8 +147,12 @@ export const Finance = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth, year1, year2]);
 
-  const diff = (data?.current_season_total || 0) - (data?.previous_season_total || 0);
-  const percentChange = data?.previous_season_total ? (diff / data.previous_season_total) * 100 : 0;
+  // "Rendimiento" se calcula sobre USD (histórico: es lo que ya se comparaba
+  // antes de separar por moneda). Los bloques de temporada anterior/actual
+  // muestran ambas monedas por separado, sin mezclarlas.
+  const diffUsd = (data?.current_season_total_usd || 0) - (data?.previous_season_total_usd || 0);
+  const percentChangeUsd = data?.previous_season_total_usd ? (diffUsd / data.previous_season_total_usd) * 100 : 0;
+  const diffArs = (data?.current_season_total_ars || 0) - (data?.previous_season_total_ars || 0);
 
   // El backend ahora compara el año calendario completo actual vs el anterior
   // (12 meses cada uno), ya no la "temporada" Dic-Mar.
@@ -283,19 +292,24 @@ export const Finance = () => {
             <p className="text-[10px] font-bold uppercase tracking-wide text-ink-muted mb-1">
               {selectedMonth > 0 ? `${monthsList[selectedMonth - 1]} ${year2}` : 'Temporada anterior'}
             </p>
-            <p className="font-sans font-extrabold text-xl text-ink-secondary">U$D {(data?.previous_season_total || 0).toLocaleString()}</p>
+            <p className="font-sans font-extrabold text-lg text-ink-secondary">$ {(data?.previous_season_total_ars || 0).toLocaleString()}</p>
+            <p className="font-sans font-bold text-sm text-ink-muted">U$D {(data?.previous_season_total_usd || 0).toLocaleString()}</p>
           </div>
           <div className="rounded-xl p-4 bg-surface-violet border border-border">
             <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1">
               {selectedMonth > 0 ? `${monthsList[selectedMonth - 1]} ${year1}` : 'Temporada actual'}
             </p>
-            <p className="font-sans font-extrabold text-xl text-ink-primary">U$D {(data?.current_season_total || 0).toLocaleString()}</p>
+            <p className="font-sans font-extrabold text-lg text-ink-primary">$ {(data?.current_season_total_ars || 0).toLocaleString()}</p>
+            <p className="font-sans font-bold text-sm text-ink-secondary">U$D {(data?.current_season_total_usd || 0).toLocaleString()}</p>
           </div>
-          <div className={`rounded-xl p-4 border flex items-center gap-2 ${diff >= 0 ? 'bg-[rgba(125,143,116,0.16)] border-[rgba(125,143,116,0.28)]' : 'bg-[rgba(166,77,69,0.14)] border-[rgba(166,77,69,0.28)]'}`}>
-            {diff >= 0 ? <TrendingUp className="w-5 h-5 text-state-green-strong" strokeWidth={1.7} /> : <TrendingDown className="w-5 h-5 text-state-red-strong" strokeWidth={1.7} />}
+          <div className={`rounded-xl p-4 border flex items-center gap-2 ${diffUsd >= 0 ? 'bg-[rgba(125,143,116,0.16)] border-[rgba(125,143,116,0.28)]' : 'bg-[rgba(166,77,69,0.14)] border-[rgba(166,77,69,0.28)]'}`}>
+            {diffUsd >= 0 ? <TrendingUp className="w-5 h-5 text-state-green-strong" strokeWidth={1.7} /> : <TrendingDown className="w-5 h-5 text-state-red-strong" strokeWidth={1.7} />}
             <div>
-              <p className={`text-[10px] font-bold uppercase tracking-wide ${diff >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>Rendimiento</p>
-              <p className={`font-display font-extrabold text-lg ${diff >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>{Math.abs(percentChange).toFixed(1)}%</p>
+              <p className={`text-[10px] font-bold uppercase tracking-wide ${diffUsd >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>Rendimiento (U$D)</p>
+              <p className={`font-display font-extrabold text-lg ${diffUsd >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>{Math.abs(percentChangeUsd).toFixed(1)}%</p>
+              <p className={`text-[11px] font-semibold ${diffArs >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>
+                {diffArs >= 0 ? '+' : ''}$ {diffArs.toLocaleString()}
+              </p>
             </div>
           </div>
         </div>
@@ -315,17 +329,30 @@ export const Finance = () => {
                 {months.map((monthName) => {
                   const current = data?.comparisons.find((c) => c.month_name === monthName && c.year === currentYear);
                   const previous = data?.comparisons.find((c) => c.month_name === monthName && c.year === currentYear - 1);
-                  const currentVal = current?.total_revenue || 0;
-                  const previousVal = previous?.total_revenue || 0;
-                  const mDiff = currentVal - previousVal;
-                  const mPercent = previousVal ? (mDiff / previousVal) * 100 : 0;
+                  const currentArs = current?.total_revenue_ars || 0;
+                  const currentUsd = current?.total_revenue_usd || 0;
+                  const previousArs = previous?.total_revenue_ars || 0;
+                  const previousUsd = previous?.total_revenue_usd || 0;
+                  const mDiffArs = currentArs - previousArs;
+                  const mDiffUsd = currentUsd - previousUsd;
                   return (
                     <tr key={monthName} className="table-row">
                       <td className="px-6 py-3.5 font-semibold text-ink-primary capitalize">{monthName}</td>
-                      <td className="px-6 py-3.5 font-sans text-ink-muted">U$D {previousVal.toLocaleString()}</td>
-                      <td className="px-6 py-3.5 font-sans font-bold text-ink-primary">U$D {currentVal.toLocaleString()}</td>
-                      <td className={`px-6 py-3.5 font-mono font-semibold ${mDiff >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>
-                        {mDiff >= 0 ? '+' : ''}{mDiff.toLocaleString()} ({mPercent.toFixed(1)}%)
+                      <td className="px-6 py-3.5 font-sans text-ink-muted">
+                        <div>$ {previousArs.toLocaleString()}</div>
+                        <div className="text-xs">U$D {previousUsd.toLocaleString()}</div>
+                      </td>
+                      <td className="px-6 py-3.5 font-sans font-bold text-ink-primary">
+                        <div>$ {currentArs.toLocaleString()}</div>
+                        <div className="text-xs font-semibold text-ink-secondary">U$D {currentUsd.toLocaleString()}</div>
+                      </td>
+                      <td className="px-6 py-3.5 font-mono font-semibold">
+                        <div className={mDiffArs >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}>
+                          {mDiffArs >= 0 ? '+' : ''}$ {mDiffArs.toLocaleString()}
+                        </div>
+                        <div className={`text-xs ${mDiffUsd >= 0 ? 'text-state-green-strong' : 'text-state-red-strong'}`}>
+                          {mDiffUsd >= 0 ? '+' : ''}U$D {mDiffUsd.toLocaleString()}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -398,7 +425,9 @@ export const Finance = () => {
                       </div>
                     </td>
                     <td className="px-6 py-3.5 text-right font-sans font-bold text-ink-primary whitespace-nowrap">
-                      💵 U$D {booking.total_price_usd.toLocaleString()}
+                      {booking.total_price_currency === 'ARS'
+                        ? `💰 $ ${booking.total_price_usd.toLocaleString()}`
+                        : `💵 U$D ${booking.total_price_usd.toLocaleString()}`}
                     </td>
                   </tr>
                 ))}

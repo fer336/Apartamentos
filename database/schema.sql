@@ -112,7 +112,8 @@ CREATE TABLE bookings (
     -- Precios y Pagos
     total_price_usd DECIMAL(10, 2) NOT NULL,
     advance_payment_usd DECIMAL(10, 2), -- 30% típicamente
-    balance_payment_usd DECIMAL(10, 2), -- 70% restante
+    balance_payment_usd DECIMAL(10, 2), -- Monto del saldo pagado, en USD (al saldar la reserva)
+    balance_payment_ars DECIMAL(12, 2) DEFAULT 0, -- Monto del saldo pagado, en ARS
     deposit_ars DECIMAL(12, 2) DEFAULT 0,
     left_to_pay_usd DECIMAL(10, 2) DEFAULT 0,
     advance_payment_date DATE, -- Fecha real en que se cobró la seña (para contabilidad)
