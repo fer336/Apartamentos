@@ -35,8 +35,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     deposit_ars: 0,
     deposit_currency: 'ARS',
     exchange_rate: 1200,
-    status: 'pending',
-    payment_status: 'pending',
     service_status: 'NO SERVICIOS',
   });
 
@@ -91,8 +89,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         deposit_ars: booking.deposit_ars || 0,
         deposit_currency: booking.deposit_currency || 'ARS',
         exchange_rate: booking.exchange_rate || defaultExchangeRate,
-        status: booking.status || 'pending',
-        payment_status: booking.payment_status || 'pending',
         service_status: booking.service_status || 'NO SERVICIOS',
       });
     } else {
@@ -112,8 +108,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         deposit_ars: 0,
         deposit_currency: 'ARS',
         exchange_rate: defaultExchangeRate,
-        status: 'pending',
-        payment_status: 'pending',
         service_status: 'NO SERVICIOS',
       });
     }
@@ -486,36 +480,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({
               </div>
             </div>
 
-            {/* Estados */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Estado Reserva</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="form-control w-full px-4 py-3 focus:outline-none"
-                >
-                  <option value="pending">Pendiente</option>
-                  <option value="confirmed">Confirmada</option>
-                  <option value="active">En curso</option>
-                  <option value="completed">Finalizada</option>
-                  <option value="cancelled">Cancelada</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Estado Pago</label>
-                <select
-                  value={formData.payment_status}
-                  onChange={(e) => setFormData({ ...formData, payment_status: e.target.value })}
-                  className="form-control w-full px-4 py-3 focus:outline-none"
-                >
-                  <option value="pending">Pendiente</option>
-                  <option value="advance_paid">Anticipo Pagado</option>
-                  <option value="fully_paid">Totalmente Pagado</option>
-                </select>
-              </div>
-            </div>
           </div>
 
           {/* Fixed Footer with Buttons */}

@@ -820,11 +820,11 @@ async def get_dashboard_stats(
         Property.organization_id == org_id
     )
 
-    # 6. Reservas activas (confirmadas o en curso) del año actual
+    # 6. Active bookings are all non-terminal bookings in the current year.
     active_bookings_query = select(func.count(Booking.id)).where(
         and_(
             Booking.organization_id == org_id,
-            Booking.status.in_(['confirmed', 'active']),
+            Booking.status.notin_(['cancelled', 'completed']),
             Booking.check_in >= current_year_start,
             Booking.check_in < next_year_start
         )
@@ -1665,5 +1665,4 @@ async def delete_expense(
     await db.commit()
 
     return {"message": "Gasto eliminado correctamente"}
-
 

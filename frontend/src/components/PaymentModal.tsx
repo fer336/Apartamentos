@@ -98,7 +98,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       settled_amount_ars: amountARS,
       settled_amount_usd: amountUSD,
       payment_status: 'fully_paid',
-      status: 'active',
       left_to_pay_usd: 0,
     };
 

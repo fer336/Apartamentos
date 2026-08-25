@@ -302,7 +302,7 @@ export const Dashboard = () => {
       if (nights > 0) bookedNights += nights;
     });
 
-    return { bookedNights, totalNights: daysInMonth };
+    return { bookedNights, totalNights: properties.length * daysInMonth };
   }, [bookings, properties]);
 
   const receivables = useMemo(() => {
