@@ -749,34 +749,39 @@ async def get_dashboard_stats(
     current_year_start = date(date.today().year, 1, 1)
     next_year_start = date(date.today().year + 1, 1, 1)
 
-    revenue_month_query = select(func.sum(Booking.total_price_usd)).where(
+    # Ingresos reales del mes: plata efectivamente cobrada (seña + saldo) en el
+    # mes actual, por moneda — usando advance_payment_date/balance_settled_at,
+    # igual que /accounting/stats. Antes esto sumaba total_price_usd por
+    # check_in, es decir "valor de reservas que empiezan este mes", no lo que
+    # realmente ingresó en pesos/dólares este mes.
+    revenue_month_advance_ars_query = select(func.sum(Booking.advance_payment_usd)).where(
         and_(
-            Booking.status != 'cancelled',
-            Booking.check_in >= current_month_start,
-            Booking.check_in < next_month_start,
-            Booking.organization_id == org_id
+            Booking.organization_id == org_id,
+            Booking.advance_payment_currency == 'ARS',
+            Booking.advance_payment_date >= current_month_start,
+            Booking.advance_payment_date < next_month_start,
         )
     )
-
-    # 2b. Ingresos del mes actual en ARS
-    revenue_month_ars_query = select(func.sum(Booking.total_price_usd)).where(
+    revenue_month_advance_usd_query = select(func.sum(Booking.advance_payment_usd)).where(
         and_(
-            Booking.status != 'cancelled',
-            Booking.check_in >= current_month_start,
-            Booking.check_in < next_month_start,
             Booking.organization_id == org_id,
-            Booking.total_price_currency == 'ARS'
+            Booking.advance_payment_currency == 'USD',
+            Booking.advance_payment_date >= current_month_start,
+            Booking.advance_payment_date < next_month_start,
         )
     )
-
-    # 2c. Ingresos del mes actual en USD
-    revenue_month_usd_query = select(func.sum(Booking.total_price_usd)).where(
+    revenue_month_balance_ars_query = select(func.sum(Booking.balance_payment_ars)).where(
         and_(
-            Booking.status != 'cancelled',
-            Booking.check_in >= current_month_start,
-            Booking.check_in < next_month_start,
             Booking.organization_id == org_id,
-            Booking.total_price_currency == 'USD'
+            Booking.balance_settled_at >= current_month_start,
+            Booking.balance_settled_at < next_month_start,
+        )
+    )
+    revenue_month_balance_usd_query = select(func.sum(Booking.balance_payment_usd)).where(
+        and_(
+            Booking.organization_id == org_id,
+            Booking.balance_settled_at >= current_month_start,
+            Booking.balance_settled_at < next_month_start,
         )
     )
 
@@ -798,27 +803,8 @@ async def get_dashboard_stats(
         )
     )
 
-    # 4b. Anticipos del mes actual en ARS
-    advances_month_ars_query = select(func.sum(Booking.advance_payment_usd)).where(
-        and_(
-            Booking.status != 'cancelled',
-            Booking.check_in >= current_month_start,
-            Booking.check_in < next_month_start,
-            Booking.organization_id == org_id,
-            Booking.advance_payment_currency == 'ARS'
-        )
-    )
-
-    # 4c. Anticipos del mes actual en USD
-    advances_month_usd_query = select(func.sum(Booking.advance_payment_usd)).where(
-        and_(
-            Booking.status != 'cancelled',
-            Booking.check_in >= current_month_start,
-            Booking.check_in < next_month_start,
-            Booking.organization_id == org_id,
-            Booking.advance_payment_currency == 'USD'
-        )
-    )
+    # 4b/4c. Anticipos del mes actual (seña cobrada este mes, por moneda) — son
+    # las mismas revenue_month_advance_*_query de arriba, se reusan tal cual.
 
     # 5. Total propiedades DISPONIBLES (solo las que se pueden alquilar)
     total_properties_query = select(func.count(Property.id)).where(
@@ -858,13 +844,12 @@ async def get_dashboard_stats(
         select(
             func.coalesce(total_revenue_ars_query.scalar_subquery(), 0).label('total_revenue_ars'),
             func.coalesce(total_revenue_usd_query.scalar_subquery(), 0).label('total_revenue_usd'),
-            func.coalesce(revenue_month_query.scalar_subquery(), 0).label('revenue_month'),
-            func.coalesce(revenue_month_ars_query.scalar_subquery(), 0).label('revenue_month_ars'),
-            func.coalesce(revenue_month_usd_query.scalar_subquery(), 0).label('revenue_month_usd'),
+            func.coalesce(revenue_month_advance_ars_query.scalar_subquery(), 0).label('revenue_month_advance_ars'),
+            func.coalesce(revenue_month_advance_usd_query.scalar_subquery(), 0).label('revenue_month_advance_usd'),
+            func.coalesce(revenue_month_balance_ars_query.scalar_subquery(), 0).label('revenue_month_balance_ars'),
+            func.coalesce(revenue_month_balance_usd_query.scalar_subquery(), 0).label('revenue_month_balance_usd'),
             func.coalesce(advances_ars_query.scalar_subquery(), 0).label('advances_ars'),
             func.coalesce(advances_usd_query.scalar_subquery(), 0).label('advances_usd'),
-            func.coalesce(advances_month_ars_query.scalar_subquery(), 0).label('advances_month_ars'),
-            func.coalesce(advances_month_usd_query.scalar_subquery(), 0).label('advances_month_usd'),
             func.coalesce(total_properties_query.scalar_subquery(), 1).label('total_properties'),
             func.coalesce(all_properties_query.scalar_subquery(), 0).label('all_properties'),
             func.coalesce(active_bookings_query.scalar_subquery(), 0).label('active_bookings'),
@@ -875,13 +860,18 @@ async def get_dashboard_stats(
     row = results.first()
     total_revenue_ars = float(row.total_revenue_ars) if row else 0.0
     total_revenue_usd = float(row.total_revenue_usd) if row else 0.0
-    total_revenue_month = float(row.revenue_month) if row else 0.0
-    total_revenue_month_ars = float(row.revenue_month_ars) if row else 0.0
-    total_revenue_month_usd = float(row.revenue_month_usd) if row else 0.0
+    total_advance_month_ars = float(row.revenue_month_advance_ars) if row else 0.0
+    total_advance_month_usd = float(row.revenue_month_advance_usd) if row else 0.0
+    balance_month_ars = float(row.revenue_month_balance_ars) if row else 0.0
+    balance_month_usd = float(row.revenue_month_balance_usd) if row else 0.0
+    # "Recaudado del mes": seña + saldo efectivamente cobrados este mes, por
+    # moneda (revenue_month sin sufijo queda como la suma bruta de ambas
+    # monedas, solo para el KPI único del home que no distingue moneda).
+    total_revenue_month_ars = total_advance_month_ars + balance_month_ars
+    total_revenue_month_usd = total_advance_month_usd + balance_month_usd
+    total_revenue_month = total_revenue_month_ars + total_revenue_month_usd
     total_advance_ars = float(row.advances_ars) if row else 0.0
     total_advance_usd = float(row.advances_usd) if row else 0.0
-    total_advance_month_ars = float(row.advances_month_ars) if row else 0.0
-    total_advance_month_usd = float(row.advances_month_usd) if row else 0.0
     total_properties_count = int(row.total_properties) if row else 1
     all_properties_count = int(row.all_properties) if row else 0
     active_bookings_count = int(row.active_bookings) if row else 0

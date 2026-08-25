@@ -182,7 +182,12 @@ body {
 
 .dashboard-content {
   position: relative;
-  z-index: 1;
+  /* Debe quedar por encima del menú inferior mobile (Layout.tsx, z-30) pero
+     por debajo del drawer/overlay del menú hamburguesa (z-40/z-50) — si no,
+     cualquier modal fixed renderizado adentro (BookingModal, PaymentModal,
+     etc.) queda atrapado en este contexto de apilamiento y su propio
+     z-index deja de compararse contra el menú inferior, perdiendo siempre. */
+  z-index: 35;
 }
 
 /* ---------------------------------------------------------------------- */
