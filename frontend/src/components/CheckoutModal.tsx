@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, LogOut, MessageSquare, AlertTriangle, CheckCircle, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { Button } from './ui/Button';
 
@@ -57,7 +58,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!isOpen || !booking) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in">
       <div className="bg-surface border border-border rounded-3xl max-w-lg w-full shadow-2xl animate-in zoom-in duration-200 overflow-hidden">
 
@@ -161,6 +162,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

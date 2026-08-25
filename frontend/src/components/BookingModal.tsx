@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Calendar as CalendarIcon, User, Home, DollarSign, Search } from 'lucide-react';
 import { getClients, getProperties, getExchangeRate, getBlueExchangeRate } from '../services/api';
 import { Button } from './ui/Button';
@@ -150,7 +151,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <>
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
       <div className="bg-surface border border-border rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-in zoom-in duration-200 shadow-2xl overflow-hidden">
@@ -512,6 +513,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         setIsClientPickerOpen(false);
       }}
     />
-    </>
+    </>,
+    document.body
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Tv, Plus, Trash2, Calendar, CreditCard, DollarSign, CheckCircle } from 'lucide-react';
 import { getDirectvDevices, createDirectvDevice, rechargeDirectvDevice, deleteDirectvDevice } from '../services/api';
 
@@ -83,7 +84,7 @@ export const DirectvManager: React.FC<DirectvManagerProps> = ({
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
             <div className="bg-surface rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col animate-in zoom-in duration-200 shadow-2xl overflow-hidden">
 
@@ -323,6 +324,7 @@ export const DirectvManager: React.FC<DirectvManagerProps> = ({
 
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

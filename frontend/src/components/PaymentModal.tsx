@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, DollarSign, Calculator, ArrowRight, Split } from 'lucide-react';
 import { getBlueExchangeRate } from '../services/api';
 
@@ -111,7 +112,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const remainingAfterPayment = debt - totalPaidUSD;
   const isCovered = remainingAfterPayment <= 0.01; // Margen de error por decimales
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 backdrop-blur-sm animate-in fade-in">
       <div className="bg-surface border border-border rounded-3xl max-w-lg w-full shadow-2xl animate-in zoom-in duration-200 overflow-hidden flex flex-col max-h-[90vh]">
 
@@ -288,6 +289,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

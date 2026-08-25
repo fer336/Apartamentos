@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Tv, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { getDirectvDevices, createDirectvDevice, rechargeDirectvDevice, deleteDirectvDevice } from '../services/api';
 
@@ -136,7 +137,7 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-surface rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
@@ -412,6 +413,7 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

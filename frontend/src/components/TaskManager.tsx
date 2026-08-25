@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Check, Plus, Trash2, Calendar, ListTodo, MoreVertical, Menu } from 'lucide-react';
 import { getTasks, createTask, updateTask, deleteTask, getProperties } from '../services/api';
 
@@ -98,7 +99,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ isOpen, onClose }) => 
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[120] backdrop-blur-sm animate-in fade-in">
             <div className="bg-surface border border-border w-full h-full md:w-[90vw] md:h-[85vh] md:rounded-3xl shadow-2xl flex overflow-hidden text-ink-primary font-sans relative">
 
@@ -326,6 +327,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ isOpen, onClose }) => 
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

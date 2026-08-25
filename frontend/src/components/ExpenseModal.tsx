@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Wrench, Upload, FileText, Trash2, AlertCircle, Plus, Check } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Button } from './ui/Button';
@@ -220,7 +221,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in">
       <div className="bg-surface rounded-3xl max-w-2xl w-full shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
@@ -605,6 +606,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

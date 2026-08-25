@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from './ui/Button';
 
@@ -38,7 +39,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   const styles = getTypeStyles();
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-in fade-in">
       <div className="bg-surface border border-border rounded-3xl max-w-md w-full shadow-2xl animate-in zoom-in duration-200">
         {/* Header */}
@@ -78,6 +79,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

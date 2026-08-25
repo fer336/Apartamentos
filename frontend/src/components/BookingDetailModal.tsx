@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X, LogOut, DollarSign, Edit, Trash2 } from 'lucide-react';
 
 interface DetailBooking {
@@ -51,7 +52,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   const canCheckout = !isCompleted && booking.status !== 'cancelled';
   const canSettle = !isFullyPaid && !isCompleted;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 bg-black/45 backdrop-blur-sm z-[100] flex items-start justify-center overflow-y-auto p-6 md:p-11 animate-in fade-in duration-200"
       onClick={onClose}
@@ -157,6 +158,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

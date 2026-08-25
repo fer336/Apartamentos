@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import { getEntityColor } from '../utils/entityColor';
 
@@ -35,7 +36,7 @@ export const ClientPickerModal = ({ isOpen, onClose, onSelect, clients }: Client
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4 backdrop-blur-sm">
       <div className="bg-surface border border-border rounded-3xl max-w-lg w-full max-h-[80vh] flex flex-col animate-in zoom-in duration-200 shadow-2xl overflow-hidden">
         {/* Header */}
@@ -98,6 +99,7 @@ export const ClientPickerModal = ({ isOpen, onClose, onSelect, clients }: Client
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

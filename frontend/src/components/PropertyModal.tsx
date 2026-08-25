@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from './ui/Button';
 import { ENTITY_COLORS } from '../utils/entityColor';
@@ -60,7 +61,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
       <div className="bg-surface border border-border rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in duration-200">
         {/* Header */}
@@ -225,6 +226,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

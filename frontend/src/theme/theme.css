@@ -181,13 +181,14 @@ body {
 }
 
 .dashboard-content {
+  /* Every fixed-overlay modal (BookingModal, PaymentModal, etc.) renders via
+     a React portal to document.body, so it is never nested inside this
+     stacking context and always compares its own z-index directly against
+     the mobile bottom nav (Layout.tsx, z-30). Keep this at z-index 1 — raising
+     it instead would make ALL ordinary page content in .dashboard-content
+     paint above the fixed nav, not just modals. */
   position: relative;
-  /* Debe quedar por encima del menú inferior mobile (Layout.tsx, z-30) pero
-     por debajo del drawer/overlay del menú hamburguesa (z-40/z-50) — si no,
-     cualquier modal fixed renderizado adentro (BookingModal, PaymentModal,
-     etc.) queda atrapado en este contexto de apilamiento y su propio
-     z-index deja de compararse contra el menú inferior, perdiendo siempre. */
-  z-index: 35;
+  z-index: 1;
 }
 
 /* ---------------------------------------------------------------------- */
