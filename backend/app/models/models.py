@@ -22,6 +22,9 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False)
     full_name = Column(String(255))
     picture = Column(String(1024))
+    # Only set for local-password accounts (e.g. the public demo user); Google
+    # sign-in accounts never get one, so it also gates who /auth/login accepts.
+    hashed_password = Column(String(255), nullable=True)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"))
     
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, HTTPException, Depends, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer
 from authlib.integrations.starlette_client import OAuth
+from pydantic import BaseModel
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.models import User, Organization
@@ -9,9 +10,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
+from app.core.security import verify_password
 import uuid
 
 router = APIRouter()
+
+# The system is admin-only: real access is limited to these two Google accounts.
+# Everyone else gets a public demo login instead (see /login below).
+ALLOWED_GOOGLE_EMAILS = {
+    "quenapuentesblanco@gmail.com",
+    "casserafernando@gmail.com",
+}
 
 oauth = OAuth()
 oauth.register(
@@ -75,7 +84,10 @@ async def auth_google_callback(request: Request, db: AsyncSession = Depends(get_
             user_info = await oauth.google.userinfo(token=token)
             
         email = user_info.get("email")
-        
+
+        if email not in ALLOWED_GOOGLE_EMAILS:
+            return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=not_allowed")
+
         # Check if user exists
         query = select(User).where(User.email == email)
         result = await db.execute(query)
@@ -123,3 +135,28 @@ async def auth_google_callback(request: Request, db: AsyncSession = Depends(get_
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail="Error en autenticación")
+
+class LocalLoginRequest(BaseModel):
+    username: str
+    password: str
+
+@router.post("/login")
+async def login_local(payload: LocalLoginRequest, db: AsyncSession = Depends(get_db)):
+    # Only the seeded demo account has a hashed_password; every Google
+    # account has none, so this can never authenticate as one of them.
+    query = select(User).where(User.email == payload.username)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+
+    if not user or not user.hashed_password or not verify_password(payload.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+
+    user_data = {
+        "sub": str(user.id),
+        "email": user.email,
+        "name": user.full_name,
+        "picture": user.picture,
+        "org_id": str(user.organization_id)
+    }
+    access_token = create_access_token(user_data)
+    return {"access_token": access_token}
