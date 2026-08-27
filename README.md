@@ -4,17 +4,31 @@ Sistema web para administrar propiedades de alquiler temporal: reservas, cliente
 
 ## Vista previa
 
-| Inicio | Calendario |
-|---|---|
-| ![Inicio](docs/inicio.png) | ![Calendario](docs/calendario.png) |
+Cada pantalla en modo claro y oscuro:
 
-| Propiedades | Clientes |
+| Inicio — claro | Inicio — oscuro |
 |---|---|
-| ![Propiedades](docs/propiedades.png) | ![Clientes](docs/clientes.png) |
+| ![Inicio claro](docs/inicio.png) | ![Inicio oscuro](docs/inicio-dark.png) |
 
-| Contabilidad | Gastos y reparaciones |
+| Calendario — claro | Calendario — oscuro |
 |---|---|
-| ![Contabilidad](docs/contabilidad.png) | ![Gastos y reparaciones](docs/gastos-reparaciones.png) |
+| ![Calendario claro](docs/calendario.png) | ![Calendario oscuro](docs/calendario-dark.png) |
+
+| Propiedades — claro | Propiedades — oscuro |
+|---|---|
+| ![Propiedades claro](docs/propiedades.png) | ![Propiedades oscuro](docs/propiedades-dark.png) |
+
+| Clientes — claro | Clientes — oscuro |
+|---|---|
+| ![Clientes claro](docs/clientes.png) | ![Clientes oscuro](docs/clientes-dark.png) |
+
+| Contabilidad — claro | Contabilidad — oscuro |
+|---|---|
+| ![Contabilidad claro](docs/contabilidad.png) | ![Contabilidad oscuro](docs/contabilidad-dark.png) |
+
+| Gastos y reparaciones — claro | Gastos y reparaciones — oscuro |
+|---|---|
+| ![Gastos y reparaciones claro](docs/gastos-reparaciones.png) | ![Gastos y reparaciones oscuro](docs/gastos-reparaciones-dark.png) |
 
 <details>
 <summary>Pantalla de login</summary>
