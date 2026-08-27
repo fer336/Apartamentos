@@ -31,6 +31,12 @@ Sistema web para administrar propiedades de alquiler temporal: reservas, cliente
 
 > Si los videos no se reproducen inline en tu visor de Markdown, abrilos directamente: [`docs/nueva-reserva.mp4`](docs/nueva-reserva.mp4) · [`docs/nueva-propiedad.mp4`](docs/nueva-propiedad.mp4)
 
+### Recorrido mobile
+
+<video src="https://s3.qeva.xyz/apartamentos-publico/demo-mobile.mp4" controls width="280"></video>
+
+> Si no se reproduce inline: [abrilo directamente](https://s3.qeva.xyz/apartamentos-publico/demo-mobile.mp4). Alojado aparte (no en `docs/`) por tamaño — es una captura de pantalla completa a x2 de velocidad.
+
 ## Camino rápido
 
 1. Copiá el archivo de entorno del backend y completá tus valores locales:
