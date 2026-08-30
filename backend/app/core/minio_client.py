@@ -99,29 +99,29 @@ async def upload_file_to_minio(
 def get_presigned_url(file_url: str, expiry_hours: int = 1) -> str:
     """
     Genera una URL firmada temporal para ver un archivo privado.
-    
+
     Args:
         file_url: URL original del archivo (almacenada en BD)
         expiry_hours: Tiempo de validez en horas (default 1)
-        
+
     Returns:
         URL firmada o la URL original si falla
     """
     try:
         if not file_url:
             return file_url
-            
+
         bucket_name = settings.MINIO_BUCKET_NAME
-        
+
         # Extraer object_name de la URL
         parts = file_url.split(f"/{bucket_name}/")
         if len(parts) != 2:
             return file_url
-            
+
         object_name = parts[1]
-        
+
         from datetime import timedelta
-        
+
         # Generar URL firmada
         presigned_url = minio_client.get_presigned_url(
             "GET",

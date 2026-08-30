@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 
 class Organization(Base):
     __tablename__ = "organizations"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     slug = Column(String(50), unique=True)
@@ -17,7 +17,7 @@ class Organization(Base):
 
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False)
     full_name = Column(String(255))
@@ -26,13 +26,13 @@ class User(Base):
     # sign-in accounts never get one, so it also gates who /auth/login accepts.
     hashed_password = Column(String(255), nullable=True)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"))
-    
+
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
 class Booking(Base):
     __tablename__ = "bookings"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
     booking_number = Column(String(20), unique=True, nullable=False)
@@ -44,21 +44,21 @@ class Booking(Base):
     adults = Column(Integer, default=1)
     children = Column(Integer, default=0)
     pets = Column(Boolean, default=False)
-    
+
     total_price_usd = Column(Numeric(10, 2), nullable=False)
     total_price_currency = Column(String(3), default='USD')
-    
+
     advance_payment_usd = Column(Numeric(10, 2))
     advance_payment_currency = Column(String(3), default='USD')
-    
+
     balance_payment_usd = Column(Numeric(10, 2))
     balance_payment_ars = Column(Numeric(12, 2), default=0)
 
     deposit_ars = Column(Numeric(12, 2), default=0)
     deposit_currency = Column(String(3), default='ARS')
-    
+
     exchange_rate = Column(Numeric(10, 2), default=1.0)
-    
+
     left_to_pay_usd = Column(Numeric(10, 2), default=0)
 
     advance_payment_date = Column(Date, nullable=True)
@@ -68,17 +68,17 @@ class Booking(Base):
     payment_status = Column(String(50), default='pending')
     service_status = Column(String(50))
     checkout_notes = Column(Text)
-    
+
     special_requests = Column(Text)
     internal_notes = Column(Text)
-    
+
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class Property(Base):
     __tablename__ = "properties"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
     name = Column(String(255), nullable=False)
@@ -95,21 +95,21 @@ class Property(Base):
     color = Column(String(20), nullable=True)
     amenities = Column(JSONB, default=[])
     photos = Column(JSONB, default=[])
-    
+
     # Configuración de alquiler
     check_in_day = Column(Integer, default=5)  # Default: Sábado (5 si 0=Lunes, pero el usuario dijo Sábado)
     check_out_day = Column(Integer, default=5) # Default: Sábado
     rental_unit = Column(String(20), default='days') # 'days' o 'weeks'
-    
+
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    
+
     directv_devices = relationship("DirectvDevice", back_populates="property", cascade="all, delete-orphan")
 
 
 class Client(Base):
     __tablename__ = "clients"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
     full_name = Column(String(255), nullable=False)
@@ -122,14 +122,14 @@ class Client(Base):
     notes = Column(Text)
     rating = Column(Integer)
     is_blacklisted = Column(Boolean, default=False)
-    
+
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
 
 class Payment(Base):
     __tablename__ = "payments"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
     booking_id = Column(UUID(as_uuid=True), nullable=False)
@@ -141,26 +141,26 @@ class Payment(Base):
     method = Column(String(50))
     receipt_url = Column(Text)
     notes = Column(Text)
-    
+
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
 
 class DirectvDevice(Base):
     __tablename__ = "directv_devices"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     property_id = Column(UUID(as_uuid=True), ForeignKey("properties.id", ondelete="CASCADE"))
     location = Column(String(100), nullable=False)
     card_number = Column(String(50), nullable=False)
     recharge_code = Column(String(50))
-    
+
     last_amount_loaded = Column(Numeric(10, 2), default=0)
     last_days_loaded = Column(Integer, default=0)
     loaded_at = Column(DateTime(timezone=True), default=func.now())
-    
+
     expiry_date = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), default=func.now())
-    
+
     # Relación
     property = relationship("Property", back_populates="directv_devices")
 

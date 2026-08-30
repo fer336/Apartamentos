@@ -55,11 +55,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-        
+
     query = select(User).where(User.email == email)
     result = await db.execute(query)
     user = result.scalar_one_or_none()
-    
+
     if user is None:
         raise credentials_exception
     return user
@@ -71,7 +71,7 @@ async def login_google(request: Request):
     # Asegurarnos de que no termine en / para evitar duplicados
     base_url = base_url.rstrip('/')
     redirect_uri = f"{base_url}/auth/google/callback"
-    
+
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @router.get("/google/callback")
@@ -82,7 +82,7 @@ async def auth_google_callback(request: Request, db: AsyncSession = Depends(get_
         if not user_info:
             # Fallback if userinfo not in token (depends on provider config)
             user_info = await oauth.google.userinfo(token=token)
-            
+
         email = user_info.get("email")
 
         if email not in ALLOWED_GOOGLE_EMAILS:
@@ -92,7 +92,7 @@ async def auth_google_callback(request: Request, db: AsyncSession = Depends(get_
         query = select(User).where(User.email == email)
         result = await db.execute(query)
         user = result.scalar_one_or_none()
-        
+
         if not user:
             # Create new Organization for the new user
             new_org = Organization(
@@ -102,7 +102,7 @@ async def auth_google_callback(request: Request, db: AsyncSession = Depends(get_
             )
             db.add(new_org)
             await db.flush() # Get ID
-            
+
             # Create new User
             user = User(
                 id=uuid.uuid4(),
@@ -114,7 +114,7 @@ async def auth_google_callback(request: Request, db: AsyncSession = Depends(get_
             db.add(user)
             await db.commit()
             await db.refresh(user)
-        
+
         user_data = {
             "sub": str(user.id),
             "email": user.email,
@@ -122,14 +122,14 @@ async def auth_google_callback(request: Request, db: AsyncSession = Depends(get_
             "picture": user.picture,
             "org_id": str(user.organization_id)
         }
-        
+
         access_token = create_access_token(user_data)
-        
+
         # Redirigir al frontend con el token
         # Usamos /login/callback para evitar conflicto con el prefijo /auth del backend en Traefik
         response = RedirectResponse(url=f"{settings.FRONTEND_URL}/login/callback?token={access_token}")
         return response
-        
+
     except Exception as e:
         print(f"Error en login: {e}")
         import traceback

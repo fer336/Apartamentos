@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    
+
     # Computed Database URL
     DATABASE_URL: Optional[str] = None
 
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], info) -> str:
         if isinstance(v, str):
             return v
-        
+
         values = info.data
         return str(
             f"postgresql+asyncpg://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@"
@@ -32,19 +32,19 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
-    
+
     # JWT
     SECRET_KEY: str
     SESSION_SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
-    
+
     # Frontend / Backend URLs
     DEV_FRONTEND_URL: str = "http://localhost:3000"
     DEV_BACKEND_URL: str = "http://localhost:8000"
     PRODUCTION_FRONTEND_URL: str = "https://apartamentos.qeva.xyz"
     PRODUCTION_BACKEND_URL: str = "https://apartamentos.qeva.xyz"
-    
+
     @property
     def FRONTEND_URL(self) -> str:
         if self.ENVIRONMENT == "production":
@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000",
-        "http://localhost:5173", 
+        "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000"
     ]
