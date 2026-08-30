@@ -3,14 +3,27 @@ import { createPortal } from 'react-dom';
 import { X, Check, Plus, Trash2, Calendar, ListTodo, MoreVertical, Menu } from 'lucide-react';
 import { getTasks, createTask, updateTask, deleteTask, getProperties } from '../services/api';
 
+interface Property {
+    id: string;
+    name: string;
+}
+
+interface Task {
+    id: string;
+    title: string;
+    description?: string;
+    is_completed: boolean;
+    property_id: string | null;
+}
+
 interface TaskManagerProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
 export const TaskManager: React.FC<TaskManagerProps> = ({ isOpen, onClose }) => {
-    const [tasks, setTasks] = useState<any[]>([]);
-    const [properties, setProperties] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [properties, setProperties] = useState<Property[]>([]);
     const [selectedList, setSelectedList] = useState<string | null>(null); // null = Todas, 'general' = General, UUID = Propiedad
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [isAdding, setIsAdding] = useState(false);
@@ -31,6 +44,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ isOpen, onClose }) => 
 
     useEffect(() => {
         if (isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing modal-open data load, tracked as follow-up
             loadData();
         }
     }, [isOpen]);
@@ -53,7 +67,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ isOpen, onClose }) => 
         }
     };
 
-    const handleToggleComplete = async (task: any) => {
+    const handleToggleComplete = async (task: Task) => {
         try {
             // Optimistic update
             const updatedTasks = tasks.map(t =>

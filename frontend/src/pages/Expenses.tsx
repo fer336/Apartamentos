@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Plus,
   Trash2,
@@ -10,7 +10,8 @@ import {
   Search
 } from 'lucide-react';
 import { getProperties, getExpenses, createExpense, updateExpense, deleteExpense } from '../services/api';
-import { ExpenseModal } from '../components/ExpenseModal';
+import { ExpenseModal, type ExpenseFormData } from '../components/ExpenseModal';
+import { getErrorMessage } from '../utils/errorMessage';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Pagination } from '../components/Pagination';
 import { Button } from '../components/ui/Button';
@@ -129,11 +130,7 @@ export const Expenses = () => {
 
   const years = [2024, 2025, 2026];
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedYear]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setErrorMessage(null);
@@ -148,14 +145,18 @@ export const Expenses = () => {
       if (Array.isArray(expensesData)) {
         setExpenses(expensesData);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching data:', error);
-      const errorMsg = error.response?.data?.detail || error.message || 'Error al cargar los datos';
-      setErrorMessage(`Error: ${errorMsg}`);
+      const fallback = error instanceof Error ? error.message : 'Error al cargar los datos';
+      setErrorMessage(`Error: ${getErrorMessage(error, fallback)}`);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedYear]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Filtrar gastos
   const filteredExpenses = expenses.filter(expense => {
@@ -217,7 +218,7 @@ export const Expenses = () => {
     }
   };
 
-  const handleSaveExpense = async (expenseData: any) => {
+  const handleSaveExpense = async (expenseData: ExpenseFormData) => {
     try {
       setErrorMessage(null);
 
@@ -246,9 +247,9 @@ export const Expenses = () => {
       setIsModalOpen(false);
       setEditingExpense(undefined);
       await fetchData();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving expense:', error);
-      setErrorMessage(error.response?.data?.detail || 'Error al guardar el gasto');
+      setErrorMessage(getErrorMessage(error, 'Error al guardar el gasto'));
     }
   };
 
@@ -267,8 +268,8 @@ export const Expenses = () => {
       await deleteExpense(deleteConfirm.expense.id);
       setExpenses(prev => prev.filter(e => e.id !== deleteConfirm.expense?.id));
       setDeleteConfirm({ isOpen: false, expense: null });
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Error al eliminar el gasto');
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Error al eliminar el gasto'));
     }
   };
 

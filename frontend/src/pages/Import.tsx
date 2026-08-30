@@ -135,9 +135,9 @@ export const Import = () => {
   };
 
   // Editar una fila
-  const handleEdit = (index: number, field: keyof ParsedBooking, value: any) => {
+  const handleEdit = <K extends keyof ParsedBooking>(index: number, field: K, value: ParsedBooking[K]) => {
     const updated = [...parsedData];
-    (updated[index] as any)[field] = value;
+    updated[index][field] = value;
     updated[index].errors = validateBooking(updated[index]);
     setParsedData(updated);
   };

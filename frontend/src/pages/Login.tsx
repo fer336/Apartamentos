@@ -35,7 +35,7 @@ export const Login = () => {
       });
       localStorage.setItem('token', data.access_token);
       navigate('/');
-    } catch (error) {
+    } catch {
       setDemoError('Usuario o contraseña incorrectos');
     } finally {
       setIsSubmittingDemo(false);

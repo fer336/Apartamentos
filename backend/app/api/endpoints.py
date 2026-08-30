@@ -50,26 +50,26 @@ async def get_bookings(
 ):
     """Obtener todas las reservas con datos relacionados"""
     org_id = current_user.organization_id
-    
+
     query = select(Booking, Property.name.label("property_name"), Client.full_name.label("client_name")) \
         .join(Property, Booking.property_id == Property.id) \
         .join(Client, Booking.client_id == Client.id) \
         .where(Booking.organization_id == org_id)
-    
+
     if status:
         query = query.where(Booking.status == status)
-    
+
     query = query.order_by(Booking.check_in.desc())
-    
+
     result = await db.execute(query)
-    
+
     bookings_list = []
     for row in result:
         booking = row[0]
         booking.property_name = row[1]
         booking.client_name = row[2]
         bookings_list.append(booking)
-        
+
     return bookings_list
 
 
@@ -82,10 +82,10 @@ async def create_booking(
     """Crear una nueva reserva"""
     try:
         org_id = current_user.organization_id
-        
+
         # Log para debugging
         print(f"🔍 Creating booking with data: {booking_data.model_dump()}")
-        
+
         overlap_query = select(Booking).where(
             and_(
                 Booking.property_id == uuid.UUID(booking_data.property_id),
@@ -104,10 +104,10 @@ async def create_booking(
         total_price = Decimal(str(booking_data.total_price_usd))
         advance = Decimal(str(booking_data.advance_payment_usd or 0))
         exchange_rate = Decimal(str(booking_data.exchange_rate or 1.0))
-        
+
         # Lógica de cálculo de saldo con conversión
         advance_in_total_currency = advance
-        
+
         # Caso común: Precio en USD y Anticipo en ARS
         if booking_data.total_price_currency == 'USD' and booking_data.advance_payment_currency == 'ARS':
             if exchange_rate > 0:
@@ -115,7 +115,7 @@ async def create_booking(
         # Caso inverso: Precio en ARS y Anticipo en USD (menos común pero posible)
         elif booking_data.total_price_currency == 'ARS' and booking_data.advance_payment_currency == 'USD':
             advance_in_total_currency = advance * exchange_rate
-            
+
         left_to_pay = total_price - advance_in_total_currency
 
         new_booking = Booking(
@@ -143,20 +143,20 @@ async def create_booking(
             payment_status=booking_data.payment_status,
             service_status=booking_data.service_status
         )
-        
+
         db.add(new_booking)
         await db.commit()
         await db.refresh(new_booking)
-        
+
         prop_query = select(Property.name).where(Property.id == new_booking.property_id)
         client_query = select(Client.full_name).where(Client.id == new_booking.client_id)
-        
+
         new_booking.property_name = (await db.execute(prop_query)).scalar()
         new_booking.client_name = (await db.execute(client_query)).scalar()
-        
+
         print(f"✅ Booking created successfully: {new_booking.id}")
         return new_booking
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -179,10 +179,10 @@ async def update_booking(
     query = select(Booking).where(and_(Booking.id == uuid.UUID(booking_id), Booking.organization_id == org_id))
     result = await db.execute(query)
     booking_obj = result.scalar_one_or_none()
-    
+
     if not booking_obj:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
-    
+
     old_advance_payment_usd = booking_obj.advance_payment_usd or Decimal(0)
 
     update_data = booking_data.model_dump(exclude_unset=True)
@@ -191,7 +191,10 @@ async def update_booking(
     left_to_pay_sent = 'left_to_pay_usd' in update_data
 
     for field, value in update_data.items():
-        if field in ['total_price_usd', 'advance_payment_usd', 'deposit_ars', 'exchange_rate', 'balance_payment_usd', 'left_to_pay_usd']:
+        if field in [
+            'total_price_usd', 'advance_payment_usd', 'deposit_ars',
+            'exchange_rate', 'balance_payment_usd', 'left_to_pay_usd',
+        ]:
              value = Decimal(str(value))
         setattr(booking_obj, field, value)
 
@@ -206,7 +209,8 @@ async def update_booking(
         booking_obj.balance_payment_ars = Decimal(str(update_data.get('settled_amount_ars') or 0))
         booking_obj.balance_payment_usd = Decimal(str(update_data.get('settled_amount_usd') or 0))
         booking_obj.balance_settled_at = date.today()
-    elif 'advance_payment_usd' in update_data and (booking_obj.advance_payment_usd or Decimal(0)) != old_advance_payment_usd:
+    elif ('advance_payment_usd' in update_data
+            and (booking_obj.advance_payment_usd or Decimal(0)) != old_advance_payment_usd):
         booking_obj.advance_payment_date = date.today()
 
     # Solo recalcular saldo si NO se envió left_to_pay_usd explícitamente
@@ -229,13 +233,13 @@ async def update_booking(
 
     await db.commit()
     await db.refresh(booking_obj)
-    
+
     prop_query = select(Property.name).where(Property.id == booking_obj.property_id)
     client_query = select(Client.full_name).where(Client.id == booking_obj.client_id)
-    
+
     booking_obj.property_name = (await db.execute(prop_query)).scalar()
     booking_obj.client_name = (await db.execute(client_query)).scalar()
-    
+
     return booking_obj
 
 
@@ -251,7 +255,7 @@ async def get_directv_devices(
     query = select(DirectvDevice).where(DirectvDevice.property_id == uuid.UUID(property_id))
     result = await db.execute(query)
     devices = result.scalars().all()
-    
+
     # Calcular días restantes en el vuelo
     now = datetime.now(timezone.utc)
     response = []
@@ -262,16 +266,16 @@ async def get_directv_devices(
              expiry = dev.expiry_date
              if expiry.tzinfo is None:
                  expiry = expiry.replace(tzinfo=timezone.utc)
-                 
+
              diff = expiry - now
              days_remaining = max(0, diff.days)
-        
-        # Crear objeto de respuesta manualmente o dejar que Pydantic lo haga, 
+
+        # Crear objeto de respuesta manualmente o dejar que Pydantic lo haga,
         # pero necesitamos inyectar days_remaining
         dev_dict = dev.__dict__.copy()
         dev_dict['days_remaining'] = days_remaining
         response.append(dev_dict)
-        
+
     return response
 
 @router.post("/properties/{property_id}/directv", response_model=DirectvDeviceResponse)
@@ -305,37 +309,37 @@ async def recharge_directv_device(
     query = select(DirectvDevice).where(DirectvDevice.id == uuid.UUID(device_id))
     result = await db.execute(query)
     device = result.scalar_one_or_none()
-    
+
     if not device:
         raise HTTPException(status_code=404, detail="Dispositivo no encontrado")
-        
+
     now = datetime.now(timezone.utc)
-    
+
     # Calcular nueva fecha de expiración
     # Si ya tiene fecha futura, sumamos a esa. Si no (o está vencida), desde hoy.
     current_expiry = device.expiry_date
     if current_expiry and current_expiry.tzinfo is None:
         current_expiry = current_expiry.replace(tzinfo=timezone.utc)
-        
+
     if current_expiry and current_expiry > now:
         new_expiry = current_expiry + timedelta(days=recharge_data.days)
     else:
         new_expiry = now + timedelta(days=recharge_data.days)
-        
+
     device.last_amount_loaded = Decimal(str(recharge_data.amount))
     device.last_days_loaded = recharge_data.days
     device.loaded_at = now
     device.expiry_date = new_expiry
     if recharge_data.recharge_code:
         device.recharge_code = recharge_data.recharge_code
-        
+
     await db.commit()
     await db.refresh(device)
-    
+
     # Calcular days_remaining para la respuesta
     diff = new_expiry - now
     device.days_remaining = max(0, diff.days)
-    
+
     return device
 
 @router.delete("/directv/{device_id}")
@@ -348,11 +352,11 @@ async def delete_directv_device(
     query = select(DirectvDevice).where(DirectvDevice.id == uuid.UUID(device_id))
     result = await db.execute(query)
     device = result.scalar_one_or_none()
-    
+
     if device:
         await db.delete(device)
         await db.commit()
-    
+
     return {"message": "Dispositivo eliminado"}
 
 
@@ -378,7 +382,7 @@ async def create_task(
 ):
     """Crear una nueva tarea"""
     org_id = current_user.organization_id
-    
+
     new_task = Task(
         id=uuid.uuid4(),
         organization_id=org_id,
@@ -387,7 +391,7 @@ async def create_task(
         description=task_data.description,
         due_date=task_data.due_date
     )
-    
+
     db.add(new_task)
     await db.commit()
     await db.refresh(new_task)
@@ -405,16 +409,16 @@ async def update_task(
     query = select(Task).where(and_(Task.id == uuid.UUID(task_id), Task.organization_id == org_id))
     result = await db.execute(query)
     task = result.scalar_one_or_none()
-    
+
     if not task:
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
-    
+
     update_data = task_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         if field == 'property_id':
              value = uuid.UUID(value) if value else None
         setattr(task, field, value)
-        
+
     await db.commit()
     await db.refresh(task)
     return task
@@ -476,7 +480,7 @@ async def create_property(
 ):
     """Crear una nueva propiedad"""
     org_id = current_user.organization_id
-    
+
     new_property = Property(
         id=uuid.uuid4(),
         organization_id=org_id,
@@ -497,7 +501,7 @@ async def create_property(
         check_out_day=property_data.check_out_day,
         rental_unit=property_data.rental_unit
     )
-    
+
     db.add(new_property)
     await db.commit()
     await db.refresh(new_property)
@@ -516,14 +520,14 @@ async def update_property(
     query = select(Property).where(and_(Property.id == uuid.UUID(property_id), Property.organization_id == org_id))
     result = await db.execute(query)
     property_obj = result.scalar_one_or_none()
-    
+
     if not property_obj:
         raise HTTPException(status_code=404, detail="Propiedad no encontrada")
-    
+
     update_data = property_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(property_obj, field, value)
-    
+
     await db.commit()
     await db.refresh(property_obj)
     return property_obj
@@ -537,7 +541,7 @@ async def delete_property(
 ):
     """Eliminar una propiedad"""
     org_id = current_user.organization_id
-    
+
     # Verificar si tiene reservas asociadas
     bookings_query = select(func.count(Booking.id)).where(
         and_(
@@ -547,17 +551,19 @@ async def delete_property(
     )
     result = await db.execute(bookings_query)
     bookings_count = result.scalar()
-    
+
     if bookings_count > 0:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"No se puede eliminar. La propiedad tiene {bookings_count} reservas asociadas."
         )
-    
-    delete_query = delete(Property).where(and_(Property.id == uuid.UUID(property_id), Property.organization_id == org_id))
+
+    delete_query = delete(Property).where(
+        and_(Property.id == uuid.UUID(property_id), Property.organization_id == org_id)
+    )
     await db.execute(delete_query)
     await db.commit()
-    
+
     return {"message": "Propiedad eliminada exitosamente"}
 
 
@@ -584,7 +590,7 @@ async def create_client(
 ):
     """Crear un nuevo cliente"""
     org_id = current_user.organization_id
-    
+
     new_client = Client(
         id=uuid.uuid4(),
         organization_id=org_id,
@@ -597,7 +603,7 @@ async def create_client(
         nationality=client_data.nationality,
         notes=client_data.notes
     )
-    
+
     db.add(new_client)
     await db.commit()
     await db.refresh(new_client)
@@ -616,14 +622,14 @@ async def update_client(
     query = select(Client).where(and_(Client.id == uuid.UUID(client_id), Client.organization_id == org_id))
     result = await db.execute(query)
     client_obj = result.scalar_one_or_none()
-    
+
     if not client_obj:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    
+
     update_data = client_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(client_obj, field, value)
-    
+
     await db.commit()
     await db.refresh(client_obj)
     return client_obj
@@ -637,7 +643,7 @@ async def delete_client(
 ):
     """Eliminar un cliente"""
     org_id = current_user.organization_id
-    
+
     # Verificar si tiene reservas asociadas
     bookings_query = select(func.count(Booking.id)).where(
         and_(
@@ -647,17 +653,17 @@ async def delete_client(
     )
     result = await db.execute(bookings_query)
     bookings_count = result.scalar()
-    
+
     if bookings_count > 0:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"No se puede eliminar. El cliente tiene {bookings_count} reservas asociadas."
         )
-    
+
     delete_query = delete(Client).where(and_(Client.id == uuid.UUID(client_id), Client.organization_id == org_id))
     await db.execute(delete_query)
     await db.commit()
-    
+
     return {"message": "Cliente eliminado exitosamente"}
 
 
@@ -716,9 +722,9 @@ async def get_dashboard_stats(
 ):
     """Obtener estadísticas del dashboard - Versión optimizada"""
     org_id = current_user.organization_id
-    
+
     # --- QUERIES ESENCIALES PARALELAS ---
-    
+
     # 1. Total Recaudado ARS (histórico)
     total_revenue_ars_query = select(func.sum(Booking.total_price_usd)).where(
         and_(
@@ -727,7 +733,7 @@ async def get_dashboard_stats(
             Booking.total_price_currency == 'ARS'
         )
     )
-    
+
     # 1b. Total Recaudado USD (histórico)
     total_revenue_usd_query = select(func.sum(Booking.total_price_usd)).where(
         and_(
@@ -736,7 +742,7 @@ async def get_dashboard_stats(
             Booking.total_price_currency == 'USD'
         )
     )
-    
+
     # 2. Ingresos del mes actual
     current_month_start = date.today().replace(day=1)
     if current_month_start.month == 12:
@@ -793,7 +799,7 @@ async def get_dashboard_stats(
             Booking.advance_payment_currency == 'ARS'
         )
     )
-    
+
     # 4. Anticipos USD
     advances_usd_query = select(func.sum(Booking.advance_payment_usd)).where(
         and_(
@@ -909,16 +915,16 @@ async def get_dashboard_stats(
 
     # --- FORECAST DE DISPONIBILIDAD ---
     availability_forecast = []
-    
+
     current_date = date.today()
     target_months = []
-    
+
     # Definir meses de temporada: Dic, Ene, Feb, Mar
     if current_date.month <= 3:
         season_start_year = current_date.year - 1
     else:
         season_start_year = current_date.year
-        
+
     target_months = [
         date(season_start_year, 12, 1),
         date(season_start_year + 1, 1, 1),
@@ -942,37 +948,38 @@ async def get_dashboard_stats(
             month_end = date(month_start.year + 1, 1, 1)
         else:
             month_end = date(month_start.year, month_start.month + 1, 1)
-        
+
         days_in_month = (month_end - month_start).days
         day_occupancy = {day: 0 for day in range(1, days_in_month + 1)}
-        
+
         for booking in all_future_bookings:
             start = max(booking.check_in, month_start)
             booking_end_exclusive = booking.check_out
-            
+
             # Iterar por los días que la reserva ocupa en este mes
             # Convertir a ordinal para iterar fácilmente
             curr_ord = start.toordinal()
             end_ord = min(booking_end_exclusive.toordinal(), month_end.toordinal())
-            
+
             for d_ord in range(curr_ord, end_ord):
                 d_date = date.fromordinal(d_ord)
                 if d_date.month == month_start.month:
                     day_occupancy[d_date.day] += 1
-        
+
         free_days = []
         start_day_scan = 1
-        
+
         # Si es el mes actual, solo contar desde HOY
         if month_start.month == current_date.month and month_start.year == current_date.year:
             start_day_scan = current_date.day
-            
+
         total_days_to_consider = days_in_month - start_day_scan + 1
-        if total_days_to_consider < 0: total_days_to_consider = 0
+        if total_days_to_consider < 0:
+            total_days_to_consider = 0
 
         # CORREGIDO: Contar días con CUALQUIER disponibilidad (ocupación < total de propiedades)
         # Si tenés 4 propiedades y solo 2 están ocupadas, ese día se cuenta como disponible
-        
+
         # DEBUG: Imprimir info del mes actual
         if month_start.month == current_date.month and month_start.year == current_date.year:
             print(f"🔍 DEBUG FEBRERO {month_start.year}:")
@@ -980,16 +987,16 @@ async def get_dashboard_stats(
             print(f"  - Días del mes: {days_in_month}")
             print(f"  - Empezar a contar desde día: {start_day_scan}")
             print(f"  - Ocupación por día: {day_occupancy}")
-        
+
         for d in range(start_day_scan, days_in_month + 1):
             if day_occupancy[d] < total_properties_count:
                 free_days.append(d)
-        
+
         ranges = []
         if free_days:
             range_start = free_days[0]
             prev = free_days[0]
-            
+
             for d in free_days[1:]:
                 if d == prev + 1:
                     prev = d
@@ -998,7 +1005,7 @@ async def get_dashboard_stats(
                     range_start = d
                     prev = d
             ranges.append(f"{range_start}-{prev}" if range_start != prev else f"{range_start}")
-            
+
         status = 'partial'
         # Si todos los días tienen disponibilidad -> FULL
         if len(free_days) >= total_days_to_consider and total_days_to_consider > 0:
@@ -1010,11 +1017,17 @@ async def get_dashboard_stats(
         else:
             status = 'partial'
 
-            
-        month_names = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-        
+
+        month_names = [
+            "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+            "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+        ]
+
         # Solo agregar si estamos en rango Dic-Mar o es el mes actual
-        if month_start.month in [12, 1, 2, 3] or (month_start.month == current_date.month and month_start.year == current_date.year) or month_start.year > current_date.year:
+        is_current_or_future_month = (
+            month_start.month == current_date.month and month_start.year == current_date.year
+        ) or month_start.year > current_date.year
+        if month_start.month in [12, 1, 2, 3] or is_current_or_future_month:
              availability_forecast.append({
                 "month_name": month_names[month_start.month],
                 "year": month_start.year,
@@ -1022,15 +1035,15 @@ async def get_dashboard_stats(
                 "status": status,
                 "free_ranges": ranges
             })
-    
+
     # DirecTV Devices Summary (optimizado - solo traer lo necesario)
     dtv_query = select(DirectvDevice).join(Property).where(Property.organization_id == org_id).limit(4)
     dtv_result = await db.execute(dtv_query)
     dtv_devices = dtv_result.scalars().all()
-    
+
     dtv_summary = []
     now_utc = datetime.now(timezone.utc)
-    
+
     for dev in dtv_devices:
         days_remaining = 0
         if dev.expiry_date:
@@ -1039,14 +1052,14 @@ async def get_dashboard_stats(
                 expiry = expiry.replace(tzinfo=timezone.utc)
             diff = expiry - now_utc
             days_remaining = max(0, diff.days)
-        
+
         dtv_summary.append({
             'id': str(dev.id),
             'location': dev.location,
             'card_number': dev.card_number,
             'days_remaining': days_remaining
         })
-    
+
     return DashboardStats(
         active_bookings=active_bookings_count,
         total_revenue_month=total_revenue_month,
@@ -1076,13 +1089,16 @@ async def get_accounting_stats(
 ):
     org_id = current_user.organization_id
     current_date = date.today()
-    
+
     # Si se pasan parámetros específicos, comparamos esos dos meses/años
     if month and year1 and year2:
         target_periods = [(year1, month), (year2, month)]
         all_stats = []
-        month_names = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-        
+        month_names = [
+            "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+            "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+        ]
+
         for y, m in target_periods:
             start_date = date(y, m, 1)
             if m == 12:
@@ -1171,7 +1187,10 @@ async def get_accounting_stats(
     years = [current_year, previous_year]
     all_stats = []
 
-    month_names = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    month_names = [
+        "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+        "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+    ]
 
     for year in years:
         target_months = [(year, m) for m in range(1, 13)]
@@ -1271,29 +1290,32 @@ async def import_bookings(
     """Importar reservas desde CSV"""
     org_id = current_user.organization_id
     bookings_data = data.get('bookings', [])
-    
+
     print(f"🔍 Importing {len(bookings_data)} bookings")
     print(f"📦 First booking data sample: {bookings_data[0] if bookings_data else 'No data'}")
-    
+
     success_count = 0
     failed_count = 0
     errors = []
-    
+
     # Obtener la primera propiedad disponible para asignar las reservas
     property_query = select(Property).where(Property.organization_id == org_id).limit(1)
     property_result = await db.execute(property_query)
     default_property = property_result.scalar_one_or_none()
-    
+
     if not default_property:
-        raise HTTPException(status_code=400, detail="No hay propiedades registradas. Crea al menos una propiedad antes de importar.")
-    
+        raise HTTPException(
+            status_code=400,
+            detail="No hay propiedades registradas. Crea al menos una propiedad antes de importar.",
+        )
+
     print(f"✅ Using default property: {default_property.name}")
-    
+
     for index, booking_data in enumerate(bookings_data):
         try:
             print(f"\n--- Processing booking {index + 1} ---")
             print(f"Data: {booking_data}")
-            
+
             # Buscar o crear cliente
             client_name = booking_data.get('clientName', '').strip()
             if not client_name:
@@ -1302,7 +1324,7 @@ async def import_bookings(
                 errors.append(error_msg)
                 print(f"❌ {error_msg}")
                 continue
-                
+
             client_query = select(Client).where(
                 and_(
                     Client.organization_id == org_id,
@@ -1311,7 +1333,7 @@ async def import_bookings(
             )
             client_result = await db.execute(client_query)
             client = client_result.scalar_one_or_none()
-            
+
             if not client:
                 # Crear nuevo cliente
                 client = Client(
@@ -1325,16 +1347,16 @@ async def import_bookings(
                 )
                 db.add(client)
                 await db.flush()
-            
+
             print(f"✅ Client: {client.full_name} (ID: {client.id})")
-            
+
             # Calcular anticipo basado en leftToPay
             print(f"Processing prices - Price: {booking_data.get('price')}, LeftToPay: {booking_data.get('leftToPay')}")
-            
+
             total_price = Decimal(str(booking_data['price']))
             left_to_pay = Decimal(str(booking_data.get('leftToPay', booking_data['price'])))
             advance_payment = total_price - left_to_pay
-            
+
             # Crear reserva
             new_booking = Booking(
                 id=str(uuid.uuid4()),
@@ -1357,14 +1379,17 @@ async def import_bookings(
                 service_status='SERVICIOS' if booking_data.get('status', '').lower() == 'active' else 'NO SERVICIOS',
                 exchange_rate=Decimal('1200')  # Default
             )
-            
+
             db.add(new_booking)
             success_count += 1
             print(f"✅ Booking created successfully for {client_name}")
-            
+
         except KeyError as e:
             failed_count += 1
-            error_msg = f"Fila {index + 1} ({booking_data.get('clientName', 'desconocido')}): Falta campo requerido {str(e)}"
+            error_msg = (
+                f"Fila {index + 1} ({booking_data.get('clientName', 'desconocido')}): "
+                f"Falta campo requerido {str(e)}"
+            )
             errors.append(error_msg)
             print(f"❌ {error_msg}")
         except ValueError as e:
@@ -1379,13 +1404,13 @@ async def import_bookings(
             print(f"❌ Error importing booking: {e}")
             import traceback
             traceback.print_exc()
-    
+
     try:
         await db.commit()
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al guardar las reservas: {str(e)}")
-    
+
     return {
         "success": success_count,
         "failed": failed_count,
@@ -1400,21 +1425,21 @@ async def export_bookings(
 ):
     """Exportar reservas a CSV"""
     org_id = current_user.organization_id
-    
+
     # Obtener todas las reservas
     query = select(Booking, Property.name.label("property_name"), Client.full_name.label("client_name")) \
         .join(Property, Booking.property_id == Property.id) \
         .join(Client, Booking.client_id == Client.id) \
         .where(Booking.organization_id == org_id) \
         .order_by(Booking.check_in.desc())
-    
+
     result = await db.execute(query)
     bookings = result.all()
-    
+
     # Crear CSV en memoria
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Escribir encabezados
     writer.writerow([
         'Name',
@@ -1427,7 +1452,7 @@ async def export_bookings(
         'Property',
         'Payment Status'
     ])
-    
+
     # Escribir datos
     for booking, property_name, client_name in bookings:
         writer.writerow([
@@ -1441,7 +1466,7 @@ async def export_bookings(
             property_name,
             booking.payment_status
         ])
-    
+
     # Preparar respuesta
     output.seek(0)
     return StreamingResponse(

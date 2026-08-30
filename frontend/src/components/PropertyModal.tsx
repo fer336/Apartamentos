@@ -3,14 +3,26 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from './ui/Button';
 import { ENTITY_COLORS } from '../utils/entityColor';
+import type { PropertyPayload } from '../services/api';
 
 const DEFAULT_COLOR_KEY = ENTITY_COLORS[0].key;
+
+interface Property {
+  id: string;
+  name?: string;
+  capacity?: number;
+  status?: string;
+  color?: string;
+  check_in_day?: number;
+  check_out_day?: number;
+  rental_unit?: string;
+}
 
 interface PropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (propertyData: any) => void;
-  property?: any;
+  onSave: (propertyData: PropertyPayload) => void;
+  property?: Property;
 }
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({
@@ -31,6 +43,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
 
   useEffect(() => {
     if (property) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing modal-open form reset, tracked as follow-up
       setFormData({
         name: property.name || '',
         capacity: property.capacity || 4,

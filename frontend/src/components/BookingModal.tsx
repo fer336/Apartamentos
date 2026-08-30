@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Calendar as CalendarIcon, User, Home, DollarSign, Search } from 'lucide-react';
-import { getClients, getProperties, getExchangeRate, getBlueExchangeRate } from '../services/api';
+import { getClients, getProperties, getExchangeRate, getBlueExchangeRate, type BookingPayload } from '../services/api';
 import { Button } from './ui/Button';
 import { ClientPickerModal } from './ClientPickerModal';
+import type { Client } from './ClientCard';
+
+interface BookingProperty {
+  id: string;
+  name: string;
+  check_in_day?: number;
+  check_out_day?: number;
+}
+
+interface Booking extends BookingPayload {
+  id: string;
+}
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (bookingData: any) => void;
-  booking?: any;
+  onSave: (bookingData: BookingPayload) => void;
+  booking?: Booking;
   errorMessage?: string | null;
 }
 
@@ -39,8 +51,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     service_status: 'NO SERVICIOS',
   });
 
-  const [clients, setClients] = useState<any[]>([]);
-  const [properties, setProperties] = useState<any[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [properties, setProperties] = useState<BookingProperty[]>([]);
   const [dateError, setDateError] = useState<string | null>(null);
   const [isClientPickerOpen, setIsClientPickerOpen] = useState(false);
   const [defaultExchangeRate, setDefaultExchangeRate] = useState<number>(1200);
@@ -256,7 +268,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       }
                     }}
                     className={`form-control w-full px-4 py-3 focus:outline-none ${formData.check_in && formData.property_id &&
-                      new Date(formData.check_in + 'T00:00:00').getDay() !== ((properties.find(p => p.id === formData.property_id)?.check_in_day + 1) % 7)
+                      new Date(formData.check_in + 'T00:00:00').getDay() !== (((properties.find(p => p.id === formData.property_id)?.check_in_day ?? 5) + 1) % 7)
                       ? 'border-state-yellow bg-state-yellow/10' : ''
                       }`}
                   />
@@ -279,7 +291,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       setFormData({ ...formData, check_out: e.target.value });
                     }}
                     className={`form-control w-full px-4 py-3 focus:outline-none ${formData.check_out && formData.property_id &&
-                      new Date(formData.check_out + 'T00:00:00').getDay() !== ((properties.find(p => p.id === formData.property_id)?.check_out_day + 1) % 7)
+                      new Date(formData.check_out + 'T00:00:00').getDay() !== (((properties.find(p => p.id === formData.property_id)?.check_out_day ?? 5) + 1) % 7)
                       ? 'border-state-yellow bg-state-yellow/10' : ''
                       }`}
                   />
@@ -371,7 +383,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 <div className="bg-state-yellow/15 p-3 rounded-xl border border-state-yellow/30 flex items-center gap-2">
                   <span className="text-lg">💡</span>
                   <p className="text-xs text-state-yellow font-medium">
-                    Esta propiedad prefiere check-in los <b>{['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][properties.find(p => p.id === formData.property_id)?.check_in_day]}</b> y check-out los <b>{['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][properties.find(p => p.id === formData.property_id)?.check_out_day]}</b>.
+                    Esta propiedad prefiere check-in los <b>{['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][properties.find(p => p.id === formData.property_id)?.check_in_day ?? 5]}</b> y check-out los <b>{['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][properties.find(p => p.id === formData.property_id)?.check_out_day ?? 5]}</b>.
                   </p>
                 </div>
               )}

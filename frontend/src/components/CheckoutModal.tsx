@@ -2,12 +2,18 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, LogOut, MessageSquare, AlertTriangle, CheckCircle, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { Button } from './ui/Button';
+import type { BookingPayload } from '../services/api';
+
+interface CheckoutBooking {
+  client_name?: string;
+  deposit_ars?: number;
+}
 
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (checkoutData: any) => void;
-  booking: any;
+  onConfirm: (checkoutData: BookingPayload) => void;
+  booking: CheckoutBooking | null;
 }
 
 const TAGS = [
@@ -87,7 +93,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
 
           {/* Alerta de Depósito */}
-          {booking.deposit_ars > 0 && (
+          {(booking.deposit_ars ?? 0) > 0 && (
             <div className={`border rounded-2xl p-4 flex items-center gap-4 transition-all ${depositReturned ? 'bg-state-green/12 border-state-green/28' : 'bg-state-yellow/12 border-state-yellow/28'}`}>
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${depositReturned ? 'bg-state-green/16' : 'bg-state-yellow/16'}`}>
                 💰
@@ -154,7 +160,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <Button
             type="submit"
             variant="primary"
-            disabled={booking.deposit_ars > 0 && !depositReturned}
+            disabled={(booking.deposit_ars ?? 0) > 0 && !depositReturned}
             className="w-full py-3.5 text-base"
           >
             Confirmar Checkout <CheckCircle className="w-5 h-5" strokeWidth={1.7} />

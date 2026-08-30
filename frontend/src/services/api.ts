@@ -1,5 +1,82 @@
 import axios from 'axios';
 
+// Payloads espejo de los schemas Pydantic en backend/app/schemas/schemas.py
+export interface BookingPayload {
+  property_id?: string;
+  client_id?: string;
+  check_in?: string;
+  check_out?: string;
+  guests_count?: number;
+  adults?: number;
+  children?: number;
+  pets?: boolean;
+  total_price_usd?: number;
+  total_price_currency?: string;
+  advance_payment_usd?: number;
+  advance_payment_currency?: string;
+  balance_payment_usd?: number;
+  left_to_pay_usd?: number;
+  settled_amount_ars?: number;
+  settled_amount_usd?: number;
+  deposit_ars?: number;
+  deposit_currency?: string;
+  exchange_rate?: number;
+  status?: string;
+  payment_status?: string;
+  service_status?: string;
+  checkout_notes?: string;
+}
+
+export interface PropertyPayload {
+  name?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  capacity?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  description?: string;
+  status?: string;
+  property_type?: string;
+  color?: string;
+  amenities?: string[];
+  check_in_day?: number;
+  check_out_day?: number;
+  rental_unit?: string;
+}
+
+export interface ClientPayload {
+  full_name?: string;
+  document_type?: string;
+  document_id?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  nationality?: string;
+  notes?: string;
+}
+
+export interface DirectvDeviceCreatePayload {
+  location: string;
+  card_number: string;
+  recharge_code?: string;
+}
+
+export interface DirectvDeviceRechargePayload {
+  amount: number;
+  days: number;
+  recharge_code?: string;
+}
+
+export interface TaskPayload {
+  property_id?: string | null;
+  title?: string;
+  description?: string;
+  is_completed?: boolean;
+  due_date?: string;
+}
+
 // En producción usa rutas relativas (Traefik maneja el routing)
 // En desarrollo usa localhost:8000
 const API_URL = import.meta.env.VITE_BACKEND_URL
@@ -73,12 +150,12 @@ export const getBookings = async (status?: string) => {
   return response.data;
 };
 
-export const createBooking = async (bookingData: any) => {
+export const createBooking = async (bookingData: BookingPayload) => {
   const response = await api.post('/bookings', bookingData);
   return response.data;
 };
 
-export const updateBooking = async (id: string, bookingData: any) => {
+export const updateBooking = async (id: string, bookingData: BookingPayload) => {
   const response = await api.put(`/bookings/${id}`, bookingData);
   return response.data;
 };
@@ -94,12 +171,12 @@ export const getProperties = async () => {
   return response.data;
 };
 
-export const createProperty = async (propertyData: any) => {
+export const createProperty = async (propertyData: PropertyPayload) => {
   const response = await api.post('/properties', propertyData);
   return response.data;
 };
 
-export const updateProperty = async (id: string, propertyData: any) => {
+export const updateProperty = async (id: string, propertyData: PropertyPayload) => {
   const response = await api.put(`/properties/${id}`, propertyData);
   return response.data;
 };
@@ -115,12 +192,12 @@ export const getClients = async () => {
   return response.data;
 };
 
-export const createClient = async (clientData: any) => {
+export const createClient = async (clientData: ClientPayload) => {
   const response = await api.post('/clients', clientData);
   return response.data;
 };
 
-export const updateClient = async (id: string, clientData: any) => {
+export const updateClient = async (id: string, clientData: ClientPayload) => {
   const response = await api.put(`/clients/${id}`, clientData);
   return response.data;
 };
@@ -136,12 +213,12 @@ export const getDirectvDevices = async (propertyId: string) => {
   return response.data;
 };
 
-export const createDirectvDevice = async (propertyId: string, data: any) => {
+export const createDirectvDevice = async (propertyId: string, data: DirectvDeviceCreatePayload) => {
   const response = await api.post(`/properties/${propertyId}/directv`, data);
   return response.data;
 };
 
-export const rechargeDirectvDevice = async (deviceId: string, data: any) => {
+export const rechargeDirectvDevice = async (deviceId: string, data: DirectvDeviceRechargePayload) => {
   const response = await api.post(`/directv/${deviceId}/recharge`, data);
   return response.data;
 };
@@ -157,12 +234,12 @@ export const getTasks = async () => {
   return response.data;
 };
 
-export const createTask = async (taskData: any) => {
+export const createTask = async (taskData: TaskPayload) => {
   const response = await api.post('/tasks', taskData);
   return response.data;
 };
 
-export const updateTask = async (id: string, taskData: any) => {
+export const updateTask = async (id: string, taskData: TaskPayload) => {
   const response = await api.put(`/tasks/${id}`, taskData);
   return response.data;
 };

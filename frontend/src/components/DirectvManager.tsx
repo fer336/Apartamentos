@@ -1,12 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Tv, Plus, Trash2, Calendar, CreditCard, DollarSign, CheckCircle } from 'lucide-react';
 import { getDirectvDevices, createDirectvDevice, rechargeDirectvDevice, deleteDirectvDevice } from '../services/api';
 
+interface Property {
+    id: string;
+    name: string;
+}
+
+interface DirectvDevice {
+    id: string;
+    location: string;
+    card_number: string;
+    days_remaining: number;
+    expiry_date: string | null;
+}
+
 interface DirectvManagerProps {
     isOpen: boolean;
     onClose: () => void;
-    property: any;
+    property: Property | null;
 }
 
 export const DirectvManager: React.FC<DirectvManagerProps> = ({
@@ -14,22 +27,17 @@ export const DirectvManager: React.FC<DirectvManagerProps> = ({
     onClose,
     property,
 }) => {
-    const [devices, setDevices] = useState<any[]>([]);
+    const [devices, setDevices] = useState<DirectvDevice[]>([]);
     const [loading, setLoading] = useState(false);
     const [view, setView] = useState<'list' | 'add' | 'recharge'>('list');
-    const [selectedDevice, setSelectedDevice] = useState<any>(null);
+    const [selectedDevice, setSelectedDevice] = useState<DirectvDevice | null>(null);
 
     // Form states
     const [newDevice, setNewDevice] = useState({ location: '', card_number: '', recharge_code: '' });
     const [rechargeData, setRechargeData] = useState({ amount: '', days: '', recharge_code: '' });
 
-    useEffect(() => {
-        if (isOpen && property) {
-            loadDevices();
-        }
-    }, [isOpen, property]);
-
-    const loadDevices = async () => {
+    const loadDevices = useCallback(async () => {
+        if (!property) return;
         setLoading(true);
         try {
             const data = await getDirectvDevices(property.id);
@@ -39,10 +47,17 @@ export const DirectvManager: React.FC<DirectvManagerProps> = ({
         } finally {
             setLoading(false);
         }
-    };
+    }, [property]);
+
+    useEffect(() => {
+        if (isOpen && property) {
+            loadDevices();
+        }
+    }, [isOpen, property, loadDevices]);
 
     const handleAddDevice = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!property) return;
         try {
             await createDirectvDevice(property.id, newDevice);
             setNewDevice({ location: '', card_number: '', recharge_code: '' });

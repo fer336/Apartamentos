@@ -18,11 +18,17 @@ import {
 } from 'lucide-react';
 import { BookingModal } from './BookingModal';
 import { ConfirmModal } from './ConfirmModal';
-import { createBooking, getBookings } from '../services/api';
+import { createBooking, getBookings, type BookingPayload } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import { KanagawaBackground } from './layout/KanagawaBackground';
 import { ThemeToggle } from './ui/ThemeToggle';
 import { useTheme } from '../theme/ThemeProvider';
+import { getErrorMessage } from '../utils/errorMessage';
+
+interface GoogleJwtPayload {
+  name?: string;
+  picture?: string;
+}
 
 const ToriiIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
@@ -101,7 +107,8 @@ export const Layout = () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const decoded: any = jwtDecode(token);
+        const decoded = jwtDecode<GoogleJwtPayload>(token);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing token decode on mount, tracked as follow-up
         setUser({
           name: decoded.name || 'Usuario',
           picture: decoded.picture || '',
@@ -128,7 +135,7 @@ export const Layout = () => {
     fetchCheckoutsToday();
   }, []);
 
-  const handleGlobalCreateBooking = async (bookingData: any) => {
+  const handleGlobalCreateBooking = async (bookingData: BookingPayload) => {
     try {
       setBookingError(null);
       await createBooking(bookingData);
@@ -138,9 +145,9 @@ export const Layout = () => {
       } else {
         navigate('/calendar');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating booking:', error);
-      setBookingError(error.response?.data?.detail || 'Error al crear la reserva');
+      setBookingError(getErrorMessage(error, 'Error al crear la reserva'));
     }
   };
 

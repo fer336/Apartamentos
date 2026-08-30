@@ -9,11 +9,11 @@ class BookingResponse(BaseModel):
     booking_number: str
     property_id: UUID
     client_id: UUID
-    
+
     # Datos expandidos
     property_name: Optional[str] = None
     client_name: Optional[str] = None
-    
+
     check_in: date
     check_out: date
     guests_count: int
@@ -42,10 +42,13 @@ class BookingResponse(BaseModel):
     def serialize_uuid(self, value: UUID, _info) -> str:
         return str(value)
 
-    @field_serializer('total_price_usd', 'advance_payment_usd', 'balance_payment_usd', 'balance_payment_ars', 'deposit_ars', 'left_to_pay_usd', 'exchange_rate')
+    @field_serializer(
+        'total_price_usd', 'advance_payment_usd', 'balance_payment_usd',
+        'balance_payment_ars', 'deposit_ars', 'left_to_pay_usd', 'exchange_rate',
+    )
     def serialize_decimal(self, value: Optional[Decimal], _info) -> Optional[float]:
         return float(value) if value is not None else None
-    
+
     class Config:
         from_attributes = True
 
@@ -118,16 +121,16 @@ class PropertyResponse(BaseModel):
     @field_serializer('id')
     def serialize_uuid(self, value: UUID, _info) -> str:
         return str(value)
-    
+
     @field_serializer('bathrooms')
     def serialize_bathrooms(self, value: Optional[Decimal], _info) -> Optional[float]:
         return float(value) if value else None
-    
+
     @field_validator('amenities', mode='before')
     @classmethod
     def set_default_list(cls, v):
         return v or []
-    
+
     class Config:
         from_attributes = True
 
@@ -230,15 +233,15 @@ class DirectvDeviceResponse(BaseModel):
     loaded_at: Optional[datetime] = None
     expiry_date: Optional[datetime] = None
     days_remaining: Optional[int] = None # Campo calculado
-    
+
     @field_serializer('id', 'property_id')
     def serialize_uuid(self, value: UUID, _info) -> str:
         return str(value)
-    
+
     @field_serializer('last_amount_loaded')
     def serialize_decimal(self, value: Optional[Decimal], _info) -> Optional[float]:
         return float(value) if value is not None else 0.0
-        
+
     class Config:
         from_attributes = True
 
@@ -283,11 +286,11 @@ class TaskResponse(BaseModel):
     is_completed: bool
     due_date: Optional[datetime] = None
     created_at: datetime
-    
+
     @field_serializer('id', 'organization_id', 'property_id')
     def serialize_uuid(self, value: Optional[UUID], _info) -> Optional[str]:
         return str(value) if value else None
-        
+
     class Config:
         from_attributes = True
 

@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import { getEntityColor } from '../utils/entityColor';
+import type { Client } from './ClientCard';
 
 interface ClientPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (client: any) => void;
-  clients: any[];
+  onSelect: (client: Client) => void;
+  clients: Client[];
 }
 
 const getInitials = (name: string) =>
@@ -19,6 +20,7 @@ export const ClientPickerModal = ({ isOpen, onClose, onSelect, clients }: Client
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing modal-open reset, tracked as follow-up
       setSearchQuery('');
       const timer = setTimeout(() => inputRef.current?.focus(), 0);
       return () => clearTimeout(timer);
