@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Tv, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { getDirectvDevices, createDirectvDevice, rechargeDirectvDevice, deleteDirectvDevice } from '../services/api';
@@ -51,17 +51,11 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
 
   const [rechargeForm, setRechargeForm] = useState({
     recharge_code: '',
-    amount_loaded: 0,
-    days_loaded: 0
+    amount: 0,
+    days: 0
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchAllDevices();
-    }
-  }, [isOpen]);
-
-  const fetchAllDevices = async () => {
+  const fetchAllDevices = useCallback(async () => {
     try {
       setLoading(true);
       const allDevices: DirectvDevice[] = [];
@@ -77,7 +71,13 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [properties]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAllDevices();
+    }
+  }, [isOpen, fetchAllDevices]);
 
   const handleAddDevice = async () => {
     if (!newDevice.property_id || !newDevice.location || !newDevice.card_number) {
@@ -105,7 +105,7 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
   };
 
   const handleRecharge = async () => {
-    if (!selectedDevice || !rechargeForm.recharge_code || rechargeForm.days_loaded <= 0) {
+    if (!selectedDevice || !rechargeForm.recharge_code || rechargeForm.days <= 0) {
       alert('Por favor completá todos los campos');
       return;
     }
@@ -113,7 +113,7 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
     try {
       await rechargeDirectvDevice(selectedDevice.id, rechargeForm);
       setSelectedDevice(null);
-      setRechargeForm({ recharge_code: '', amount_loaded: 0, days_loaded: 0 });
+      setRechargeForm({ recharge_code: '', amount: 0, days: 0 });
       await fetchAllDevices();
       onUpdate();
     } catch (error) {
@@ -331,7 +331,7 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
                     <button
                       onClick={() => {
                         setSelectedDevice(device);
-                        setRechargeForm({ recharge_code: '', amount_loaded: 0, days_loaded: 0 });
+                        setRechargeForm({ recharge_code: '', amount: 0, days: 0 });
                       }}
                       className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${
                         isExpiringSoon
@@ -380,8 +380,8 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
                   <label className="block text-sm font-bold text-ink-secondary mb-2">Monto (ARS)</label>
                   <input
                     type="number"
-                    value={rechargeForm.amount_loaded}
-                    onChange={(e) => setRechargeForm({ ...rechargeForm, amount_loaded: parseFloat(e.target.value) })}
+                    value={rechargeForm.amount}
+                    onChange={(e) => setRechargeForm({ ...rechargeForm, amount: parseFloat(e.target.value) })}
                     className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>
@@ -389,8 +389,8 @@ export const DirectvManagerModal: React.FC<DirectvManagerModalProps> = ({
                   <label className="block text-sm font-bold text-ink-secondary mb-2">Días *</label>
                   <input
                     type="number"
-                    value={rechargeForm.days_loaded}
-                    onChange={(e) => setRechargeForm({ ...rechargeForm, days_loaded: parseInt(e.target.value) })}
+                    value={rechargeForm.days}
+                    onChange={(e) => setRechargeForm({ ...rechargeForm, days: parseInt(e.target.value) })}
                     className="w-full p-3 border border-border rounded-xl focus:ring-2 focus:ring-primary/40 focus:border-transparent"
                   />
                 </div>

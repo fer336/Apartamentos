@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, DollarSign, Calculator, ArrowRight, Split } from 'lucide-react';
-import { getBlueExchangeRate } from '../services/api';
+import { getBlueExchangeRate, type BookingPayload } from '../services/api';
+
+interface PaymentBooking {
+  booking_number?: string;
+  client_name?: string;
+  left_to_pay_usd?: number;
+}
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (paymentData: any) => void;
-  booking: any;
+  onConfirm: (paymentData: BookingPayload) => void;
+  booking: PaymentBooking | null;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -42,6 +48,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   useEffect(() => {
     if (booking && isOpen) {
       // Reset
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing modal-open reset, tracked as follow-up
       setMode('single');
       setCurrency('USD');
       setAmountUSD(booking.left_to_pay_usd || 0);
@@ -53,6 +60,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   useEffect(() => {
     if (mode === 'single' && booking) {
       if (currency === 'ARS') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing derived-state sync, tracked as follow-up
         setAmountARS(Math.round((booking.left_to_pay_usd || 0) * exchangeRate * 100) / 100);
         setAmountUSD(0); // En modo single ARS, el input visual es ARS
       } else {

@@ -28,6 +28,11 @@ interface MonthlyAvailability {
   free_ranges: string[];
 }
 
+interface Property {
+  id: string;
+  name: string;
+}
+
 interface DirectvDevice {
   id: string;
   location: string;
@@ -198,7 +203,7 @@ export const Dashboard = () => {
     occupancy_rate: 0,
   });
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDirectvModalOpen, setIsDirectvModalOpen] = useState(false);

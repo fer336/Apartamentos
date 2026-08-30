@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Search, Plus, Edit, Trash2, Users as UsersIcon } from 'lucide-react';
-import { getClients, getBookings, createClient, updateClient, deleteClient } from '../services/api';
+import { getClients, getBookings, createClient, updateClient, deleteClient, type ClientPayload } from '../services/api';
 import { ClientCard, type Client } from '../components/ClientCard';
 import { ClientModal } from '../components/ClientModal';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -9,6 +9,7 @@ import { KanagawaCard } from '../components/ui/KanagawaCard';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { getEntityColor } from '../utils/entityColor';
+import { getErrorMessage } from '../utils/errorMessage';
 
 const PAGE_SIZE = 10;
 
@@ -118,7 +119,7 @@ export const Clients = () => {
     };
   };
 
-  const handleSaveClient = async (clientData: any) => {
+  const handleSaveClient = async (clientData: ClientPayload) => {
     try {
       setErrorMessage(null);
       if (editingClient) {
@@ -129,9 +130,9 @@ export const Clients = () => {
       setIsModalOpen(false);
       setEditingClient(undefined);
       fetchClients();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving client:', error);
-      setErrorMessage(error.response?.data?.detail || 'Error al guardar el cliente');
+      setErrorMessage(getErrorMessage(error, 'Error al guardar el cliente'));
     }
   };
 
@@ -150,8 +151,8 @@ export const Clients = () => {
       await deleteClient(deleteConfirm.client.id);
       fetchClients();
       setErrorMessage(null);
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Error al eliminar el cliente');
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Error al eliminar el cliente'));
     } finally {
       setDeleteConfirm({ isOpen: false, client: null });
     }

@@ -16,7 +16,7 @@ interface Category {
   color: string;
 }
 
-interface Expense {
+export interface Expense {
   id?: string;
   property_id: string;
   date: string;
@@ -31,10 +31,14 @@ interface Expense {
   status: 'pending' | 'paid' | 'cancelled';
 }
 
+export interface ExpenseFormData extends Expense {
+  receipt_file: File | null;
+}
+
 interface ExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (expense: any) => void;
+  onSave: (expense: ExpenseFormData) => void;
   onAddCategory?: (category: Category) => void;
   expense?: Expense;
   properties: Property[];
@@ -98,6 +102,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({
 
   useEffect(() => {
     if (expense) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing modal-open form reset, tracked as follow-up
       setFormData({
         property_id: expense.property_id,
         date: expense.date,

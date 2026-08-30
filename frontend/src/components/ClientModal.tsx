@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, LogOut, CalendarClock } from 'lucide-react';
 import { Button } from './ui/Button';
+import type { Client } from './ClientCard';
+import type { ClientPayload } from '../services/api';
 
 interface ClientBooking {
   id: string;
@@ -15,8 +17,8 @@ interface ClientBooking {
 interface ClientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (clientData: any) => void;
-  client?: any;
+  onSave: (clientData: ClientPayload) => void;
+  client?: Client;
   bookings?: ClientBooking[];
 }
 
@@ -50,6 +52,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({
 
   useEffect(() => {
     if (client) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing modal-open form reset, tracked as follow-up
       setFormData({
         full_name: client.full_name || '',
         email: client.email || '',

@@ -3,7 +3,8 @@ import { useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, Sparkles, PawPrint, Pencil, User, Baby,
 } from 'lucide-react';
-import { getBookings, getProperties, createBooking, updateBooking, deleteBooking } from '../services/api';
+import { getBookings, getProperties, createBooking, updateBooking, deleteBooking, type BookingPayload } from '../services/api';
+import { getErrorMessage } from '../utils/errorMessage';
 import { BookingModal } from '../components/BookingModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { PaymentModal } from '../components/PaymentModal';
@@ -107,7 +108,7 @@ export const Calendar = () => {
   }, []);
 
   // --- CRUD Handlers ---
-  const handleSaveBooking = async (bookingData: any) => {
+  const handleSaveBooking = async (bookingData: BookingPayload) => {
     try {
       setErrorMessage(null);
       if (editingBooking) {
@@ -118,30 +119,30 @@ export const Calendar = () => {
       setIsModalOpen(false);
       setEditingBooking(undefined);
       fetchData();
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Error al guardar la reserva');
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Error al guardar la reserva'));
     }
   };
 
-  const handleSettlePayment = async (updateData: any) => {
+  const handleSettlePayment = async (updateData: BookingPayload) => {
     if (!settleBooking) return;
     try {
       await updateBooking(settleBooking.id, updateData);
       setSettleBooking(null);
       fetchData();
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Error al registrar el pago');
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Error al registrar el pago'));
     }
   };
 
-  const handleCheckout = async (checkoutData: any) => {
+  const handleCheckout = async (checkoutData: BookingPayload) => {
     if (!checkoutBooking) return;
     try {
       await updateBooking(checkoutBooking.id, checkoutData);
       setCheckoutBooking(null);
       fetchData();
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Error al finalizar estadía');
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Error al finalizar estadía'));
     }
   };
 
@@ -159,8 +160,8 @@ export const Calendar = () => {
       await deleteBooking(deleteConfirm.booking.id);
       fetchData();
       setErrorMessage(null);
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Error al eliminar la reserva');
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Error al eliminar la reserva'));
     } finally {
       setDeleteConfirm({ isOpen: false, booking: null });
     }

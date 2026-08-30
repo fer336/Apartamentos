@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Building2, Plus, Trash2, Edit, Check, Tv, ListTodo, MapPin } from 'lucide-react';
-import { getProperties, getBookings, createProperty, updateProperty, deleteProperty } from '../services/api';
+import { getProperties, getBookings, createProperty, updateProperty, deleteProperty, type PropertyPayload } from '../services/api';
+import { getErrorMessage } from '../utils/errorMessage';
 import { PropertyModal } from '../components/PropertyModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { DirectvManager } from '../components/DirectvManager';
@@ -150,7 +151,7 @@ export const Properties = () => {
 
   const filteredProperties = properties.filter((p) => statusFilter === 'all' || p.status === statusFilter);
 
-  const handleSaveProperty = async (propertyData: any) => {
+  const handleSaveProperty = async (propertyData: PropertyPayload) => {
     try {
       setErrorMessage(null);
       if (editingProperty) {
@@ -161,9 +162,9 @@ export const Properties = () => {
       setIsModalOpen(false);
       setEditingProperty(undefined);
       fetchProperties();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving property:', error);
-      setErrorMessage(error.response?.data?.detail || 'Error al guardar la propiedad');
+      setErrorMessage(getErrorMessage(error, 'Error al guardar la propiedad'));
     }
   };
 
@@ -182,8 +183,8 @@ export const Properties = () => {
       await deleteProperty(deleteConfirm.property.id);
       fetchProperties();
       setErrorMessage(null);
-    } catch (error: any) {
-      setErrorMessage(error.response?.data?.detail || 'Error al eliminar la propiedad');
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Error al eliminar la propiedad'));
     } finally {
       setDeleteConfirm({ isOpen: false, property: null });
     }
