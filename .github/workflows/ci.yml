@@ -1,0 +1,47 @@
+# PR gate: lint + typecheck + build, required before merging into main.
+#
+# mypy is intentionally NOT included yet — the backend has ~50 pre-existing
+# SQLAlchemy Column-typing false positives that need Mapped[] typing (a real
+# migration, not a lint fix). Add it here once that cleanup lands.
+
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc -b --noEmit
+      - run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install ruff
+      - run: ruff check .
