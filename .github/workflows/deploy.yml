@@ -1,12 +1,23 @@
-# PR-gated production deploy.
+# PR-gated, auto-versioned production deploy.
 #
 # Flow: `main` is branch-protected — every change lands via a reviewed and
-# approved pull request. Once a PR merges, this workflow builds+pushes
-# `:latest` images to the GitHub Container Registry (ghcr.io) and triggers a
-# Portainer stack webhook to redeploy. Pushing a `vX.Y.Z` tag (or manually
-# dispatching against one) does the same build+deploy AND additionally tags
-# the images with that version and creates a GitHub Release — use a tag when
-# a change should also be a named, pinned release.
+# approved pull request. Once a PR merges, this workflow:
+#   1. Computes the next release version by bumping the patch number of the
+#      latest `vX.Y.Z` git tag (v0.3.12 -> v0.3.13). Pushing a `vX.Y.Z` tag
+#      manually instead (or dispatching against one) skips this auto-bump and
+#      uses that exact tag — use this for an intentional minor/major bump.
+#   2. Builds+pushes the backend/frontend images tagged with that version
+#      (and `:latest`, kept for convenience/manual pulls) to ghcr.io.
+#   3. Creates the git tag (if it didn't already exist) and a GitHub Release.
+#   4. Rewrites docker-compose.yml's `image:` lines to pin that exact version
+#      and commits that change straight to `main` — bypassing the PR
+#      requirement, since this is a narrow, fully automated, auditable commit
+#      (uses DEPLOY_ADMIN_TOKEN, not the default bot token; see below). The
+#      commit message carries `[skip ci]` so it doesn't re-trigger this
+#      workflow.
+#   5. Triggers the Portainer stack webhook. Because the stack is git-based,
+#      Portainer re-pulls docker-compose.yml from `main` — now pinned to the
+#      new version — and redeploys with it. No Portainer API call needed.
 #
 # What this workflow does NOT do:
 #   - It does not manage the backend's runtime environment variables. Those are
@@ -19,15 +30,6 @@
 #     Portainer generates the webhook URL, which then gets stored here as the
 #     PORTAINER_WEBHOOK_URL repo secret. GitHub Actions has no way to create
 #     that webhook itself.
-#   - It relies on the stack's compose file using the `:latest` tag (the
-#     default in docker-compose.yml) and on Portainer re-pulling images when
-#     the webhook fires. If the Portainer stack should instead run a pinned
-#     version, set the stack's BACKEND_IMAGE_TAG / FRONTEND_IMAGE_TAG
-#     environment variables in Portainer to the released tag (e.g. `v1.4.2`)
-#     — the webhook alone does not change which tag the stack is pinned to.
-#   - The only repo secret this workflow requires is PORTAINER_WEBHOOK_URL.
-#     (VITE_GOOGLE_CLIENT_ID / VITE_OAUTH_PROD_URL were removed — the frontend
-#     never reads them; Google OAuth is entirely backend-driven.)
 #   - GHCR packages are private by default. For Portainer to pull them, pick one:
 #       (a) make the package public from its GitHub package settings after the
 #           first push (Settings -> Packages -> apartamentos-backend/-frontend
@@ -36,6 +38,14 @@
 #           ghcr.io, using a GitHub Personal Access Token with `read:packages`
 #           scope as the password) if the packages should stay private.
 #     This workflow doesn't decide between them — pick whichever fits.
+#
+# Required repo secrets:
+#   - PORTAINER_WEBHOOK_URL — the stack's redeploy webhook (Portainer UI).
+#   - DEPLOY_ADMIN_TOKEN — a Personal Access Token belonging to a repo admin,
+#     with Contents: Read and write on this repo (fine-grained PAT). Needed
+#     only for step 4 above: the default GITHUB_TOKEN acts as a bot, not an
+#     admin, so branch protection would block it from pushing to `main` even
+#     with enforce_admins disabled — that exemption only covers real admins.
 
 name: Deploy
 
@@ -52,29 +62,42 @@ env:
   FRONTEND_IMAGE: ghcr.io/fer336/apartamentos-frontend
 
 jobs:
-  context:
+  version:
     runs-on: ubuntu-latest
     outputs:
-      is_tag: ${{ steps.ctx.outputs.is_tag }}
-      version_tag: ${{ steps.ctx.outputs.version_tag }}
+      version: ${{ steps.compute.outputs.version }}
+      is_new_tag: ${{ steps.compute.outputs.is_new_tag }}
     steps:
-      - id: ctx
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: compute
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            if [[ ! "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "::error::Ref '${{ github.ref_name }}' does not match the required release tag format vX.Y.Z (e.g. v1.4.2). Refusing to build or deploy."
+            tag="${{ github.ref_name }}"
+            if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Ref '$tag' does not match the required release tag format vX.Y.Z (e.g. v1.4.2). Refusing to build or deploy."
               exit 1
             fi
-            echo "Tag '${{ github.ref_name }}' is a valid release version."
-            echo "is_tag=true" >> "$GITHUB_OUTPUT"
-            echo "version_tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "Tag '$tag' is a valid release version, using it as-is."
+            echo "version=$tag" >> "$GITHUB_OUTPUT"
+            echo "is_new_tag=false" >> "$GITHUB_OUTPUT"
           else
-            echo "is_tag=false" >> "$GITHUB_OUTPUT"
-            echo "version_tag=" >> "$GITHUB_OUTPUT"
+            latest="$(git tag -l 'v*.*.*' | sort -V | tail -n1)"
+            if [[ -z "$latest" ]]; then
+              next="v0.1.0"
+            else
+              IFS='.' read -r major minor patch <<< "${latest#v}"
+              next="v${major}.${minor}.$((patch + 1))"
+            fi
+            echo "Latest tag: '${latest:-none}'. Auto-bumping to '$next'."
+            echo "version=$next" >> "$GITHUB_OUTPUT"
+            echo "is_new_tag=true" >> "$GITHUB_OUTPUT"
           fi
 
   build-backend:
-    needs: [context]
+    needs: [version]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -89,26 +112,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push backend image (main)
-        if: needs.context.outputs.is_tag != 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          push: true
-          tags: ${{ env.BACKEND_IMAGE }}:latest
-
-      - name: Build and push backend image (release)
-        if: needs.context.outputs.is_tag == 'true'
+      - name: Build and push backend image
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
           tags: |
             ${{ env.BACKEND_IMAGE }}:latest
-            ${{ env.BACKEND_IMAGE }}:${{ needs.context.outputs.version_tag }}
+            ${{ env.BACKEND_IMAGE }}:${{ needs.version.outputs.version }}
 
   build-frontend:
-    needs: [context]
+    needs: [version]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -123,31 +137,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push frontend image (main)
-        if: needs.context.outputs.is_tag != 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          push: true
-          tags: ${{ env.FRONTEND_IMAGE }}:latest
-          build-args: |
-            VITE_BACKEND_URL=
-
-      - name: Build and push frontend image (release)
-        if: needs.context.outputs.is_tag == 'true'
+      - name: Build and push frontend image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.FRONTEND_IMAGE }}:${{ needs.context.outputs.version_tag }}
+            ${{ env.FRONTEND_IMAGE }}:${{ needs.version.outputs.version }}
           build-args: |
             VITE_BACKEND_URL=
 
+  create-tag:
+    needs: [version, build-backend, build-frontend]
+    if: needs.version.outputs.is_new_tag == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create and push version tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ needs.version.outputs.version }}"
+          git push origin "${{ needs.version.outputs.version }}"
+
   release:
-    needs: [context, build-backend, build-frontend]
-    if: needs.context.outputs.is_tag == 'true'
+    needs: [version, build-backend, build-frontend, create-tag]
+    if: always() && needs.build-backend.result == 'success' && needs.build-frontend.result == 'success' && (needs.create-tag.result == 'success' || needs.create-tag.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -155,12 +173,37 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.context.outputs.version_tag }}
+          tag_name: ${{ needs.version.outputs.version }}
           generate_release_notes: true
 
+  pin-compose:
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.DEPLOY_ADMIN_TOKEN }}
+
+      - name: Pin docker-compose.yml to the released version
+        run: |
+          sed -i -E "s#(image: ${{ env.BACKEND_IMAGE }}:).*#\1${{ needs.version.outputs.version }}#" docker-compose.yml
+          sed -i -E "s#(image: ${{ env.FRONTEND_IMAGE }}:).*#\1${{ needs.version.outputs.version }}#" docker-compose.yml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docker-compose.yml
+          if git diff --cached --quiet; then
+            echo "docker-compose.yml already pinned to ${{ needs.version.outputs.version }}, nothing to commit."
+          else
+            git commit -m "chore(deploy): pin images to ${{ needs.version.outputs.version }} [skip ci]"
+            git push origin HEAD:main
+          fi
+
   deploy:
-    needs: [build-backend, build-frontend, release]
-    if: always() && needs.build-backend.result == 'success' && needs.build-frontend.result == 'success' && (needs.release.result == 'success' || needs.release.result == 'skipped')
+    needs: [pin-compose]
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Portainer stack redeploy
