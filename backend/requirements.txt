@@ -13,3 +13,4 @@ itsdangerous
 starlette
 python-multipart
 minio
+slowapi
