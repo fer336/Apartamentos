@@ -1,11 +1,12 @@
-# Release-gated production deploy.
+# PR-gated production deploy.
 #
-# Flow: push a `vX.Y.Z` tag (or manually dispatch against one) -> validates the
-# tag format -> builds+pushes versioned images to the GitHub Container Registry
-# (ghcr.io) -> creates a GitHub Release for that tag -> triggers a Portainer
-# stack webhook to redeploy. Regular pushes to `main` no longer trigger any
-# build or deploy — only a properly formatted version tag does, and every such
-# tag always gets a corresponding GitHub Release as part of this same run.
+# Flow: `main` is branch-protected — every change lands via a reviewed and
+# approved pull request. Once a PR merges, this workflow builds+pushes
+# `:latest` images to the GitHub Container Registry (ghcr.io) and triggers a
+# Portainer stack webhook to redeploy. Pushing a `vX.Y.Z` tag (or manually
+# dispatching against one) does the same build+deploy AND additionally tags
+# the images with that version and creates a GitHub Release — use a tag when
+# a change should also be a named, pinned release.
 #
 # What this workflow does NOT do:
 #   - It does not manage the backend's runtime environment variables. Those are
@@ -40,6 +41,8 @@ name: Deploy
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*.*.*"
   workflow_dispatch: {}
@@ -49,19 +52,29 @@ env:
   FRONTEND_IMAGE: ghcr.io/fer336/apartamentos-frontend
 
 jobs:
-  validate-tag:
+  context:
     runs-on: ubuntu-latest
+    outputs:
+      is_tag: ${{ steps.ctx.outputs.is_tag }}
+      version_tag: ${{ steps.ctx.outputs.version_tag }}
     steps:
-      - name: Validate tag format
+      - id: ctx
         run: |
-          if [[ ! "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Ref '${{ github.ref_name }}' does not match the required release tag format vX.Y.Z (e.g. v1.4.2). Refusing to build or deploy."
-            exit 1
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            if [[ ! "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Ref '${{ github.ref_name }}' does not match the required release tag format vX.Y.Z (e.g. v1.4.2). Refusing to build or deploy."
+              exit 1
+            fi
+            echo "Tag '${{ github.ref_name }}' is a valid release version."
+            echo "is_tag=true" >> "$GITHUB_OUTPUT"
+            echo "version_tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_tag=false" >> "$GITHUB_OUTPUT"
+            echo "version_tag=" >> "$GITHUB_OUTPUT"
           fi
-          echo "Tag '${{ github.ref_name }}' is a valid release version."
 
   build-backend:
-    needs: [validate-tag]
+    needs: [context]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -76,17 +89,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push backend image
+      - name: Build and push backend image (main)
+        if: needs.context.outputs.is_tag != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Build and push backend image (release)
+        if: needs.context.outputs.is_tag == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: true
           tags: |
             ${{ env.BACKEND_IMAGE }}:latest
-            ${{ env.BACKEND_IMAGE }}:${{ github.ref_name }}
+            ${{ env.BACKEND_IMAGE }}:${{ needs.context.outputs.version_tag }}
 
   build-frontend:
-    needs: [validate-tag]
+    needs: [context]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -101,19 +123,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push frontend image
+      - name: Build and push frontend image (main)
+        if: needs.context.outputs.is_tag != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ env.FRONTEND_IMAGE }}:latest
+          build-args: |
+            VITE_BACKEND_URL=
+
+      - name: Build and push frontend image (release)
+        if: needs.context.outputs.is_tag == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.FRONTEND_IMAGE }}:${{ github.ref_name }}
+            ${{ env.FRONTEND_IMAGE }}:${{ needs.context.outputs.version_tag }}
           build-args: |
             VITE_BACKEND_URL=
 
   release:
-    needs: [build-backend, build-frontend]
+    needs: [context, build-backend, build-frontend]
+    if: needs.context.outputs.is_tag == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -121,11 +155,12 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ needs.context.outputs.version_tag }}
           generate_release_notes: true
 
   deploy:
-    needs: [release]
+    needs: [build-backend, build-frontend, release]
+    if: always() && needs.build-backend.result == 'success' && needs.build-frontend.result == 'success' && (needs.release.result == 'success' || needs.release.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Portainer stack redeploy
