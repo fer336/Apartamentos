@@ -5,11 +5,15 @@ version: "3.8"
 #   docker secret create apartamentos_backend_env <path-to-local-env-file>
 # This is managed out-of-band (manually, or via infra/rotate-secret.sh) — it is
 # NOT created or updated by the CI/CD workflow in .github/workflows/deploy.yml.
+#
+# NOTE: the `image:` tags below are rewritten automatically by
+# .github/workflows/deploy.yml on every deploy, pinned to the released
+# version (e.g. v0.3.13) — do not hand-edit them, they'll be overwritten.
 
 services:
   # ⚙️ Backend API
   backend:
-    image: ghcr.io/fer336/apartamentos-backend:${BACKEND_IMAGE_TAG:-latest}
+    image: ghcr.io/fer336/apartamentos-backend:latest
     networks:
       - network_public
       - apartamentos-internal
@@ -57,7 +61,7 @@ services:
 
   # 🎨 Frontend
   frontend:
-    image: ghcr.io/fer336/apartamentos-frontend:${FRONTEND_IMAGE_TAG:-latest}
+    image: ghcr.io/fer336/apartamentos-frontend:latest
     networks:
       - network_public
       - apartamentos-internal
