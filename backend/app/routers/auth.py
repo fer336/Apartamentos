@@ -11,6 +11,7 @@ from sqlalchemy import select
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from app.core.security import verify_password
+from app.core.limiter import limiter
 import uuid
 
 router = APIRouter()
@@ -141,7 +142,8 @@ class LocalLoginRequest(BaseModel):
     password: str
 
 @router.post("/login")
-async def login_local(payload: LocalLoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login_local(request: Request, payload: LocalLoginRequest, db: AsyncSession = Depends(get_db)):
     # Only the seeded demo account has a hashed_password; every Google
     # account has none, so this can never authenticate as one of them.
     query = select(User).where(User.email == payload.username)

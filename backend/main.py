@@ -1,12 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import uvicorn
 from app.routers import auth
 from app.api import endpoints
 from app.core.config import settings
+from app.core.limiter import limiter
 
 app = FastAPI(title="Property Management AI Agent")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Session Middleware is required for Authlib
 app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
