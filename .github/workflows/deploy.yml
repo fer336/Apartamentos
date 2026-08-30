@@ -43,9 +43,13 @@
 #   - PORTAINER_WEBHOOK_URL — the stack's redeploy webhook (Portainer UI).
 #   - DEPLOY_ADMIN_TOKEN — a Personal Access Token belonging to a repo admin,
 #     with Contents: Read and write on this repo (fine-grained PAT). Needed
-#     only for step 4 above: the default GITHUB_TOKEN acts as a bot, not an
-#     admin, so branch protection would block it from pushing to `main` even
-#     with enforce_admins disabled — that exemption only covers real admins.
+#     for two things the default GITHUB_TOKEN (a bot, not an admin) can't do:
+#       - step 3: this repo also has a "Protect version tags" ruleset on
+#         refs/tags/v* blocking tag creation/update/deletion for non-admins,
+#         separate from `main`'s branch protection.
+#       - step 4: pushing straight to `main`, which branch protection also
+#         blocks for non-admins even with enforce_admins disabled — that
+#         exemption only covers real admins, not the bot token.
 
 name: Deploy
 
@@ -152,14 +156,15 @@ jobs:
     needs: [version, build-backend, build-frontend]
     if: needs.version.outputs.is_new_tag == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
+      # Repo has a "Protect version tags" ruleset on refs/tags/v* blocking
+      # creation/update/deletion for everyone except admins — the default
+      # bot token can't push a new tag, so this needs DEPLOY_ADMIN_TOKEN too.
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.DEPLOY_ADMIN_TOKEN }}
       - name: Create and push version tag
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "${{ needs.version.outputs.version }}"
           git push origin "${{ needs.version.outputs.version }}"
 
