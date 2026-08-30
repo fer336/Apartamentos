@@ -43,16 +43,16 @@ export const Login = () => {
   };
 
   return (
-    <div data-theme={theme} className="app-shell min-h-screen relative flex items-center justify-center overflow-hidden">
+    <div data-theme={theme} className="app-shell min-h-screen relative flex items-center justify-center overflow-y-auto py-3">
       <KanagawaBackground theme={theme} />
 
       <div className="dashboard-content w-full max-w-md px-4">
         {/* Logo Section */}
-        <div className="text-center mb-8">
-          <div className="inline-block hover:scale-110 transition-transform duration-500 drop-shadow-lg mb-4">
-            <Logo className="w-24 h-24" />
+        <div className="text-center mb-4">
+          <div className="inline-block hover:scale-110 transition-transform duration-500 drop-shadow-lg mb-2">
+            <Logo className="w-16 h-16" />
           </div>
-          <h1 className="font-display text-4xl font-extrabold text-ink-primary mb-2 tracking-tight">
+          <h1 className="font-display text-3xl font-extrabold text-ink-primary mb-1 tracking-tight">
             Apartamentos
             <span className="text-primary-soft block">Valeria</span>
           </h1>
@@ -63,10 +63,10 @@ export const Login = () => {
         </div>
 
         {/* Login Card */}
-        <div className="kanagawa-card p-8">
+        <div className="kanagawa-card p-6">
           <div className="card-content">
-            <div className="text-center mb-8">
-              <h2 className="font-display text-2xl font-bold text-ink-primary mb-2 flex items-center justify-center gap-2">
+            <div className="text-center mb-4">
+              <h2 className="font-display text-2xl font-bold text-ink-primary mb-1 flex items-center justify-center gap-2">
                 ¡Bienvenida!
                 <Heart className="w-6 h-6 text-cta fill-cta animate-pulse" strokeWidth={1.7} />
               </h2>
@@ -91,8 +91,8 @@ export const Login = () => {
               Continuar con Google
             </button>
 
-            <div className="mt-8 pt-6 border-t border-border-subtle">
-              <p className="text-xs text-center text-ink-muted font-medium mb-4">
+            <div className="mt-5 pt-4 border-t border-border-subtle">
+              <p className="text-xs text-center text-ink-muted font-medium mb-3">
                 ¿Solo querés probarlo? Entrá con la cuenta demo
               </p>
               <form onSubmit={handleDemoLogin} className="space-y-3">
@@ -128,7 +128,7 @@ export const Login = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-4">
           <p className="text-sm text-ink-muted font-medium flex items-center justify-center gap-2">
             © 2025 Apartamentos Valeria
           </p>
