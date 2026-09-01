@@ -90,7 +90,7 @@ export const Finance = () => {
   // Filtros personalizados (comparativa de temporadas)
   const [selectedMonth, setSelectedMonth] = useState<number>(0); // 0 = Temporada completa
   const [year1, setYear1] = useState<number>(new Date().getFullYear());
-  const [year2, setYear2] = useState<number>(new Date().getFullYear() - 1);
+  const [year2, setYear2] = useState<number>(new Date().getFullYear() + 1);
   const [movementsPage, setMovementsPage] = useState(1);
   // Año de "Movimientos recientes" (independiente de la comparativa de
   // temporadas): a diferencia del dashboard de inicio, acá sí se puede
@@ -154,10 +154,13 @@ export const Finance = () => {
   const percentChangeUsd = data?.previous_season_total_usd ? (diffUsd / data.previous_season_total_usd) * 100 : 0;
   const diffArs = (data?.current_season_total_ars || 0) - (data?.previous_season_total_ars || 0);
 
-  // El backend ahora compara el año calendario completo actual vs el anterior
-  // (12 meses cada uno), ya no la "temporada" Dic-Mar.
+  // El backend ahora compara el año calendario completo actual vs el
+  // consecutivo/siguiente (12 meses cada uno), ya no la "temporada" Dic-Mar
+  // ni el año anterior: este negocio vende con meses de anticipación, así
+  // que lo que importa por defecto es este año y el próximo.
   const months = monthsList;
   const currentYear = data?.comparisons[0]?.year || new Date().getFullYear();
+  const nextYear = currentYear + 1;
 
   const saldosArs = Math.max(0, dashboardStats.total_revenue_month_ars - dashboardStats.total_advance_month_ars);
   const saldosUsd = Math.max(0, dashboardStats.total_revenue_month_usd - dashboardStats.total_advance_month_usd);
@@ -290,7 +293,7 @@ export const Finance = () => {
         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-xl p-4 bg-background-alt border border-border-subtle">
             <p className="text-[10px] font-bold uppercase tracking-wide text-ink-muted mb-1">
-              {selectedMonth > 0 ? `${monthsList[selectedMonth - 1]} ${year2}` : 'Temporada anterior'}
+              {selectedMonth > 0 ? `${monthsList[selectedMonth - 1]} ${year2}` : `Temporada ${nextYear}`}
             </p>
             <p className="font-sans font-extrabold text-lg text-ink-secondary">$ {(data?.previous_season_total_ars || 0).toLocaleString()}</p>
             <p className="font-sans font-bold text-sm text-ink-muted">U$D {(data?.previous_season_total_usd || 0).toLocaleString()}</p>
@@ -320,7 +323,7 @@ export const Finance = () => {
               <thead>
                 <tr className="bg-background-alt text-left">
                   <th className="px-6 py-3 table-head-cell">Mes</th>
-                  <th className="px-6 py-3 table-head-cell">Temp. anterior</th>
+                  <th className="px-6 py-3 table-head-cell">Temp. siguiente</th>
                   <th className="px-6 py-3 table-head-cell">Temp. actual</th>
                   <th className="px-6 py-3 table-head-cell">Diferencia</th>
                 </tr>
@@ -328,7 +331,7 @@ export const Finance = () => {
               <tbody>
                 {months.map((monthName) => {
                   const current = data?.comparisons.find((c) => c.month_name === monthName && c.year === currentYear);
-                  const previous = data?.comparisons.find((c) => c.month_name === monthName && c.year === currentYear - 1);
+                  const previous = data?.comparisons.find((c) => c.month_name === monthName && c.year === nextYear);
                   const currentArs = current?.total_revenue_ars || 0;
                   const currentUsd = current?.total_revenue_usd || 0;
                   const previousArs = previous?.total_revenue_ars || 0;
