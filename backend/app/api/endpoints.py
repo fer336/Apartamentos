@@ -753,7 +753,6 @@ async def get_dashboard_stats(
     # Ventana del año actual: el dashboard de inicio nunca debe mostrar datos de
     # años anteriores (eso es tarea exclusiva de Contabilidad)
     current_year_start = date(date.today().year, 1, 1)
-    next_year_start = date(date.today().year + 1, 1, 1)
     # Reservas activas y saldos por cobrar del Inicio cubren el año actual +
     # el año siguiente completo: el negocio vende temporada con meses de
     # anticipación (reserva de agosto para una estadía de enero del año que
