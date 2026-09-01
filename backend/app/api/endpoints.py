@@ -753,7 +753,11 @@ async def get_dashboard_stats(
     # Ventana del año actual: el dashboard de inicio nunca debe mostrar datos de
     # años anteriores (eso es tarea exclusiva de Contabilidad)
     current_year_start = date(date.today().year, 1, 1)
-    next_year_start = date(date.today().year + 1, 1, 1)
+    # Reservas activas y saldos por cobrar del Inicio cubren el año actual +
+    # el año siguiente completo: el negocio vende temporada con meses de
+    # anticipación (reserva de agosto para una estadía de enero del año que
+    # viene), así que cortar en el 31/12 del año actual las dejaba invisibles.
+    active_window_end = date(date.today().year + 2, 1, 1)
 
     # Ingresos reales del mes: plata efectivamente cobrada (seña + saldo) en el
     # mes actual, por moneda — usando advance_payment_date/balance_settled_at,
@@ -826,13 +830,14 @@ async def get_dashboard_stats(
         Property.organization_id == org_id
     )
 
-    # 6. Active bookings are all non-terminal bookings in the current year.
+    # 6. Active bookings are all non-terminal bookings in the current year
+    # through the end of the next one (see active_window_end above).
     active_bookings_query = select(func.count(Booking.id)).where(
         and_(
             Booking.organization_id == org_id,
             Booking.status.notin_(['cancelled', 'completed']),
             Booking.check_in >= current_year_start,
-            Booking.check_in < next_year_start
+            Booking.check_in < active_window_end
         )
     )
 
@@ -883,41 +888,10 @@ async def get_dashboard_stats(
     active_bookings_count = int(row.active_bookings) if row else 0
     checkins_today_count = int(row.checkins_today) if row else 0
 
-    # --- OCUPACIÓN DEL MES ACTUAL ---
-    # Mismo cálculo que el frontend: noches reservadas (recorte al mes actual) /
-    # (cantidad total de propiedades * días del mes actual)
-    occupancy_rate = 0.0
-    if all_properties_count > 0:
-        days_in_current_month = (next_month_start - current_month_start).days
-        total_available_nights = all_properties_count * days_in_current_month
-
-        occupancy_bookings_query = select(Booking).where(
-            and_(
-                Booking.organization_id == org_id,
-                Booking.status != 'cancelled',
-                Booking.check_in < next_month_start,
-                Booking.check_out > current_month_start
-            )
-        )
-        occupancy_bookings_result = await db.execute(occupancy_bookings_query)
-        occupancy_bookings = occupancy_bookings_result.scalars().all()
-
-        booked_nights = 0
-        for booking in occupancy_bookings:
-            overlap_start = max(booking.check_in, current_month_start)
-            overlap_end = min(booking.check_out, next_month_start)
-            nights = (overlap_end - overlap_start).days
-            if nights > 0:
-                booked_nights += nights
-
-        if total_available_nights > 0:
-            occupancy_rate = min(100.0, round((booked_nights / total_available_nights) * 100, 2))
-
-    # --- FORECAST DE DISPONIBILIDAD ---
-    availability_forecast = []
-
+    # --- TEMPORADA ACTUAL (Dic-Mar) ---
+    # Se define acá arriba porque tanto la Ocupación como el forecast de
+    # disponibilidad la usan.
     current_date = date.today()
-    target_months = []
 
     # Definir meses de temporada: Dic, Ene, Feb, Mar
     if current_date.month <= 3:
@@ -931,6 +905,45 @@ async def get_dashboard_stats(
         date(season_start_year + 1, 2, 1),
         date(season_start_year + 1, 3, 1)
     ]
+    season_window_start = target_months[0]
+    season_window_end = date(season_start_year + 1, 4, 1)
+
+    # --- OCUPACIÓN DE LA TEMPORADA ACTUAL ---
+    # Noches reservadas (recorte a la ventana Dic-Mar) / (cantidad total de
+    # propiedades * días de esa ventana). Antes esto solo miraba el mes
+    # calendario actual, así que una reserva de temporada cargada en agosto
+    # para una estadía de enero del año que viene (cruza de año) mostraba
+    # siempre 0% hasta que arrancaba diciembre — inútil como vistazo rápido
+    # de "esto ya se alquiló".
+    occupancy_rate = 0.0
+    if all_properties_count > 0:
+        days_in_season_window = (season_window_end - season_window_start).days
+        total_available_nights = all_properties_count * days_in_season_window
+
+        occupancy_bookings_query = select(Booking).where(
+            and_(
+                Booking.organization_id == org_id,
+                Booking.status != 'cancelled',
+                Booking.check_in < season_window_end,
+                Booking.check_out > season_window_start
+            )
+        )
+        occupancy_bookings_result = await db.execute(occupancy_bookings_query)
+        occupancy_bookings = occupancy_bookings_result.scalars().all()
+
+        booked_nights = 0
+        for booking in occupancy_bookings:
+            overlap_start = max(booking.check_in, season_window_start)
+            overlap_end = min(booking.check_out, season_window_end)
+            nights = (overlap_end - overlap_start).days
+            if nights > 0:
+                booked_nights += nights
+
+        if total_available_nights > 0:
+            occupancy_rate = min(100.0, round((booked_nights / total_available_nights) * 100, 2))
+
+    # --- FORECAST DE DISPONIBILIDAD ---
+    availability_forecast = []
 
     # Obtener todas las reservas futuras
     future_bookings_query = select(Booking).where(
