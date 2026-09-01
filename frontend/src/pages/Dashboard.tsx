@@ -288,37 +288,45 @@ export const Dashboard = () => {
   const hasDirectv = Boolean(stats.directv_devices_summary && stats.directv_devices_summary.length > 0);
 
   // El % de ocupación en sí viene real de stats.occupancy_rate (backend). Acá solo
-  // derivamos el desglose "X de Y noches" para el subtítulo, con la misma fórmula.
+  // derivamos el desglose "X de Y noches" para el subtítulo, con la misma fórmula:
+  // ventana de temporada (Dic-Mar), no el mes calendario actual. Se vende temporada
+  // con meses de anticipación (reserva de agosto para enero del año próximo), así
+  // que atarlo al mes actual lo dejaba en 0% casi todo el año fuera de diciembre.
   const occupancyDetail = useMemo(() => {
     if (!properties.length) return { bookedNights: 0, totalNights: 0 };
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEndExclusive = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const daysInMonth = (monthEndExclusive.getTime() - monthStart.getTime()) / 86400000;
+    const seasonStartYear = now.getMonth() <= 2 ? now.getFullYear() - 1 : now.getFullYear();
+    const seasonStart = new Date(seasonStartYear, 11, 1); // Diciembre
+    const seasonEndExclusive = new Date(seasonStartYear + 1, 3, 1); // hasta Abril
+    const daysInSeason = (seasonEndExclusive.getTime() - seasonStart.getTime()) / 86400000;
 
     let bookedNights = 0;
     bookings.forEach((b) => {
       if (b.status === 'cancelled') return;
       const checkIn = new Date(b.check_in);
       const checkOut = new Date(b.check_out);
-      const overlapStart = checkIn > monthStart ? checkIn : monthStart;
-      const overlapEnd = checkOut < monthEndExclusive ? checkOut : monthEndExclusive;
+      const overlapStart = checkIn > seasonStart ? checkIn : seasonStart;
+      const overlapEnd = checkOut < seasonEndExclusive ? checkOut : seasonEndExclusive;
       const nights = Math.round((overlapEnd.getTime() - overlapStart.getTime()) / 86400000);
       if (nights > 0) bookedNights += nights;
     });
 
-    return { bookedNights, totalNights: properties.length * daysInMonth };
+    return { bookedNights, totalNights: properties.length * daysInSeason };
   }, [bookings, properties]);
 
   const receivables = useMemo(() => {
-    // El dashboard de inicio solo muestra el año actual (datos de años
-    // anteriores se revisan en Contabilidad, no acá)
-    const pending = bookings.filter(
-      (b) =>
+    // El dashboard de inicio muestra el año actual + el año siguiente completo
+    // (temporada vendida con meses de anticipación); años anteriores se revisan
+    // en Contabilidad, no acá.
+    const pending = bookings.filter((b) => {
+      const checkInYear = Number(b.check_in?.slice(0, 4));
+      return (
         !['cancelled', 'completed'].includes(b.status) &&
         (b.left_to_pay_usd || 0) > 0 &&
-        b.check_in?.slice(0, 4) === String(currentYear)
-    );
+        checkInYear >= currentYear &&
+        checkInYear <= currentYear + 1
+      );
+    });
     const total = pending.reduce((sum, b) => sum + (b.left_to_pay_usd || 0), 0);
     return { total, count: pending.length, bookings: pending };
   }, [bookings, currentYear]);
