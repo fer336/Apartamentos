@@ -819,14 +819,6 @@ async def get_dashboard_stats(
     # 4b/4c. Anticipos del mes actual (seña cobrada este mes, por moneda) — son
     # las mismas revenue_month_advance_*_query de arriba, se reusan tal cual.
 
-    # 5. Total propiedades DISPONIBLES (solo las que se pueden alquilar)
-    total_properties_query = select(func.count(Property.id)).where(
-        and_(
-            Property.organization_id == org_id,
-            Property.status == 'available'
-        )
-    )
-
     # 5b. Total propiedades (todas, sin filtrar por estado) - para el cálculo de ocupación,
     # igual que el frontend (getProperties() no filtra por status)
     all_properties_query = select(func.count(Property.id)).where(
@@ -864,7 +856,6 @@ async def get_dashboard_stats(
             func.coalesce(revenue_month_balance_usd_query.scalar_subquery(), 0).label('revenue_month_balance_usd'),
             func.coalesce(advances_ars_query.scalar_subquery(), 0).label('advances_ars'),
             func.coalesce(advances_usd_query.scalar_subquery(), 0).label('advances_usd'),
-            func.coalesce(total_properties_query.scalar_subquery(), 1).label('total_properties'),
             func.coalesce(all_properties_query.scalar_subquery(), 0).label('all_properties'),
             func.coalesce(active_bookings_query.scalar_subquery(), 0).label('active_bookings'),
             func.coalesce(checkins_today_query.scalar_subquery(), 0).label('checkins_today')
@@ -886,7 +877,6 @@ async def get_dashboard_stats(
     total_revenue_month = total_revenue_month_ars + total_revenue_month_usd
     total_advance_ars = float(row.advances_ars) if row else 0.0
     total_advance_usd = float(row.advances_usd) if row else 0.0
-    total_properties_count = int(row.total_properties) if row else 1
     all_properties_count = int(row.all_properties) if row else 0
     active_bookings_count = int(row.active_bookings) if row else 0
     checkins_today_count = int(row.checkins_today) if row else 0
@@ -945,10 +935,16 @@ async def get_dashboard_stats(
         if total_available_nights > 0:
             occupancy_rate = min(100.0, round((booked_nights / total_available_nights) * 100, 2))
 
-    # --- FORECAST DE DISPONIBILIDAD ---
-    availability_forecast = []
+    # --- DISPONIBILIDAD DE TEMPORADA, POR PROPIEDAD ---
+    # Antes esto agregaba todas las propiedades en un solo número por mes
+    # ("cuántos días queda AL MENOS una propiedad libre"), que con varias
+    # propiedades dice poco. Ahora es un mapa día a día por cada propiedad,
+    # para el heatmap de temporada del Inicio.
+    month_names = [
+        "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+        "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+    ]
 
-    # Obtener todas las reservas futuras
     future_bookings_query = select(Booking).where(
         and_(
             Booking.status != 'cancelled',
@@ -959,98 +955,50 @@ async def get_dashboard_stats(
     future_bookings_result = await db.execute(future_bookings_query)
     all_future_bookings = future_bookings_result.scalars().all()
 
-    for month_start in target_months:
-        if month_start.month == 12:
-            month_end = date(month_start.year + 1, 1, 1)
-        else:
-            month_end = date(month_start.year, month_start.month + 1, 1)
+    org_properties_query = select(Property.id, Property.name).where(
+        Property.organization_id == org_id,
+        Property.status == 'available'
+    ).order_by(Property.name)
+    org_properties_result = await db.execute(org_properties_query)
+    org_properties = org_properties_result.all()
 
-        days_in_month = (month_end - month_start).days
-        day_occupancy = {day: 0 for day in range(1, days_in_month + 1)}
+    property_availability = []
+    for prop in org_properties:
+        prop_bookings = [b for b in all_future_bookings if b.property_id == prop.id]
+        months_data = []
+        free_days_total = 0
 
-        for booking in all_future_bookings:
-            start = max(booking.check_in, month_start)
-            booking_end_exclusive = booking.check_out
+        for month_start in target_months:
+            if month_start.month == 12:
+                month_end = date(month_start.year + 1, 1, 1)
+            else:
+                month_end = date(month_start.year, month_start.month + 1, 1)
 
-            # Iterar por los días que la reserva ocupa en este mes
-            # Convertir a ordinal para iterar fácilmente
-            curr_ord = start.toordinal()
-            end_ord = min(booking_end_exclusive.toordinal(), month_end.toordinal())
+            days_in_month = (month_end - month_start).days
+            day_free = [True] * days_in_month
 
-            for d_ord in range(curr_ord, end_ord):
-                d_date = date.fromordinal(d_ord)
-                if d_date.month == month_start.month:
-                    day_occupancy[d_date.day] += 1
+            for booking in prop_bookings:
+                start_ord = max(booking.check_in, month_start).toordinal()
+                end_ord = min(booking.check_out.toordinal(), month_end.toordinal())
+                for d_ord in range(start_ord, end_ord):
+                    d_date = date.fromordinal(d_ord)
+                    if d_date.month == month_start.month:
+                        day_free[d_date.day - 1] = False
 
-        free_days = []
-        start_day_scan = 1
-
-        # Si es el mes actual, solo contar desde HOY
-        if month_start.month == current_date.month and month_start.year == current_date.year:
-            start_day_scan = current_date.day
-
-        total_days_to_consider = days_in_month - start_day_scan + 1
-        if total_days_to_consider < 0:
-            total_days_to_consider = 0
-
-        # CORREGIDO: Contar días con CUALQUIER disponibilidad (ocupación < total de propiedades)
-        # Si tenés 4 propiedades y solo 2 están ocupadas, ese día se cuenta como disponible
-
-        # DEBUG: Imprimir info del mes actual
-        if month_start.month == current_date.month and month_start.year == current_date.year:
-            print(f"🔍 DEBUG FEBRERO {month_start.year}:")
-            print(f"  - Total propiedades: {total_properties_count}")
-            print(f"  - Días del mes: {days_in_month}")
-            print(f"  - Empezar a contar desde día: {start_day_scan}")
-            print(f"  - Ocupación por día: {day_occupancy}")
-
-        for d in range(start_day_scan, days_in_month + 1):
-            if day_occupancy[d] < total_properties_count:
-                free_days.append(d)
-
-        ranges = []
-        if free_days:
-            range_start = free_days[0]
-            prev = free_days[0]
-
-            for d in free_days[1:]:
-                if d == prev + 1:
-                    prev = d
-                else:
-                    ranges.append(f"{range_start}-{prev}" if range_start != prev else f"{range_start}")
-                    range_start = d
-                    prev = d
-            ranges.append(f"{range_start}-{prev}" if range_start != prev else f"{range_start}")
-
-        status = 'partial'
-        # Si todos los días tienen disponibilidad -> FULL
-        if len(free_days) >= total_days_to_consider and total_days_to_consider > 0:
-            status = 'full'
-        # Si NO hay ningún día con disponibilidad -> NONE
-        elif len(free_days) == 0:
-            status = 'none'
-        # Si hay algunos días con disponibilidad -> PARTIAL
-        else:
-            status = 'partial'
-
-
-        month_names = [
-            "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
-            "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-        ]
-
-        # Solo agregar si estamos en rango Dic-Mar o es el mes actual
-        is_current_or_future_month = (
-            month_start.month == current_date.month and month_start.year == current_date.year
-        ) or month_start.year > current_date.year
-        if month_start.month in [12, 1, 2, 3] or is_current_or_future_month:
-             availability_forecast.append({
+            free_days_total += sum(day_free)
+            months_data.append({
                 "month_name": month_names[month_start.month],
                 "year": month_start.year,
-                "total_free_days": len(free_days),
-                "status": status,
-                "free_ranges": ranges
+                "days": day_free,
             })
+
+        property_availability.append({
+            "property_id": str(prop.id),
+            "property_name": prop.name,
+            "free_days": free_days_total,
+            "total_days": sum(len(m["days"]) for m in months_data),
+            "months": months_data,
+        })
 
     # DirecTV Devices Summary (optimizado - solo traer lo necesario)
     dtv_query = select(DirectvDevice).join(Property).where(Property.organization_id == org_id).limit(4)
@@ -1083,7 +1031,7 @@ async def get_dashboard_stats(
         total_revenue_month_usd=total_revenue_month_usd,
         occupancy_rate=occupancy_rate,
         checkins_today=checkins_today_count,
-        availability_forecast=availability_forecast,
+        property_availability=property_availability,
         total_revenue_accumulated=total_revenue_ars + total_revenue_usd,  # Total combinado
         total_revenue_accumulated_ars=total_revenue_ars,
         total_revenue_accumulated_usd=total_revenue_usd,
