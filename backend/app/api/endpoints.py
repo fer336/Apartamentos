@@ -183,8 +183,6 @@ async def update_booking(
     if not booking_obj:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
 
-    old_advance_payment_usd = booking_obj.advance_payment_usd or Decimal(0)
-
     update_data = booking_data.model_dump(exclude_unset=True)
 
     # Verificar si se envió left_to_pay_usd explícitamente (ej: al saldar)
@@ -209,8 +207,13 @@ async def update_booking(
         booking_obj.balance_payment_ars = Decimal(str(update_data.get('settled_amount_ars') or 0))
         booking_obj.balance_payment_usd = Decimal(str(update_data.get('settled_amount_usd') or 0))
         booking_obj.balance_settled_at = date.today()
-    elif ('advance_payment_usd' in update_data
-            and (booking_obj.advance_payment_usd or Decimal(0)) != old_advance_payment_usd):
+    elif (booking_obj.advance_payment_usd or Decimal(0)) > 0 and booking_obj.advance_payment_date is None:
+        # Autocurativo: antes esto solo estampaba la fecha cuando ESTE mismo
+        # envío era el que cambiaba advance_payment_usd, así que una reserva
+        # editada por otro motivo después de cargarle la seña (o con la seña
+        # puesta por el viejo selector manual de "Estado de Pago", ya
+        # eliminado) se quedaba con seña cargada pero sin fecha para siempre.
+        # Ahora, cualquier guardado la completa si todavía falta.
         booking_obj.advance_payment_date = date.today()
 
     # Solo recalcular saldo si NO se envió left_to_pay_usd explícitamente
