@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, type ReactNode } from 'react';
 import { TrendingUp, TrendingDown, Download, Home, User } from 'lucide-react';
-import { getAccountingStats, getBookings, getDashboardStats, getExpenses } from '../services/api';
+import { getAccountingStats, getBookings, getExpenses } from '../services/api';
 import { Pagination } from '../components/Pagination';
 import { KanagawaCard, type KanagawaCardTone } from '../components/ui/KanagawaCard';
 import { Button } from '../components/ui/Button';
@@ -78,13 +78,9 @@ const downloadCsv = (rows: CompletedBooking[]) => {
 export const Finance = () => {
   const [data, setData] = useState<AccountingData | null>(null);
   const [completedBookings, setCompletedBookings] = useState<CompletedBooking[]>([]);
-  const [dashboardStats, setDashboardStats] = useState({
-    total_revenue_month_ars: 0,
-    total_revenue_month_usd: 0,
-    total_advance_month_ars: 0,
-    total_advance_month_usd: 0,
-  });
-  const [monthExpensesArs, setMonthExpensesArs] = useState(0);
+  // Gastos del año completo (no solo el mes actual), separados por moneda
+  // para no mezclar pesos con dólares en el resultado.
+  const [yearExpenses, setYearExpenses] = useState({ ars: 0, usd: 0 });
   const [loading, setLoading] = useState(true);
 
   // Filtros personalizados (comparativa de temporadas)
@@ -109,32 +105,26 @@ export const Finance = () => {
     try {
       setLoading(true);
       const now = new Date();
-      const [stats, bookings, dashStats, expenses] = await Promise.all([
+      const [stats, bookings, expenses] = await Promise.all([
         getAccountingStats(
           selectedMonth > 0 ? selectedMonth : undefined,
           selectedMonth > 0 ? year1 : undefined,
           selectedMonth > 0 ? year2 : undefined
         ),
         getBookings('completed'),
-        getDashboardStats(),
         getExpenses({ year: now.getFullYear() }),
       ]);
       setData(stats);
       setCompletedBookings(bookings || []);
-      setDashboardStats({
-        total_revenue_month_ars: dashStats.total_revenue_month_ars || 0,
-        total_revenue_month_usd: dashStats.total_revenue_month_usd || 0,
-        total_advance_month_ars: dashStats.total_advance_month_ars || 0,
-        total_advance_month_usd: dashStats.total_advance_month_usd || 0,
-      });
-      const currentMonth = now.getMonth() + 1;
-      const monthTotal = (expenses || [])
-        .filter((e: Expense) => {
-          const [, m] = e.date.split('-').map(Number);
-          return m === currentMonth && e.currency === 'ARS';
-        })
-        .reduce((sum: number, e: Expense) => sum + Number(e.amount || 0), 0);
-      setMonthExpensesArs(monthTotal);
+      const totals = (expenses || []).reduce(
+        (acc: { ars: number; usd: number }, e: Expense) => {
+          if (e.currency === 'USD') acc.usd += Number(e.amount || 0);
+          else acc.ars += Number(e.amount || 0);
+          return acc;
+        },
+        { ars: 0, usd: 0 }
+      );
+      setYearExpenses(totals);
     } catch (error) {
       console.error('Error fetching accounting stats:', error);
     } finally {
@@ -162,9 +152,13 @@ export const Finance = () => {
   const currentYear = data?.comparisons[0]?.year || new Date().getFullYear();
   const nextYear = currentYear + 1;
 
-  const saldosArs = Math.max(0, dashboardStats.total_revenue_month_ars - dashboardStats.total_advance_month_ars);
-  const saldosUsd = Math.max(0, dashboardStats.total_revenue_month_usd - dashboardStats.total_advance_month_usd);
-  const resultadoMes = dashboardStats.total_revenue_month_ars - monthExpensesArs;
+  // Recaudado real del año (por fecha de cobro, igual que la comparativa de
+  // abajo) y gastos del año completo — antes esto mostraba solo el mes
+  // calendario actual, así que quedaba en $0 apenas pasaba el mes en el que
+  // se cobró o se gastó algo.
+  const yearRevenueArs = data?.current_season_total_ars || 0;
+  const yearRevenueUsd = data?.current_season_total_usd || 0;
+  const resultadoAnio = yearRevenueArs - yearExpenses.ars;
 
   const KpiCard = useMemo(
     () =>
@@ -224,27 +218,27 @@ export const Finance = () => {
         <KpiCard
           icon={<span className="text-xl leading-none">🇦🇷</span>}
           title="Recaudado en pesos"
-          value={`$${dashboardStats.total_revenue_month_ars.toLocaleString()}`}
+          value={`$${yearRevenueArs.toLocaleString()}`}
           valueClassName="text-state-blue"
-          breakdown={`Anticipos $${dashboardStats.total_advance_month_ars.toLocaleString()} · Saldos $${saldosArs.toLocaleString()}`}
+          breakdown={`Año ${currentYear} · Gastos $${yearExpenses.ars.toLocaleString()}`}
           tone="blue"
           artwork={kanagawaAssets.cards.pesos}
         />
         <KpiCard
           icon={<span className="text-xl leading-none">💵</span>}
           title="Recaudado en dólares"
-          value={`U$D ${dashboardStats.total_revenue_month_usd.toLocaleString()}`}
+          value={`U$D ${yearRevenueUsd.toLocaleString()}`}
           valueClassName="text-state-green-strong"
-          breakdown={`Anticipos U$D ${dashboardStats.total_advance_month_usd.toLocaleString()} · Saldos U$D ${saldosUsd.toLocaleString()}`}
+          breakdown={`Año ${currentYear}${yearExpenses.usd > 0 ? ` · Gastos U$D ${yearExpenses.usd.toLocaleString()}` : ''}`}
           tone="green"
           artwork={kanagawaAssets.cards.dolares}
         />
         <KpiCard
           icon={<TrendingUp className="w-5 h-5 text-primary-soft" strokeWidth={1.7} />}
-          title="Resultado del mes"
-          value={`$${resultadoMes.toLocaleString()}`}
+          title="Resultado del año"
+          value={`$${resultadoAnio.toLocaleString()}`}
           valueClassName="text-ink-primary"
-          breakdown={`Ingresos $${dashboardStats.total_revenue_month_ars.toLocaleString()} − Gastos $${monthExpensesArs.toLocaleString()}`}
+          breakdown={`Ingresos $${yearRevenueArs.toLocaleString()} − Gastos $${yearExpenses.ars.toLocaleString()}`}
           tone="red"
           artwork={kanagawaAssets.cards.resultado}
         />
