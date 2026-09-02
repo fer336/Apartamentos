@@ -215,12 +215,17 @@ class ClientUpdate(BaseModel):
     notes: Optional[str] = None
 
 
-class MonthlyAvailability(BaseModel):
+class PropertyAvailabilityMonth(BaseModel):
     month_name: str
     year: int
-    total_free_days: int
-    status: str  # 'full', 'partial', 'none'
-    free_ranges: List[str] # ["24-31", "10-15"]
+    days: List[bool]  # índice 0 = día 1 del mes; True = libre
+
+class PropertyAvailability(BaseModel):
+    property_id: str
+    property_name: str
+    free_days: int
+    total_days: int
+    months: List[PropertyAvailabilityMonth]
 
 class DirectvDeviceResponse(BaseModel):
     id: UUID
@@ -263,7 +268,7 @@ class DashboardStats(BaseModel):
     total_revenue_month_usd: float = 0.0
     occupancy_rate: float
     checkins_today: int
-    availability_forecast: List[MonthlyAvailability] = []
+    property_availability: List[PropertyAvailability] = []
     total_revenue_accumulated: float = 0.0
     total_revenue_accumulated_ars: float = 0.0
     total_revenue_accumulated_usd: float = 0.0

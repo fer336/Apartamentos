@@ -20,12 +20,18 @@ import { kanagawaAssets, pickKpiArtwork, pickThemedArtwork, type KanagawaArtwork
 import { useTheme } from '../theme/ThemeProvider';
 import type { AppTheme } from '../theme/kanagawa-tokens';
 
-interface MonthlyAvailability {
+interface PropertyAvailabilityMonth {
   month_name: string;
   year: number;
-  total_free_days: number;
-  status: 'full' | 'partial' | 'none';
-  free_ranges: string[];
+  days: boolean[]; // índice 0 = día 1 del mes; true = libre
+}
+
+interface PropertyAvailability {
+  property_id: string;
+  property_name: string;
+  free_days: number;
+  total_days: number;
+  months: PropertyAvailabilityMonth[];
 }
 
 interface Property {
@@ -131,12 +137,14 @@ const StatCard = ({
   </KanagawaCard>
 );
 
-const AvailabilityWidget = ({ forecast, theme }: { forecast: MonthlyAvailability[]; theme: AppTheme }) => {
-  const currentYear = useMemo(() => new Date().getFullYear(), []);
+const SeasonAvailabilityWidget = ({ properties, theme }: { properties: PropertyAvailability[]; theme: AppTheme }) => {
+  if (!properties || properties.length === 0) return null;
 
-  if (!forecast || forecast.length === 0) return null;
-
-  const upcoming = forecast.slice(0, 4);
+  const firstMonths = properties[0].months;
+  const seasonLabel =
+    firstMonths.length > 0
+      ? `${firstMonths[0].month_name.slice(0, 3)} ${firstMonths[0].year} – ${firstMonths[firstMonths.length - 1].month_name.slice(0, 3)} ${firstMonths[firstMonths.length - 1].year}`
+      : '';
 
   return (
     <div className="kanagawa-card p-6 h-full" style={{ ['--card-accent' as string]: 'var(--primary-soft)' }}>
@@ -145,7 +153,7 @@ const AvailabilityWidget = ({ forecast, theme }: { forecast: MonthlyAvailability
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="font-display font-semibold text-lg text-ink-primary">Disponibilidad de temporada</h3>
-            <p className="text-xs text-ink-secondary">Próximos 4 meses · {currentYear}</p>
+            <p className="text-xs text-ink-secondary">Temporada {seasonLabel}</p>
           </div>
           <Link
             to="/calendar"
@@ -156,33 +164,41 @@ const AvailabilityWidget = ({ forecast, theme }: { forecast: MonthlyAvailability
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {upcoming.map((month) => {
-            const dotColor =
-              month.status === 'full' ? 'var(--green)' : month.status === 'none' ? 'var(--red)' : 'var(--orange)';
-            const fraction = Math.min(100, Math.round((month.total_free_days / 30) * 100));
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {properties.map((property) => {
+            const freePct = property.total_days > 0 ? Math.round((property.free_days / property.total_days) * 100) : 0;
+            const statusColor = freePct >= 60 ? 'var(--green)' : freePct >= 25 ? 'var(--orange)' : 'var(--red)';
 
             return (
-              <div key={`${month.year}-${month.month_name}`} className="bg-surface-elevated rounded-md p-4 border border-border-subtle">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wide">
-                    {month.month_name.slice(0, 3)}
+              <div key={property.property_id} className="bg-surface-elevated rounded-md p-4 border border-border-subtle">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-ink-primary truncate">{property.property_name}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wide flex-shrink-0 ml-2" style={{ color: statusColor }}>
+                    {freePct}% libre
                   </span>
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dotColor }}></span>
                 </div>
-                <p className="font-display font-bold text-2xl text-ink-primary leading-none mb-1">
-                  {month.total_free_days}
-                </p>
-                <p className="text-[9px] font-bold text-ink-muted uppercase tracking-wide mb-1">Noches</p>
-                <p className="text-[10px] font-semibold uppercase tracking-wide mb-3" style={{ color: dotColor }}>
-                  {fraction}%
-                </p>
-                <div className="h-1.5 bg-surface-hover rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-slow ease-kanagawa"
-                    style={{ width: `${fraction}%`, background: dotColor }}
-                  ></div>
+                <div className="space-y-[3px]">
+                  {property.months.map((month) => (
+                    <div key={`${month.year}-${month.month_name}`} className="flex items-center gap-1.5">
+                      <span className="text-[8px] font-bold text-ink-muted uppercase w-6 flex-shrink-0">
+                        {month.month_name.slice(0, 3)}
+                      </span>
+                      <div className="flex gap-[1px]">
+                        {month.days.map((free, i) => (
+                          <span
+                            key={i}
+                            title={`${month.month_name} ${i + 1}: ${free ? 'libre' : 'ocupado'}`}
+                            className="w-[4px] h-[4px] rounded-[1px] flex-shrink-0"
+                            style={{ background: free ? 'var(--green)' : 'var(--red)', opacity: free ? 0.5 : 0.85 }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
+                <p className="text-[10px] font-semibold text-ink-secondary mt-3">
+                  {property.free_days} de {property.total_days} noches libres
+                </p>
               </div>
             );
           })}
@@ -197,7 +213,7 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const [view, setView] = useState<'general' | 'operativa'>('general');
   const [stats, setStats] = useState({
-    availability_forecast: [] as MonthlyAvailability[],
+    property_availability: [] as PropertyAvailability[],
     total_revenue_month: 0,
     directv_devices_summary: [] as DirectvDevice[],
     active_bookings: 0,
@@ -222,7 +238,7 @@ export const Dashboard = () => {
         getBookings(),
         getProperties(),
       ]);
-      setStats({ ...statsData, availability_forecast: statsData.availability_forecast || [] });
+      setStats({ ...statsData, property_availability: statsData.property_availability || [] });
       setBookings(bookingsData || []);
       setProperties(propertiesData || []);
       setError(null);
@@ -502,8 +518,8 @@ export const Dashboard = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
             <div className={hasDirectv ? 'lg:col-span-2' : 'lg:col-span-3'}>
-              {!loading && stats.availability_forecast.length > 0 && (
-                <AvailabilityWidget forecast={stats.availability_forecast} theme={theme} />
+              {!loading && stats.property_availability.length > 0 && (
+                <SeasonAvailabilityWidget properties={stats.property_availability} theme={theme} />
               )}
             </div>
 
