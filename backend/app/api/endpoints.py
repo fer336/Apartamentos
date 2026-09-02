@@ -1190,14 +1190,18 @@ async def get_accounting_stats(
             comparisons=all_stats
         )
 
-    # Lógica por defecto: año calendario actual vs año anterior, completos (12
-    # meses cada uno). Antes esto solo consultaba la "temporada" Dic-Mar, así que
-    # un pago cobrado en cualquier otro mes (ej. una seña de Agosto) nunca se
-    # mostraba en la vista por defecto.
+    # Lógica por defecto: año calendario actual vs el año consecutivo
+    # (siguiente), completos (12 meses cada uno). El negocio vende temporada
+    # con meses de anticipación (una seña de este agosto para la estadía de
+    # enero del año que viene), así que lo relevante para planificar es lo que
+    # ya entró/entra este año y el próximo, no el año pasado. Los campos de
+    # respuesta se llaman "previous_season_*" por compatibilidad con el modo
+    # de comparación manual (donde year2 sí puede ser un año realmente
+    # anterior), pero acá siempre llevan los datos del año siguiente.
     current_year = current_date.year
-    previous_year = current_year - 1
+    next_year = current_year + 1
 
-    years = [current_year, previous_year]
+    years = [current_year, next_year]
     all_stats = []
 
     month_names = [
@@ -1280,14 +1284,14 @@ async def get_accounting_stats(
 
     current_total_ars = sum(s.total_revenue_ars for s in all_stats if s.year == current_year)
     current_total_usd = sum(s.total_revenue_usd for s in all_stats if s.year == current_year)
-    previous_total_ars = sum(s.total_revenue_ars for s in all_stats if s.year == previous_year)
-    previous_total_usd = sum(s.total_revenue_usd for s in all_stats if s.year == previous_year)
+    next_total_ars = sum(s.total_revenue_ars for s in all_stats if s.year == next_year)
+    next_total_usd = sum(s.total_revenue_usd for s in all_stats if s.year == next_year)
 
     return AccountingStats(
         current_season_total_ars=current_total_ars,
         current_season_total_usd=current_total_usd,
-        previous_season_total_ars=previous_total_ars,
-        previous_season_total_usd=previous_total_usd,
+        previous_season_total_ars=next_total_ars,
+        previous_season_total_usd=next_total_usd,
         comparisons=all_stats
     )
 
