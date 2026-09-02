@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Calendar,
   TrendingUp,
@@ -194,6 +194,7 @@ const AvailabilityWidget = ({ forecast, theme }: { forecast: MonthlyAvailability
 
 export const Dashboard = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const [view, setView] = useState<'general' | 'operativa'>('general');
   const [stats, setStats] = useState({
     availability_forecast: [] as MonthlyAvailability[],
@@ -375,14 +376,12 @@ export const Dashboard = () => {
           title: `Saldo pendiente: ${b.client_name || 'Sin cliente'}`,
           description: `${b.property_name || ''} · U$D ${(b.left_to_pay_usd || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           action: 'Ver reserva',
-          onAction: () => {
-            window.location.href = '/calendar';
-          },
+          onAction: () => navigate(`/calendar?booking=${b.id}`),
         });
       });
 
     return items.slice(0, 6);
-  }, [stats.directv_devices_summary, receivables.bookings]);
+  }, [stats.directv_devices_summary, receivables.bookings, navigate]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -644,7 +643,11 @@ export const Dashboard = () => {
                     {checkinsToday.map((b) => {
                       const owesBalance = (b.left_to_pay_usd || 0) > 0;
                       return (
-                        <div key={b.id} className="flex items-center gap-3 p-3 rounded-md bg-surface-elevated">
+                        <div
+                          key={b.id}
+                          onClick={() => navigate(`/calendar?booking=${b.id}`)}
+                          className="flex items-center gap-3 p-3 rounded-md bg-surface-elevated cursor-pointer hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
+                        >
                           <div className="w-9 h-9 rounded-md bg-surface-violet text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
                             {getInitials(b.client_name || '?')}
                           </div>
@@ -695,7 +698,11 @@ export const Dashboard = () => {
                       const needsDepositReview = (b.deposit_ars || 0) > 0;
                       const owesBalance = (b.left_to_pay_usd || 0) > 0;
                       return (
-                        <div key={b.id} className="flex items-center gap-3 p-3 rounded-md bg-surface-elevated">
+                        <div
+                          key={b.id}
+                          onClick={() => navigate(`/calendar?booking=${b.id}`)}
+                          className="flex items-center gap-3 p-3 rounded-md bg-surface-elevated cursor-pointer hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
+                        >
                           <div className="w-9 h-9 rounded-md bg-surface-violet text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
                             {getInitials(b.client_name || '?')}
                           </div>
