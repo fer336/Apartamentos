@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Sparkles, PawPrint, Pencil, User, Baby,
 } from 'lucide-react';
@@ -106,6 +107,23 @@ export const Calendar = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Deep-link desde otras pantallas (ej. Inicio → Vista Operativa): al
+  // llegar con ?booking=<id> abrimos directo la ficha de esa reserva en vez
+  // de mandar a la persona a buscarla a mano en la grilla.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const targetId = searchParams.get('booking');
+    if (!targetId || bookings.length === 0) return;
+    const target = bookings.find((b) => b.id === targetId);
+    if (target) {
+      setSelectedBooking(target);
+    }
+    setSearchParams((prev) => {
+      prev.delete('booking');
+      return prev;
+    }, { replace: true });
+  }, [bookings, searchParams, setSearchParams]);
 
   // --- CRUD Handlers ---
   const handleSaveBooking = async (bookingData: BookingPayload) => {
