@@ -34,7 +34,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     capacity: 4,
-    status: 'available',
     color: DEFAULT_COLOR_KEY as string,
     check_in_day: 5, // Sábado
     check_out_day: 5, // Sábado
@@ -47,7 +46,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
       setFormData({
         name: property.name || '',
         capacity: property.capacity || 4,
-        status: property.status || 'available',
         color: property.color || DEFAULT_COLOR_KEY,
         check_in_day: property.check_in_day !== undefined ? property.check_in_day : 5,
         check_out_day: property.check_out_day !== undefined ? property.check_out_day : 5,
@@ -58,7 +56,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
       setFormData({
         name: '',
         capacity: 4,
-        status: 'available',
         color: DEFAULT_COLOR_KEY,
         check_in_day: 5,
         check_out_day: 5,
@@ -199,33 +196,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
             <p className="text-xs text-ink-muted italic">
               * Esta configuración ayudará a validar las fechas al crear reservas y mostrar la disponibilidad en el calendario.
             </p>
-          </div>
-
-          {/* Estado */}
-          <div className="space-y-4">
-            <h3 className="font-display font-semibold text-lg text-ink-primary">Estado</h3>
-            <div className="flex gap-3">
-              {[
-                { value: 'available', label: 'Disponible', color: 'bg-state-green/16 border-state-green/32 text-state-green-strong' },
-                { value: 'occupied', label: 'Ocupado', color: 'bg-state-red/16 border-state-red/32 text-state-red' },
-              ].map((status) => (
-                <label
-                  key={status.value}
-                  className={`flex-1 p-3 rounded-xl border cursor-pointer transition-all text-center font-medium ${formData.status === status.value ? status.color : 'border-border text-ink-secondary hover:border-primary-soft'
-                    }`}
-                >
-                  <input
-                    type="radio"
-                    name="status"
-                    value={status.value}
-                    checked={formData.status === status.value}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="sr-only"
-                  />
-                  {status.label}
-                </label>
-              ))}
-            </div>
           </div>
 
           {/* Buttons */}

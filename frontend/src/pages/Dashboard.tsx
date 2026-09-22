@@ -154,12 +154,15 @@ const SeasonAvailabilityWidget = ({ properties, theme }: { properties: PropertyA
     <div className="kanagawa-card p-6 h-full" style={{ ['--card-accent' as string]: 'var(--primary-soft)' }}>
       <DecorativeCardImage artwork={pickThemedArtwork(kanagawaAssets.cards.propertyLandscape, theme)} />
       <div className="card-content">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div>
             <h3 className="font-display font-semibold text-lg text-ink-primary">Disponibilidad de temporada</h3>
             <p className="text-xs text-ink-secondary">Temporada {seasonLabel}</p>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          {/* flex-wrap (not flex-shrink-0) so the legend + link drop onto
+              their own row on narrow screens instead of forcing the card
+              wider than its box and spilling "Ver calendario" past the edge. */}
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wide text-ink-secondary">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full" style={{ background: 'var(--green)' }} />

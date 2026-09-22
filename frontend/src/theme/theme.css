@@ -371,45 +371,14 @@ body {
 }
 
 /* ---------------------------------------------------------------------- */
-/* Property status badges (section 16)                                    */
+/* Booking status badges (section 16)                                     */
 /* ---------------------------------------------------------------------- */
 
 /* Solid, high-contrast badges — unlike the rest of the palette above, these
    intentionally break from the muted Kanagawa tones: at low-opacity mix they
-   washed out against colorful property card headers, so status needs to read
-   at a glance regardless of what's behind it. */
-[data-theme="kanagawa-light"] .status-available {
-  background: #22c55e;
-  color: #ffffff;
-  border: 1px solid #4ade80;
-}
-
-[data-theme="kanagawa-dark"] .status-available {
-  background: #4ade80;
-  color: #0f172a;
-  border: 1px solid #86efac;
-}
-
-[data-theme="kanagawa-light"] .status-occupied {
-  background: #dc5a54;
-  color: #ffffff;
-  border: 1px solid #f28b82;
-}
-
-[data-theme="kanagawa-dark"] .status-occupied {
-  background: #f87171;
-  color: #1f2937;
-  border: 1px solid #fca5a5;
-}
-
-.status-available,
-.status-occupied {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-/* Same solid-badge treatment for booking status (confirmed/cancelled).
-   'cancelada' deliberately uses amber instead of red so it reads as a
-   distinct identity from 'ocupada', which already owns red. */
+   washed out against colorful card headers, so status needs to read at a
+   glance regardless of what's behind it. 'cancelada' deliberately uses amber
+   instead of red to keep its own distinct identity. */
 [data-theme="kanagawa-light"] .status-confirmed {
   background: #2563eb;
   color: #ffffff;
