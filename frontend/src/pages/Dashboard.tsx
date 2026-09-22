@@ -74,13 +74,16 @@ const formatShortDate = (dateStr: string) => {
   return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }).replace('.', '');
 };
 
-const getStatusChip = (booking: Booking): { label: string; text: string; bg: string } => {
-  if (booking.status === 'cancelled') return { label: 'Cancelada', text: 'var(--red-strong)', bg: 'rgba(166,77,69,0.14)' };
+const getStatusChip = (booking: Booking): { label: string; className: string } => {
+  // Confirmada/Cancelada share the same solid badge classes used across
+  // Calendar and BookingDetailModal — see theme.css. Finalizada/Seña stay
+  // on the existing muted, borderless treatment (out of scope here).
+  if (booking.status === 'cancelled') return { label: 'Cancelada', className: 'status-cancelled border' };
   // "Finalizada" ya no es un status guardado — se deriva de checked_out_at.
-  if (booking.checked_out_at) return { label: 'Finalizada', text: 'var(--text-secondary)', bg: 'var(--surface-violet)' };
+  if (booking.checked_out_at) return { label: 'Finalizada', className: 'text-[color:var(--text-secondary)] bg-[color:var(--surface-violet)]' };
   // confirmed
-  if ((booking.left_to_pay_usd || 0) > 0) return { label: 'Seña', text: 'var(--orange)', bg: 'rgba(198,138,78,0.14)' };
-  return { label: 'Confirmada', text: 'var(--green-strong)', bg: 'rgba(125,143,116,0.16)' };
+  if ((booking.left_to_pay_usd || 0) > 0) return { label: 'Seña', className: 'text-[color:var(--orange)] bg-[rgba(198,138,78,0.14)]' };
+  return { label: 'Confirmada', className: 'status-confirmed border' };
 };
 
 const StatCard = ({
@@ -626,8 +629,7 @@ export const Dashboard = () => {
                             </td>
                             <td className="py-3 pr-4">
                               <span
-                                className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide"
-                                style={{ color: chip.text, background: chip.bg }}
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${chip.className}`}
                               >
                                 {chip.label}
                               </span>
