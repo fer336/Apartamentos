@@ -218,9 +218,9 @@ export const Calendar = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return 'text-state-blue bg-[rgba(118,102,154,0.14)] border-[rgba(118,102,154,0.28)]';
+      case 'confirmed': return 'status-confirmed';
       case 'completed': return 'text-ink-secondary bg-surface-elevated border-border-subtle';
-      case 'cancelled': return 'text-state-red-strong bg-[rgba(166,77,69,0.14)] border-[rgba(166,77,69,0.28)]';
+      case 'cancelled': return 'status-cancelled';
       default: return 'text-ink-secondary bg-surface-elevated border-border-subtle';
     }
   };
