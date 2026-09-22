@@ -52,6 +52,8 @@ interface Booking {
   check_in: string;
   check_out: string;
   status: string;
+  checked_out_at?: string;
+  cancelled_at?: string;
   client_name?: string;
   property_name?: string;
   guests_count?: number;
@@ -74,9 +76,8 @@ const formatShortDate = (dateStr: string) => {
 
 const getStatusChip = (booking: Booking): { label: string; text: string; bg: string } => {
   if (booking.status === 'cancelled') return { label: 'Cancelada', text: 'var(--red-strong)', bg: 'rgba(166,77,69,0.14)' };
-  if (booking.status === 'completed') return { label: 'Finalizada', text: 'var(--text-secondary)', bg: 'var(--surface-violet)' };
-  if (booking.status === 'active') return { label: 'En curso', text: 'var(--blue)', bg: 'rgba(118,102,154,0.14)' };
-  if (booking.status === 'pending') return { label: 'Pendiente', text: 'var(--primary)', bg: 'var(--surface-violet)' };
+  // "Finalizada" ya no es un status guardado — se deriva de checked_out_at.
+  if (booking.checked_out_at) return { label: 'Finalizada', text: 'var(--text-secondary)', bg: 'var(--surface-violet)' };
   // confirmed
   if ((booking.left_to_pay_usd || 0) > 0) return { label: 'Seña', text: 'var(--orange)', bg: 'rgba(198,138,78,0.14)' };
   return { label: 'Confirmada', text: 'var(--green-strong)', bg: 'rgba(125,143,116,0.16)' };
@@ -155,13 +156,25 @@ const SeasonAvailabilityWidget = ({ properties, theme }: { properties: PropertyA
             <h3 className="font-display font-semibold text-lg text-ink-primary">Disponibilidad de temporada</h3>
             <p className="text-xs text-ink-secondary">Temporada {seasonLabel}</p>
           </div>
-          <Link
-            to="/calendar"
-            className="flex items-center gap-1.5 text-xs font-semibold text-primary bg-surface-violet px-3 py-1.5 rounded-full border border-border-subtle hover:bg-surface-hover transition-colors duration-fast ease-kanagawa flex-shrink-0"
-          >
-            Ver calendario
-            <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
-          </Link>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-wide text-ink-secondary">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ background: 'var(--green)' }} />
+                Libre
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ background: 'var(--red)' }} />
+                Reservado
+              </span>
+            </div>
+            <Link
+              to="/calendar"
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary bg-surface-violet px-3 py-1.5 rounded-full border border-border-subtle hover:bg-surface-hover transition-colors duration-fast ease-kanagawa flex-shrink-0"
+            >
+              Ver calendario
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={2} />
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -338,7 +351,8 @@ export const Dashboard = () => {
     const pending = bookings.filter((b) => {
       const checkInYear = Number(b.check_in?.slice(0, 4));
       return (
-        !['cancelled', 'completed'].includes(b.status) &&
+        b.status !== 'cancelled' &&
+        !b.checked_out_at &&
         (b.left_to_pay_usd || 0) > 0 &&
         checkInYear >= currentYear &&
         checkInYear <= currentYear + 1

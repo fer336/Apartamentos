@@ -72,3 +72,6 @@ htmlcov/
 *.sqlite3
 *.db
 dumps/
+
+# CodeGraph local index (not shared, machine-specific)
+.codegraph/

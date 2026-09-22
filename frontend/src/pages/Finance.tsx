@@ -111,7 +111,7 @@ export const Finance = () => {
           selectedMonth > 0 ? year1 : undefined,
           selectedMonth > 0 ? year2 : undefined
         ),
-        getBookings('completed'),
+        getBookings(undefined, true),
         getExpenses({ year: now.getFullYear() }),
       ]);
       setData(stats);
