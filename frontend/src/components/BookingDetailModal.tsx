@@ -136,12 +136,14 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Footer actions */}
-        <div className="flex flex-wrap gap-2 px-6 py-4 bg-surface-elevated border-t border-border-subtle">
+        {/* Footer actions — even grid so button count/order never looks
+            lopsided (was flex-wrap + ml-auto, which left orphaned buttons
+            pushed to one side depending on which conditional actions showed). */}
+        <div className="grid grid-cols-2 gap-2 px-6 py-4 bg-surface-elevated border-t border-border-subtle">
           {canCheckout && (
             <button
               onClick={() => onCheckout(booking)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-primary font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-primary font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
             >
               <LogOut className="w-4 h-4" strokeWidth={1.7} /> Checkout
             </button>
@@ -149,28 +151,28 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           {canSettle && (
             <button
               onClick={() => onSettle(booking)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-green-strong font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-green-strong font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
             >
               <DollarSign className="w-4 h-4" strokeWidth={1.7} /> Cobrar saldo
             </button>
           )}
           <button
             onClick={() => onEdit(booking)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-blue font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-blue font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
           >
             <Edit className="w-4 h-4" strokeWidth={1.7} /> Editar
           </button>
           {canCancel && (
             <button
               onClick={() => onCancel(booking)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-orange font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-orange font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
             >
               <Ban className="w-4 h-4" strokeWidth={1.7} /> Cancelar reserva
             </button>
           )}
           <button
             onClick={() => onDelete(booking)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-red font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa ml-auto"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-red font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
           >
             <Trash2 className="w-4 h-4" strokeWidth={1.7} /> Eliminar
           </button>
