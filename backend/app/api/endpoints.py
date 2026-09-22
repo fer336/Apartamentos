@@ -45,6 +45,7 @@ router = APIRouter()
 @router.get("/bookings", response_model=List[BookingResponse])
 async def get_bookings(
     status: str = None,
+    checked_out: bool = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -58,6 +59,11 @@ async def get_bookings(
 
     if status:
         query = query.where(Booking.status == status)
+
+    if checked_out is True:
+        query = query.where(Booking.checked_out_at.isnot(None))
+    elif checked_out is False:
+        query = query.where(Booking.checked_out_at.is_(None))
 
     query = query.order_by(Booking.check_in.desc())
 
@@ -139,7 +145,7 @@ async def create_booking(
             exchange_rate=exchange_rate,
             left_to_pay_usd=left_to_pay,
             advance_payment_date=date.today() if advance > 0 else None,
-            status=booking_data.status,
+            status='confirmed',
             payment_status=booking_data.payment_status,
             service_status=booking_data.service_status
         )
@@ -188,12 +194,43 @@ async def update_booking(
     # Verificar si se envió left_to_pay_usd explícitamente (ej: al saldar)
     left_to_pay_sent = 'left_to_pay_usd' in update_data
 
+    # Overlap-conflict validation, mirroring create_booking's check. Unlike
+    # create_booking, this endpoint never validated overlaps before, so
+    # editing a booking's property/dates could silently collide with another
+    # reservation on the same property.
+    if any(f in update_data for f in ('property_id', 'check_in', 'check_out')):
+        new_property_id = (
+            uuid.UUID(update_data['property_id'])
+            if update_data.get('property_id')
+            else booking_obj.property_id
+        )
+        new_check_in = update_data.get('check_in', booking_obj.check_in)
+        new_check_out = update_data.get('check_out', booking_obj.check_out)
+
+        overlap_query = select(Booking).where(
+            and_(
+                Booking.property_id == new_property_id,
+                Booking.status != 'cancelled',
+                Booking.organization_id == org_id,
+                Booking.id != booking_obj.id,
+                and_(
+                    Booking.check_in < new_check_out,
+                    Booking.check_out > new_check_in
+                )
+            )
+        )
+        overlap_result = await db.execute(overlap_query)
+        if overlap_result.first():
+            raise HTTPException(status_code=400, detail="La propiedad no está disponible en esas fechas")
+
     for field, value in update_data.items():
         if field in [
             'total_price_usd', 'advance_payment_usd', 'deposit_ars',
             'exchange_rate', 'balance_payment_usd', 'left_to_pay_usd',
         ]:
              value = Decimal(str(value))
+        elif field in ('property_id', 'client_id') and value:
+             value = uuid.UUID(value)
         setattr(booking_obj, field, value)
 
     # Fechas reales de cobro (para contabilidad): PaymentModal siempre salda el
@@ -233,6 +270,36 @@ async def update_booking(
 
         booking_obj.left_to_pay_usd = total_price - advance_in_total_currency
         booking_obj.balance_payment_usd = booking_obj.left_to_pay_usd
+
+    await db.commit()
+    await db.refresh(booking_obj)
+
+    prop_query = select(Property.name).where(Property.id == booking_obj.property_id)
+    client_query = select(Client.full_name).where(Client.id == booking_obj.client_id)
+
+    booking_obj.property_name = (await db.execute(prop_query)).scalar()
+    booking_obj.client_name = (await db.execute(client_query)).scalar()
+
+    return booking_obj
+
+
+@router.post("/bookings/{booking_id}/cancel", response_model=BookingResponse)
+async def cancel_booking(
+    booking_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Cancelar una reserva (queda registrada, no se borra)"""
+    org_id = current_user.organization_id
+    query = select(Booking).where(and_(Booking.id == uuid.UUID(booking_id), Booking.organization_id == org_id))
+    result = await db.execute(query)
+    booking_obj = result.scalar_one_or_none()
+
+    if not booking_obj:
+        raise HTTPException(status_code=404, detail="Reserva no encontrada")
+
+    booking_obj.status = 'cancelled'
+    booking_obj.cancelled_at = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(booking_obj)
@@ -731,7 +798,7 @@ async def get_dashboard_stats(
     # 1. Total Recaudado ARS (histórico)
     total_revenue_ars_query = select(func.sum(Booking.total_price_usd)).where(
         and_(
-            Booking.status.in_(['confirmed', 'active', 'completed']),
+            Booking.status == 'confirmed',
             Booking.organization_id == org_id,
             Booking.total_price_currency == 'ARS'
         )
@@ -740,7 +807,7 @@ async def get_dashboard_stats(
     # 1b. Total Recaudado USD (histórico)
     total_revenue_usd_query = select(func.sum(Booking.total_price_usd)).where(
         and_(
-            Booking.status.in_(['confirmed', 'active', 'completed']),
+            Booking.status == 'confirmed',
             Booking.organization_id == org_id,
             Booking.total_price_currency == 'USD'
         )
@@ -830,7 +897,8 @@ async def get_dashboard_stats(
     active_bookings_query = select(func.count(Booking.id)).where(
         and_(
             Booking.organization_id == org_id,
-            Booking.status.notin_(['cancelled', 'completed']),
+            Booking.status != 'cancelled',
+            Booking.checked_out_at.is_(None),
             Booking.check_in >= current_year_start,
             Booking.check_in < active_window_end
         )
@@ -1115,7 +1183,7 @@ async def get_accounting_stats(
             count_query = select(func.count(Booking.id)).where(
                 and_(
                     Booking.organization_id == org_id,
-                    Booking.status.in_(['confirmed', 'active', 'completed']),
+                    Booking.status == 'confirmed',
                     Booking.check_in >= start_date,
                     Booking.check_in < end_date
                 )
@@ -1215,7 +1283,7 @@ async def get_accounting_stats(
             count_query = select(func.count(Booking.id)).where(
                 and_(
                     Booking.organization_id == org_id,
-                    Booking.status.in_(['confirmed', 'active', 'completed']),
+                    Booking.status == 'confirmed',
                     Booking.check_in >= start_date,
                     Booking.check_in < end_date
                 )
@@ -1342,7 +1410,12 @@ async def import_bookings(
                 deposit_ars=Decimal(str(booking_data.get('deposit', 0))),
                 deposit_currency=booking_data.get('depositCurrency', 'ARS'),
                 left_to_pay_usd=left_to_pay,
-                status=booking_data.get('status', 'pending'),
+                # Status only carries 2 values now: any imported value that
+                # reads as 'cancelled' maps to 'cancelled', everything else
+                # (including the old 'pending'/'active'/'completed') maps to
+                # 'confirmed'. service_status below keeps reading the raw
+                # imported string — it's a separate, unrelated field.
+                status='cancelled' if booking_data.get('status', '').lower() == 'cancelled' else 'confirmed',
                 payment_status='pending' if left_to_pay > 0 else 'paid',
                 service_status='SERVICIOS' if booking_data.get('status', '').lower() == 'active' else 'NO SERVICIOS',
                 exchange_rate=Decimal('1200')  # Default

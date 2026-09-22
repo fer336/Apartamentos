@@ -64,10 +64,12 @@ class Booking(Base):
     advance_payment_date = Column(Date, nullable=True)
     balance_settled_at = Column(Date, nullable=True)
 
-    status = Column(String(50), default='pending')
+    status = Column(String(50), default='confirmed')
     payment_status = Column(String(50), default='pending')
     service_status = Column(String(50))
     checkout_notes = Column(Text)
+    checked_out_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    cancelled_at = Column(TIMESTAMP(timezone=True), nullable=True)
 
     special_requests = Column(Text)
     internal_notes = Column(Text)

@@ -36,6 +36,8 @@ class BookingResponse(BaseModel):
     payment_status: str
     service_status: Optional[str] = None
     checkout_notes: Optional[str] = None
+    checked_out_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
     created_at: datetime
 
     @field_serializer('id', 'property_id', 'client_id')
@@ -70,12 +72,13 @@ class BookingCreate(BaseModel):
     deposit_ars: Optional[float] = 0.0
     deposit_currency: Optional[str] = 'ARS'
     exchange_rate: Optional[float] = 1.0
-    status: str = 'pending'
     payment_status: str = 'pending'
     service_status: str = 'NO SERVICIOS'
 
 
 class BookingUpdate(BaseModel):
+    property_id: Optional[str] = None
+    client_id: Optional[str] = None
     check_in: Optional[date] = None
     check_out: Optional[date] = None
     guests_count: Optional[int] = None
@@ -93,10 +96,10 @@ class BookingUpdate(BaseModel):
     deposit_ars: Optional[float] = None
     deposit_currency: Optional[str] = None
     exchange_rate: Optional[float] = None
-    status: Optional[str] = None
     payment_status: Optional[str] = None
     service_status: Optional[str] = None
     checkout_notes: Optional[str] = None
+    checked_out_at: Optional[datetime] = None
 
 
 class PropertyResponse(BaseModel):
