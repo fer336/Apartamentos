@@ -25,6 +25,8 @@ export interface BookingPayload {
   payment_status?: string;
   service_status?: string;
   checkout_notes?: string;
+  checked_out_at?: string;
+  cancelled_at?: string;
 }
 
 export interface PropertyPayload {
@@ -144,8 +146,10 @@ export const getBlueExchangeRate = async () => {
 };
 
 // Bookings
-export const getBookings = async (status?: string) => {
-  const params = status ? { status } : {};
+export const getBookings = async (status?: string, checkedOut?: boolean) => {
+  const params: { status?: string; checked_out?: boolean } = {};
+  if (status) params.status = status;
+  if (checkedOut !== undefined) params.checked_out = checkedOut;
   const response = await api.get('/bookings', { params });
   return response.data;
 };
@@ -157,6 +161,11 @@ export const createBooking = async (bookingData: BookingPayload) => {
 
 export const updateBooking = async (id: string, bookingData: BookingPayload) => {
   const response = await api.put(`/bookings/${id}`, bookingData);
+  return response.data;
+};
+
+export const cancelBooking = async (id: string) => {
+  const response = await api.post(`/bookings/${id}/cancel`);
   return response.data;
 };
 

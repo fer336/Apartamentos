@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Sparkles, PawPrint, Pencil, User, Baby,
 } from 'lucide-react';
-import { getBookings, getProperties, createBooking, updateBooking, deleteBooking, type BookingPayload } from '../services/api';
+import { getBookings, getProperties, createBooking, updateBooking, deleteBooking, cancelBooking, type BookingPayload } from '../services/api';
 import { getErrorMessage } from '../utils/errorMessage';
 import { BookingModal } from '../components/BookingModal';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -24,6 +24,8 @@ const PAGE_SIZE = 10;
    check_in: string;
    check_out: string;
    status: string;
+   checked_out_at?: string;
+   cancelled_at?: string;
    guests_count: number;
    adults?: number;
    children?: number;
@@ -80,6 +82,10 @@ export const Calendar = () => {
   });
   const [settleBooking, setSettleBooking] = useState<Booking | null>(null);
   const [checkoutBooking, setCheckoutBooking] = useState<Booking | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState<{ isOpen: boolean; booking: Booking | null }>({
+    isOpen: false,
+    booking: null,
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Ficha de detalle de la reserva clickeada en la grilla
@@ -185,10 +191,27 @@ export const Calendar = () => {
     }
   };
 
+  const handleCancelClick = (booking: Booking) => {
+    setCancelConfirm({ isOpen: true, booking });
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelConfirm.booking) return;
+    try {
+      await cancelBooking(cancelConfirm.booking.id);
+      fetchData();
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Error al cancelar la reserva'));
+    } finally {
+      setCancelConfirm({ isOpen: false, booking: null });
+    }
+  };
+
+  // Status solo tiene 2 valores reales (confirmed/cancelled). 'completed' es
+  // un pseudo-estado usado solo para el badge, derivado de checked_out_at.
   const STATUS_LABELS: Record<string, string> = {
-    pending: 'Pendiente',
     confirmed: 'Confirmada',
-    active: 'Activa',
     completed: 'Finalizada',
     cancelled: 'Cancelada',
   };
@@ -196,9 +219,7 @@ export const Calendar = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'text-state-blue bg-[rgba(118,102,154,0.14)] border-[rgba(118,102,154,0.28)]';
-      case 'active': return 'text-state-green-strong bg-[rgba(125,143,116,0.16)] border-[rgba(125,143,116,0.28)]';
       case 'completed': return 'text-ink-secondary bg-surface-elevated border-border-subtle';
-      case 'pending': return 'text-state-yellow bg-[rgba(212,178,111,0.16)] border-[rgba(212,178,111,0.28)]';
       case 'cancelled': return 'text-state-red-strong bg-[rgba(166,77,69,0.14)] border-[rgba(166,77,69,0.28)]';
       default: return 'text-ink-secondary bg-surface-elevated border-border-subtle';
     }
@@ -228,7 +249,7 @@ export const Calendar = () => {
     targetDate.setHours(0, 0, 0, 0);
 
     return bookings.filter(b => {
-      if (b.status === 'cancelled' || b.status === 'completed') return false;
+      if (b.status === 'cancelled' || b.checked_out_at) return false;
       const [sy, sm, sd] = b.check_in.split('-').map(Number);
       const [ey, em, ed] = b.check_out.split('-').map(Number);
 
@@ -249,15 +270,18 @@ export const Calendar = () => {
 
   const monthStart = new Date(year, month, 1);
   const monthEnd = new Date(year, month + 1, 0);
+  const propertyById = new Map(properties.map((p) => [p.id, p]));
 
-  // Clientes con reservas activas que tocan el mes visible, para la leyenda
-  const visibleClients = new Map<string, string>();
+  // Propiedades con reservas activas que tocan el mes visible, para la
+  // leyenda — antes era por cliente, ahora los bloques se colorean por
+  // propiedad (igual que la vista de lista) así que la leyenda acompaña.
+  const visibleProperties = new Map<string, string>();
   bookings.forEach(b => {
     if (b.status === 'cancelled') return;
     const checkInDate = new Date(b.check_in);
     const checkOutDate = new Date(b.check_out);
     if (checkInDate <= monthEnd && checkOutDate >= monthStart) {
-      visibleClients.set(b.client_id, b.client_name || '');
+      visibleProperties.set(b.property_id, propertyById.get(b.property_id)?.name || b.property_name || '');
     }
   });
 
@@ -272,7 +296,6 @@ export const Calendar = () => {
 
   const listTotalPages = Math.max(1, Math.ceil(monthBookings.length / PAGE_SIZE));
   const paginatedMonthBookings = monthBookings.slice((listPage - 1) * PAGE_SIZE, listPage * PAGE_SIZE);
-  const propertyById = new Map(properties.map((p) => [p.id, p]));
 
   return (
     <div className="space-y-6 pb-20 font-sans">
@@ -309,14 +332,17 @@ export const Calendar = () => {
         </div>
 
         <div className="flex items-center gap-4 flex-wrap">
-          {visibleClients.size > 0 && (
+          {visibleProperties.size > 0 && (
             <div className="flex items-center gap-3 flex-wrap">
-              {Array.from(visibleClients.entries()).map(([clientId, name]) => (
-                <div key={clientId} className="flex items-center gap-1.5 text-xs font-semibold text-ink-secondary">
-                  <span className={`w-2.5 h-2.5 rounded-full ${getEntityColor(clientId).dot}`}></span>
-                  {getSurname(name)}
-                </div>
-              ))}
+              {Array.from(visibleProperties.entries()).map(([propertyId, name]) => {
+                const propertyColor = getColorByKey(propertyById.get(propertyId)?.color) ?? getEntityColor(propertyId);
+                return (
+                  <div key={propertyId} className="flex items-center gap-1.5 text-xs font-semibold text-ink-secondary">
+                    <span className={`w-2.5 h-2.5 rounded-full ${propertyColor.dot}`}></span>
+                    {getPropertyShortLabel(name)}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -359,7 +385,7 @@ export const Calendar = () => {
                     {dayBookings.map(b => {
                       const [ciY, ciM, ciD] = b.check_in.split('-').map(Number);
                       const isCheckInDay = ciY === year && (ciM - 1) === month && ciD === day;
-                      const color = getEntityColor(b.client_id);
+                      const color = getColorByKey(propertyById.get(b.property_id)?.color) ?? getEntityColor(b.property_id);
                       return isCheckInDay ? (
                         <div
                           key={b.id}
@@ -396,6 +422,7 @@ export const Calendar = () => {
                 const isPaid = (b.left_to_pay_usd || 0) <= 0;
                 const property = propertyById.get(b.property_id);
                 const propertyColor = getColorByKey(property?.color) ?? getEntityColor(b.property_id);
+                const displayStatus = b.checked_out_at ? 'completed' : b.status;
                 const [ciDay] = b.check_in.split('-').slice(2);
                 const ciMonthShort = formatShortDate(b.check_in).split(' ')[1];
                 const hasServices = b.service_status === 'SERVICIOS';
@@ -420,8 +447,8 @@ export const Calendar = () => {
                         <p className="font-display font-extrabold text-lg text-ink-primary leading-none">{ciDay}</p>
                         <p className="text-[9px] font-bold uppercase text-ink-muted leading-none mt-0.5">{ciMonthShort}</p>
                       </div>
-                      <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(b.status)}`}>
-                        {STATUS_LABELS[b.status] || b.status}
+                      <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(displayStatus)}`}>
+                        {STATUS_LABELS[displayStatus] || displayStatus}
                       </span>
                     </div>
 
@@ -501,6 +528,7 @@ export const Calendar = () => {
         onSettle={(b) => { setSettleBooking(b as Booking); setSelectedBooking(null); }}
         onEdit={(b) => { handleEditBooking(b as Booking); setSelectedBooking(null); }}
         onDelete={(b) => { handleDeleteClick(b as Booking); setSelectedBooking(null); }}
+        onCancel={(b) => { handleCancelClick(b as Booking); setSelectedBooking(null); }}
         getStatusColor={getStatusColor}
       />
 
@@ -508,6 +536,7 @@ export const Calendar = () => {
       <PaymentModal isOpen={!!settleBooking} booking={settleBooking} onClose={() => setSettleBooking(null)} onConfirm={handleSettlePayment} />
       <CheckoutModal isOpen={!!checkoutBooking} booking={checkoutBooking} onClose={() => setCheckoutBooking(null)} onConfirm={handleCheckout} />
       <ConfirmModal isOpen={deleteConfirm.isOpen} onClose={() => setDeleteConfirm({ isOpen: false, booking: null })} onConfirm={handleConfirmDelete} title="¿Eliminar Reserva?" message="¿Estás segura? Esta acción no se puede deshacer." confirmText="Eliminar" cancelText="Cancelar" type="danger" />
+      <ConfirmModal isOpen={cancelConfirm.isOpen} onClose={() => setCancelConfirm({ isOpen: false, booking: null })} onConfirm={handleConfirmCancel} title="¿Cancelar Reserva?" message="La reserva quedará registrada como cancelada, con fecha y hora del cambio." confirmText="Cancelar reserva" cancelText="Volver" type="warning" />
     </div>
   );
 };

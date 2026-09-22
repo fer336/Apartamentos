@@ -7,6 +7,7 @@ import type { ClientPayload } from '../services/api';
 interface ClientBooking {
   id: string;
   status: string;
+  checked_out_at?: string;
   check_in: string;
   check_out: string;
   booking_number?: string;
@@ -27,12 +28,16 @@ const formatDate = (dateStr: string) => {
   return new Date(y, m - 1, d).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
+// "Finalizada" ya no es un status guardado — se deriva de checked_out_at
+// (ver getBookingStatusLabel más abajo).
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pendiente',
   confirmed: 'Confirmada',
-  active: 'Activa',
-  completed: 'Finalizada',
   cancelled: 'Cancelada',
+};
+
+const getBookingStatusLabel = (booking: ClientBooking) => {
+  if (booking.checked_out_at) return 'Finalizada';
+  return STATUS_LABELS[booking.status] || booking.status;
 };
 
 export const ClientModal: React.FC<ClientModalProps> = ({
@@ -130,7 +135,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({
                       <CalendarClock className="w-4 h-4 text-ink-muted" strokeWidth={1.7} />
                       {formatDate(b.check_in)} → {formatDate(b.check_out)}
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{STATUS_LABELS[b.status] || b.status}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{getBookingStatusLabel(b)}</span>
                   </div>
                   <p className="text-xs text-ink-secondary mb-2">
                     {b.property_name}{b.booking_number ? ` · ${b.booking_number}` : ''}

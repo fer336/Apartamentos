@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { X, LogOut, DollarSign, Edit, Trash2 } from 'lucide-react';
+import { X, LogOut, DollarSign, Edit, Trash2, Ban } from 'lucide-react';
 
 interface DetailBooking {
   id: string;
@@ -7,6 +7,8 @@ interface DetailBooking {
   check_in: string;
   check_out: string;
   status: string;
+  checked_out_at?: string;
+  cancelled_at?: string;
   guests_count: number;
   total_price_usd: number;
   total_price_currency?: string;
@@ -26,6 +28,7 @@ interface BookingDetailModalProps {
   onSettle: (booking: DetailBooking) => void;
   onEdit: (booking: DetailBooking) => void;
   onDelete: (booking: DetailBooking) => void;
+  onCancel: (booking: DetailBooking) => void;
   getStatusColor: (status: string) => string;
 }
 
@@ -42,15 +45,22 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   onSettle,
   onEdit,
   onDelete,
+  onCancel,
   getStatusColor,
 }) => {
   if (!isOpen || !booking) return null;
 
   const leftToPay = booking.left_to_pay_usd || 0;
   const isFullyPaid = leftToPay <= 0;
-  const isCompleted = booking.status === 'completed';
-  const canCheckout = !isCompleted && booking.status !== 'cancelled';
-  const canSettle = !isFullyPaid && !isCompleted;
+  // "Finalizada" is no longer a stored status — it's derived from checked_out_at.
+  const isCompleted = !!booking.checked_out_at;
+  const isCancelled = booking.status === 'cancelled';
+  const canCheckout = !isCompleted && !isCancelled;
+  const canSettle = !isFullyPaid && !isCompleted && !isCancelled;
+  const canCancel = !isCancelled;
+  // Pseudo-status used only for the badge: 'completed' isn't a real stored
+  // status, it just reuses the same muted color treatment as before.
+  const displayStatus = isCompleted ? 'completed' : booking.status;
 
   return createPortal(
     <div
@@ -78,8 +88,8 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           <p className="text-sm text-white/70 mb-3 relative z-10">
             {booking.property_name} · {booking.guests_count} huésped{booking.guests_count === 1 ? '' : 'es'}
           </p>
-          <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border relative z-10 ${getStatusColor(booking.status)}`}>
-            {booking.status}
+          <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border relative z-10 ${getStatusColor(displayStatus)}`}>
+            {displayStatus}
           </span>
         </div>
 
@@ -150,6 +160,14 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           >
             <Edit className="w-4 h-4" strokeWidth={1.7} /> Editar
           </button>
+          {canCancel && (
+            <button
+              onClick={() => onCancel(booking)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-orange font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa"
+            >
+              <Ban className="w-4 h-4" strokeWidth={1.7} /> Cancelar reserva
+            </button>
+          )}
           <button
             onClick={() => onDelete(booking)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-[11px] border border-border bg-surface text-state-red font-semibold text-sm hover:bg-surface-hover transition-colors duration-fast ease-kanagawa ml-auto"

@@ -57,7 +57,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       : (tagsLabels || notes).trim();
 
     onConfirm({
-      status: 'completed',
+      checked_out_at: new Date().toISOString(),
       checkout_notes: finalNotes
     });
   };
