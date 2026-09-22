@@ -37,15 +37,6 @@ interface Booking {
   total_price_usd: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; chip: string }> = {
-  available: { label: 'Disponible', chip: 'status-available' },
-  occupied: { label: 'Ocupada', chip: 'status-occupied' },
-  maintenance: {
-    label: 'Mantenimiento',
-    chip: 'border border-[rgba(212,178,111,0.28)] bg-[rgba(212,178,111,0.16)] text-state-yellow',
-  },
-};
-
 const dateFromISO = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
@@ -60,7 +51,6 @@ export const Properties = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'occupied'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | undefined>();
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; property: Property | null }>({
@@ -143,14 +133,6 @@ export const Properties = () => {
     return Math.round((bookedNights / daysInMonth) * 100);
   };
 
-  const counts = useMemo(() => ({
-    all: properties.length,
-    available: properties.filter((p) => p.status === 'available').length,
-    occupied: properties.filter((p) => p.status === 'occupied').length,
-  }), [properties]);
-
-  const filteredProperties = properties.filter((p) => statusFilter === 'all' || p.status === statusFilter);
-
   const handleSaveProperty = async (propertyData: PropertyPayload) => {
     try {
       setErrorMessage(null);
@@ -224,27 +206,7 @@ export const Properties = () => {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          {([
-            { value: 'all', label: `Todas · ${counts.all}` },
-            { value: 'available', label: `Disponibles · ${counts.available}` },
-            { value: 'occupied', label: `Ocupadas · ${counts.occupied}` },
-          ] as const).map((chip) => (
-            <button
-              key={chip.value}
-              onClick={() => setStatusFilter(chip.value)}
-              className={`px-4 py-2 rounded-[11px] text-sm font-semibold transition-all duration-fast ease-kanagawa border ${
-                statusFilter === chip.value
-                  ? 'bg-primary text-primary-foreground border-primary shadow-btn-primary'
-                  : 'bg-surface text-primary border-border hover:bg-surface-hover'
-              }`}
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={() => setIsTaskManagerOpen(true)}>
             <ListTodo className="w-4 h-4" strokeWidth={1.7} />
@@ -262,7 +224,7 @@ export const Properties = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-ink-secondary">Cargando propiedades...</p>
         </div>
-      ) : filteredProperties.length === 0 ? (
+      ) : properties.length === 0 ? (
         <KanagawaCard className="text-center">
           <EmptyState
             icon={<Building2 className="w-8 h-8" strokeWidth={1.7} />}
@@ -278,11 +240,7 @@ export const Properties = () => {
         </KanagawaCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">
-          {filteredProperties.map((property) => {
-            const status = STATUS_CONFIG[property.status] || {
-              label: property.status,
-              chip: 'border border-border-subtle bg-surface-elevated text-ink-secondary',
-            };
+          {properties.map((property) => {
             const avgPrice = getAvgPricePerNight(property.id);
             const occupancy = getMonthOccupancy(property.id);
             const propertyColor = getColorByKey(property.color) ?? getEntityColor(property.id);
@@ -299,9 +257,6 @@ export const Properties = () => {
                       {getPropertyShortLabel(property.name)}
                     </span>
                   </div>
-                  <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${status.chip}`}>
-                    {status.label}
-                  </span>
                 </div>
 
                 <div className="p-[18px] flex-1 flex flex-col">
