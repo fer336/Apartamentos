@@ -19,8 +19,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('bookings', sa.Column('checked_out_at', sa.TIMESTAMP(timezone=True), nullable=True))
-    op.add_column('bookings', sa.Column('cancelled_at', sa.TIMESTAMP(timezone=True), nullable=True))
+    # IF NOT EXISTS instead of op.add_column: the container's CMD runs
+    # `alembic upgrade head` on every start/restart (see backend/Dockerfile),
+    # and a container that crash-loops mid-migration (e.g. Swarm's
+    # restart_policy retrying after an unrelated startup failure) must be
+    # able to re-run this migration without erroring on columns a prior
+    # partial attempt already committed.
+    op.execute("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS checked_out_at TIMESTAMP WITH TIME ZONE")
+    op.execute("ALTER TABLE bookings ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITH TIME ZONE")
 
     # Backfill: bookings previously marked 'completed' get a checked_out_at
     # stamp (use updated_at as the best available approximation of when the
@@ -46,5 +52,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.alter_column('bookings', 'status', server_default='pending')
-    op.drop_column('bookings', 'cancelled_at')
-    op.drop_column('bookings', 'checked_out_at')
+    op.execute("ALTER TABLE bookings DROP COLUMN IF EXISTS cancelled_at")
+    op.execute("ALTER TABLE bookings DROP COLUMN IF EXISTS checked_out_at")
